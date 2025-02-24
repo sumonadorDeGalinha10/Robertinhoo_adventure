@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
+
 
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;;
@@ -34,7 +34,7 @@ public class ProjectileRenderer {
         }
         
         Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
-        animation.setPlayMode(Animation.PlayMode.NORMAL); // Alterado para não loop
+        animation.setPlayMode(Animation.PlayMode.NORMAL); 
         return animation;
     }
 
@@ -66,10 +66,6 @@ public class ProjectileRenderer {
         }
     }
     
-
-
-
- 
 
     public void dispose() {
         projectileTexture.dispose();

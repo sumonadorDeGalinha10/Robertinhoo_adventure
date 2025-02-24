@@ -35,8 +35,9 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public static final int DEAD = 5;
     public static final int LEFT = 8;
     public static final int RIGHT = 7;
+    public static final int UP = 9;
     public static final int TOP = 1;
-    public static final int BOTTOM = -1;
+    public static final int DOWN = -1;
     public static final int IDLE = 6;
     public static final float ACCELERATION = 4f;
     public static final float DASH_DURATION = 0.1f;
@@ -46,6 +47,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
     public int state = SPAWN;
     public int dir = IDLE;
+    public int lastDir = DOWN;
     private boolean isInvulnerable = false;
 
     public final Mapa map;
@@ -162,19 +164,32 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
     private void processKeys() {
         Vector2 moveDir = new Vector2();
-        boolean isMoving = false; // Novo flag para controle de movimento
+        boolean isMoving = false;
+        if (Gdx.input.isKeyPressed(Keys.W)){
+            moveDir.y += 1;
+            isMoving = true;
+            dir = UP;
+            lastDir = UP; // Atualiza lastDir
+        } 
     
-        if (Gdx.input.isKeyPressed(Keys.W)) moveDir.y += 1;
-        if (Gdx.input.isKeyPressed(Keys.S)) moveDir.y -= 1;
+        if (Gdx.input.isKeyPressed(Keys.S)){
+            isMoving = true;
+            dir = DOWN;
+            moveDir.y -= 1;
+            lastDir = DOWN; // Atualiza lastDir
+        } 
+    
         if (Gdx.input.isKeyPressed(Keys.D)) {
             moveDir.x += 1;
             isMoving = true;
             dir = RIGHT;
+            lastDir = RIGHT; // Atualiza lastDir
         }
         if (Gdx.input.isKeyPressed(Keys.A)) {
             moveDir.x -= 1;
             isMoving = true;
             dir = LEFT;
+            lastDir = LEFT; // Atualiza lastDir
         }
     
         if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
@@ -249,7 +264,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
         }
     }
 
-// Robertinhoo.java
+
 public void applyAimRotation() {
     if (inventory.getEquippedWeapon() != null) {
         float angle = weaponSystem.getAimAngle();
@@ -336,7 +351,7 @@ public void clearWeaponToPickup() {
 
     @Override
     public float getBoundingRadius() {
-        return 0.5f; // Example: Set the radius based on your entity's size
+        return 0.5f;
     }
 
     @Override
@@ -351,7 +366,7 @@ public void clearWeaponToPickup() {
 
     @Override
     public Vector2 getPosition() {
-        return body.getPosition(); // Retorna a posição central do corpo
+        return body.getPosition();
     }
     @Override
     public void setOrientation(float orientation) {
