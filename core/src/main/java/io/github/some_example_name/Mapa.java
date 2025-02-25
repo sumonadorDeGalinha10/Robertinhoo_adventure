@@ -32,6 +32,8 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.math.Rectangle;
 
+
+
 import java.util.List;
 
 public class Mapa {
@@ -155,18 +157,18 @@ public class Mapa {
         BodyDef bodyDef = new BodyDef();
         
         bodyDef.type = BodyType.StaticBody;
-        // Se necessário, inverta o eixo Y (exemplo para mapas com Y começando no topo):
+       
         float posY = (mapHeight - ret.y - ret.height/2) * escala;
         bodyDef.position.set(
-            (ret.x + ret.width/2) * escala, 
-            posY // Aplicar inversão se necessário
+            (ret.x + ret.width/2) * escala,
+            posY
         );
     
         Body body = world.createBody(bodyDef);
         body.setUserData("WALL");
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(
-            (ret.width/2) * escala, 
+            (ret.width/2) * escala,
             (ret.height/2) * escala
         );
     
@@ -188,24 +190,16 @@ public class Mapa {
 
 
     public void update(float deltaTime) {
-        robertinhoo.update(deltaTime);
-        for (Enemy enemy : enemies) {
-            enemy.update(deltaTime);
-        }
-        for (Weapon weapon : weapons) {
-            weapon.update(deltaTime);
-        }
-    
-    
-        List<Projectile> toRemove = new ArrayList<>();
-        for (Projectile p : projectiles) {
-            if (p.isMarkedForDestruction()) {
-                toRemove.add(p);
+        System.err.println("updade do meu papa chamando");
+
+
+        java.util.Iterator<Projectile> it = projectiles.iterator();
+        while(it.hasNext()) {
+            Projectile p = it.next();
+            if(p.isMarkedForDestruction()) {
+                p.destroy();
+                it.remove();
             }
-        }
-        for (Projectile p : toRemove) {
-            p.destroy();
-            projectiles.remove(p);
         }
     }
     

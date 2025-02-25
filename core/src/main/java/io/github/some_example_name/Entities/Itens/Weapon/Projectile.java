@@ -78,9 +78,10 @@ public class Projectile {
 
     public void destroy() {
         if (body != null) {
-            body.getWorld().destroyBody(body);
+            body.getWorld().destroyBody(body); // Destrói imediatamente
             body = null;
         }
+        markForDestruction();
     }
     public Body getBody() {
         return body;

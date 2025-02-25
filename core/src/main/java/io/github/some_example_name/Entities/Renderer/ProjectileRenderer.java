@@ -14,6 +14,8 @@ public class ProjectileRenderer {
     private final Animation<TextureRegion> shootAnimation;
     private final Texture projectileTexture;
     private final int tileSize;
+   // private final Texture glowTexture; // Nova textura para o brilho
+   // private final float GLOW_SCALE = 1.5f; // Escala do brilho em relação ao projétil
 
     public ProjectileRenderer(Mapa mapa, int tileSize) {
         this.mapa = mapa;
@@ -22,6 +24,7 @@ public class ProjectileRenderer {
         projectileTexture = new Texture("ITENS/Pistol/shoot.png");
         System.out.println(projectileTexture);
         this.shootAnimation = createAnimation(projectileTexture, 4, 0.2f);
+        //glowTexture = new Texture("ITENS/Pistol/glow_yellow.png");
     }
 
     private Animation<TextureRegion> createAnimation(Texture texture, int frameCount, float frameDuration) {
@@ -54,7 +57,7 @@ public class ProjectileRenderer {
                 frame,
                 x,
                 y,
-                width / 2, 
+                width / 2,
                 height / 2,
                 width,
                 height,

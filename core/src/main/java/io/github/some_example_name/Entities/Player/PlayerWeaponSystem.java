@@ -19,14 +19,7 @@ public class PlayerWeaponSystem {
 
 
 
-    private final MapRenderer mapRenderer; // Nova referência
-
- 
-
-
-
-   
-
+    private final MapRenderer mapRenderer;
     public PlayerWeaponSystem(Robertinhoo player, MapRenderer mapRenderer) {
         this.player = player;
         this.mapRenderer = mapRenderer;
@@ -38,21 +31,16 @@ public class PlayerWeaponSystem {
 
 
 private void updateAimDirection() {
-    // Obtenha o centro da tela
     float centerX = Gdx.graphics.getWidth() / 2f;
     float centerY = Gdx.graphics.getHeight() / 2f;
     
-    // Obtenha a posição do mouse (em pixels)
     int mouseX = Gdx.input.getX();
     int mouseY = Gdx.input.getY();
     
-    // Como Gdx.input.getY() tem origem no topo, inverta-o para que a origem seja a base
     float correctedMouseY = Gdx.graphics.getHeight() - mouseY;
-    
-    // Calcule a diferença entre a posição do mouse e o centro da tela
     Vector2 diff = new Vector2(mouseX - centerX, correctedMouseY - centerY);
     
-    // Se o vetor não for zero, normaliza e atualiza a direção da mira
+
     if (diff.len() != 0) {
         aimDirection.set(diff.nor());
     }
@@ -60,7 +48,7 @@ private void updateAimDirection() {
 
 public float getAimAngle() {
     float angle = aimDirection.angleDeg();
-    return angle < 0 ? angle + 360 : angle; // Já retorna -180° a 180°, suficiente para rotação
+    return angle < 0 ? angle + 360 : angle;
 }
     
 
@@ -81,8 +69,8 @@ public float getAimAngle() {
         float baseX = mapRenderer.offsetX + (playerWorldPos.x * MapRenderer.TILE_SIZE);
         float baseY = mapRenderer.offsetY + (playerWorldPos.y * MapRenderer.TILE_SIZE);
         
-        Vector2 muzzleOffset = weapon != null ? 
-            weapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE) : 
+        Vector2 muzzleOffset = weapon != null ?
+            weapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE) :
             new Vector2(0, 0);
         
         Vector2 rotatedOffset = new Vector2(muzzleOffset).rotateDeg(getAimAngle());
@@ -96,8 +84,8 @@ public float getAimAngle() {
     
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.5f, 0.5f, 0.5f, 0.3f); // Alpha ajustado para 0.3
-        shapeRenderer.rectLine(startX, startY, endX, endY, 3f); // Espessura reduzida para 2px
+        shapeRenderer.setColor(0.5f, 0.5f, 0.5f, 0.3f);
+        shapeRenderer.rectLine(startX, startY, endX, endY, 3f);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -123,8 +111,8 @@ public float getAimAngle() {
             float drawY = baseY + rotatedOffset.y;
             
           
-            float originX = 8; 
-            float originY = 4;  
+            float originX = 8;
+            float originY = 4;
             float angle = getAimAngle();
             boolean flip = angle > 90 && angle < 270;
             float scaleY = flip ? -1 : 1;

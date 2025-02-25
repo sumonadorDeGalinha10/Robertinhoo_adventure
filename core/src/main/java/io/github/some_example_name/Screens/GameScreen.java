@@ -45,6 +45,8 @@ public class GameScreen extends CatScreen {
         // Atualiza a posição e animação do jogador
         robertinhoo.update(delta);
 
+        mapa.update(delta);
+
         // Renderiza o mapa e o jogador
         renderer.render(delta, robertinhoo);
     }

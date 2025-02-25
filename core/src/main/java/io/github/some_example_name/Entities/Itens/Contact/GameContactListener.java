@@ -6,6 +6,7 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 
+import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
@@ -27,8 +28,7 @@ public class GameContactListener implements ContactListener {
         
             Object dataA = fixA.getBody().getUserData();
             Object dataB = fixB.getBody().getUserData();
-            System.out.println("dataA"+dataA);
-            System.out.println("DataB"+dataB);
+        
         
             if (dataA != null && dataB != null) {
                 if(dataA.equals("PLAYER") && dataB instanceof Weapon) {
@@ -37,6 +37,16 @@ public class GameContactListener implements ContactListener {
                     player.setWeaponToPickup((Weapon) dataA);
                 }
             }
+            System.out.println("dataA"+dataA);
+            System.out.println("DataB"+dataB);
+            if ((dataA instanceof Projectile && "WALL".equals(dataB)) || 
+            (dataB instanceof Projectile && "WALL".equals(dataA))) {
+            System.out.println("chego aqui vei");
+            Projectile projectile = (dataA instanceof Projectile) ? 
+                (Projectile) dataA : (Projectile) dataB;
+            
+            projectile.markForDestruction();
+        }
         }
 
     @Override
