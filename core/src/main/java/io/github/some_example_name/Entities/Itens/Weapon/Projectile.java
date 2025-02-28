@@ -1,6 +1,8 @@
 package io.github.some_example_name.Entities.Itens.Weapon;
 
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import io.github.some_example_name.Mapa;
@@ -10,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
+import java.util.List;
 
 public class Projectile {
     private Body body;
@@ -21,6 +24,10 @@ public class Projectile {
     private static final float WIDTH = 0.4f; // 0.2 * 2 (box2d usa half-width)
     private static final float HEIGHT = 0.4f;
     private boolean toBeDestroyed = false;
+
+
+    private List<Vector2> trailPositions = new ArrayList<>();
+    private static final int TRAIL_LENGTH = 8;
     
     
 
@@ -74,6 +81,15 @@ public class Projectile {
         if (timeAlive >= lifespan) {
             destroy();
         }
+
+        trailPositions.add(new Vector2(getPosition()));
+        if (trailPositions.size() > TRAIL_LENGTH) {
+            trailPositions.remove(0);
+        }
+    }
+
+    public List<Vector2> getTrailPositions() {
+        return trailPositions;
     }
 
     public void destroy() {

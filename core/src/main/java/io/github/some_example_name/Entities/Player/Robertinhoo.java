@@ -382,10 +382,6 @@ public void clearWeaponToPickup() {
     }
     
 
- 
-  
-// Garanta que o Steerable está implementado corretamente:
-// Robertinhoo.java - método vectorToAngle
 @Override
 public float vectorToAngle(Vector2 vector) {
     return (float) Math.atan2(vector.y, vector.x); // Removido o "-" do eixo Y
