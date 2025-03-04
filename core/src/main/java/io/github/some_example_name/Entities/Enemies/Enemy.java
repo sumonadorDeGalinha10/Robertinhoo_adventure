@@ -2,6 +2,7 @@ package io.github.some_example_name.Entities.Enemies;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
 
 public abstract class Enemy {
     
@@ -10,6 +11,7 @@ public abstract class Enemy {
     protected float health;
     protected float speed;
     protected boolean isAlive;
+    protected boolean toBeDestroyed = false;
 
     public Enemy(float x, float y, float health, float speed) {
         this.position = new Vector2(x, y);
@@ -34,7 +36,19 @@ public abstract class Enemy {
         return position;
     }
 
-    public boolean isAlive() {
-        return isAlive;
+    public void destroy() {
+        toBeDestroyed = true;
     }
+
+    public boolean isToBeDestroyed() {
+        return toBeDestroyed;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+  public abstract Body getBody(); 
+
+
+
 }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 
+import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
@@ -47,6 +48,26 @@ public class GameContactListener implements ContactListener {
             
             projectile.markForDestruction();
         }
+
+
+            if ((dataA instanceof Projectile && dataB instanceof Ratinho) || 
+            (dataB instanceof Projectile && dataA instanceof Ratinho)) {
+
+            Projectile projectile = (dataA instanceof Projectile) ? 
+                (Projectile) dataA : (Projectile) dataB;
+            Ratinho ratinho = (dataB instanceof Ratinho) ? 
+                (Ratinho) dataB : (Ratinho) dataA;
+
+            // Aplicar dano ao Ratinho
+            ratinho.takeDamage(projectile.getDamage());
+            // Marcar projétil para destruição
+            projectile.markForDestruction();
+
+            // Verificar se o Ratinho morreu
+            if (ratinho.getHealth() <= 0) {
+                ratinho.destroy();
+        }
+    }
         }
 
     @Override

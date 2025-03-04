@@ -15,7 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
-import com.badlogic.gdx.utils.Array;
+
 
 
 public class Ratinho extends Enemy implements Steerable<Vector2> {
@@ -82,9 +82,15 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         body.setLinearDamping(2f); // Amortecimento mínimo para movimento fluido
         body.setAngularDamping(2f); // Sem amortecimento angular
         shape.dispose();
-        body.setUserData("RATINHO_" + x + "_" + y); // Ex: RATINHO_5_3
+    
+        body.setUserData(this);
         
         return body;
+    }
+
+    @Override
+    public Body getBody() {
+        return this.body;
     }
     
     private Pursue<Vector2> setupAI() {

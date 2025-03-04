@@ -201,6 +201,15 @@ public class Mapa {
                 it.remove();
             }
         }
+
+        java.util.Iterator<Enemy> iterator = enemies.iterator();
+        while (iterator.hasNext()) {
+            Enemy enemy = iterator.next();
+            if (enemy.isToBeDestroyed()) {
+                world.destroyBody(enemy.getBody());
+                iterator.remove();
+            }
+        }
     }
     
 
