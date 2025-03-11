@@ -1,14 +1,18 @@
 package io.github.some_example_name.Entities.Player;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.MapRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -22,6 +26,8 @@ import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.MapRenderer;
+import io.github.some_example_name.Camera.Camera;
+
 
 
 public class Robertinhoo  implements Steerable<Vector2> {
@@ -64,6 +70,8 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
     private Weapon currentWeapon;
     private Inventory inventory;
+    private ShapeRenderer shapeRenderer;
+    private Camera cameraController;
 
     public Robertinhoo(Mapa map, int x, int y,MapRenderer mapRenderer) {
         this.map = map;
@@ -72,6 +80,9 @@ public class Robertinhoo  implements Steerable<Vector2> {
         state = SPAWN;
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
         this.inventory = new Inventory(this);
+        shapeRenderer = new ShapeRenderer();
+        cameraController =new Camera();
+
         
     
 
@@ -132,10 +143,10 @@ public class Robertinhoo  implements Steerable<Vector2> {
         if (currentWeapon != null) {
             currentWeapon.update(deltaTime);
         }
-        // Reduz o cooldown do dash
+
         if (dashCooldownTime > 0) dashCooldownTime -= deltaTime;
     
-        // Verifica se está no estado de dash
+  
         if (dashTime > 0) {
             dashTime -= deltaTime;
     
@@ -154,6 +165,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
         linearVelocity.set(body.getLinearVelocity());
    
         angularVelocity = body.getAngularVelocity();
+        render(shapeRenderer);
 
 
 
@@ -169,27 +181,27 @@ public class Robertinhoo  implements Steerable<Vector2> {
             moveDir.y += 1;
             isMoving = true;
             dir = UP;
-            lastDir = UP; // Atualiza lastDir
+            lastDir = UP;
         } 
     
         if (Gdx.input.isKeyPressed(Keys.S)){
             isMoving = true;
             dir = DOWN;
             moveDir.y -= 1;
-            lastDir = DOWN; // Atualiza lastDir
+            lastDir = DOWN;
         } 
     
         if (Gdx.input.isKeyPressed(Keys.D)) {
             moveDir.x += 1;
             isMoving = true;
             dir = RIGHT;
-            lastDir = RIGHT; // Atualiza lastDir
+            lastDir = RIGHT;
         }
         if (Gdx.input.isKeyPressed(Keys.A)) {
             moveDir.x -= 1;
             isMoving = true;
             dir = LEFT;
-            lastDir = LEFT; // Atualiza lastDir
+            lastDir = LEFT;
         }
     
         if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
@@ -224,7 +236,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 }
             }
         }
-        if (Gdx.input.isKeyJustPressed(Keys.M)) {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = getCurrentWeapon();
             if (currentWeapon != null) {
          
@@ -406,6 +418,20 @@ public Vector2 angleToVector(Vector2 outVector, float angle) {
         return body.getAngle(); // Assuming you're using Box2D for physics
     }
 
- 
+     public void render( ShapeRenderer shapeRenderer) {
+      
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        if (inventory.getEquippedWeapon() != null) {
+            System.out.println("true");
+            weaponSystem.renderMiraArma(shapeRenderer);
+        }
+        else{
+            System.err.println("false");
+        }
+    }
+
+    public void dispose(){
+        shapeRenderer.dispose();
+    }
 
 }

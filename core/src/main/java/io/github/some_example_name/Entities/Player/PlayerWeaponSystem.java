@@ -60,7 +60,7 @@ public float getAimAngle() {
     public Vector2 getMousePosition() {
         return mousePosition;
     }
-    public void renderDebug(ShapeRenderer shapeRenderer) {
+    public void renderMiraArma(ShapeRenderer shapeRenderer) {
         if (mapRenderer == null) return;
     
         Vector2 playerWorldPos = player.body.getPosition();

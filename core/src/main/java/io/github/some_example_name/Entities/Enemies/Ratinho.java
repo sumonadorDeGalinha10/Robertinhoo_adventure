@@ -62,7 +62,6 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         this.pursueBehavior.setOwner(this);
 
         body.setUserData(this); // Identificação do corpo
-   
     }
     
     private Body createBody(int x, int y) {

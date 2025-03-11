@@ -2,24 +2,15 @@ package io.github.some_example_name.Entities.Itens.Weapon;
 
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
+
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
+
 
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 
-import io.github.some_example_name.Entities.Player.Robertinhoo;
+
 import io.github.some_example_name.Mapa;
-import box2dLight.PointLight;
-import box2dLight.RayHandler;
-import com.badlogic.gdx.graphics.Color;
+
 
 public abstract class Weapon {
     protected float fireRate; // Tiros por segundo

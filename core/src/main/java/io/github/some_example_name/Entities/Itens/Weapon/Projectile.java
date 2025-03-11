@@ -17,11 +17,11 @@ import java.util.List;
 public class Projectile {
     private Body body;
     private float damage;
-    private float lifespan = 3f; // Tempo de vida em segundos
+    private float lifespan = 3f;
     private float timeAlive = 0f;
     private float stateTime = 0f;
     private float angle;
-    private static final float WIDTH = 0.4f; // 0.2 * 2 (box2d usa half-width)
+    private static final float WIDTH = 0.4f;
     private static final float HEIGHT = 0.4f;
     private boolean toBeDestroyed = false;
 
@@ -43,10 +43,8 @@ public class Projectile {
     public Projectile(Mapa mapa, Vector2 position, Vector2 velocity, float damage) {
         this.damage = damage;
         createBody(mapa, position, velocity);
-        mapa.addProjectile(this); 
+        mapa.addProjectile(this);
     }
-
-   
     
     public void updateStateTime(float delta) {
         stateTime += delta;
@@ -94,7 +92,7 @@ public class Projectile {
 
     public void destroy() {
         if (body != null) {
-            body.getWorld().destroyBody(body); // Destrói imediatamente
+            body.getWorld().destroyBody(body);
             body = null;
         }
         markForDestruction();
@@ -107,7 +105,7 @@ public class Projectile {
 
 
     public Vector2 getPosition() {
-        return body.getPosition(); // Retorna a posição central do corpo
+        return body.getPosition();
     }
 
 
