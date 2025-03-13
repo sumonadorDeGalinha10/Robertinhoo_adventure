@@ -30,7 +30,7 @@ public class MapRenderer {
     private PlayerRenderer playerRenderer;
     
     // Usaremos o CameraController para gerenciar a câmera
-    public Camera cameraController;
+    private Camera cameraController;
     
     public static final int TILE_SIZE = 16;
     public float offsetX;
@@ -109,8 +109,10 @@ public class MapRenderer {
         rayHandler.setCombinedMatrix(cameraController.getCamera());
         rayHandler.updateAndRender();
 
-        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
-
+        if (player.getInventory().getEquippedWeapon() != null) {
+            shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+            player.getWeaponSystem().renderMiraArma(shapeRenderer);
+        }
         spriteBatch.begin();
         player.getWeaponSystem().renderWeapon(spriteBatch, delta);
         spriteBatch.end();

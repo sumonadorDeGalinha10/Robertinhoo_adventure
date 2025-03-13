@@ -60,19 +60,15 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
     private PlayerWeaponSystem weaponSystem;
-     private OrthographicCamera camera;
-     private Weapon weaponToPickup;
-     private MapRenderer mapRenderer;
-
- 
+    private OrthographicCamera camera;
+    private Weapon weaponToPickup;
+    private MapRenderer mapRenderer;
     private float dashTime = 0;
     private float dashCooldownTime = 0;
-
     private Weapon currentWeapon;
     private Inventory inventory;
     private ShapeRenderer shapeRenderer;
-    private Camera cameraController;
-
+;
     public Robertinhoo(Mapa map, int x, int y,MapRenderer mapRenderer) {
         this.map = map;
         pos.set(x, y);
@@ -81,12 +77,8 @@ public class Robertinhoo  implements Steerable<Vector2> {
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
         this.inventory = new Inventory(this);
         shapeRenderer = new ShapeRenderer();
-        cameraController =new Camera();
 
-        
-    
 
-       
         createBody(x, y);
 
         
@@ -418,18 +410,13 @@ public Vector2 angleToVector(Vector2 outVector, float angle) {
         return body.getAngle(); // Assuming you're using Box2D for physics
     }
 
-     public void render( ShapeRenderer shapeRenderer) {
-      
-        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
-        if (inventory.getEquippedWeapon() != null) {
-            System.out.println("true");
-            weaponSystem.renderMiraArma(shapeRenderer);
-        }
-        else{
-            System.err.println("false");
-        }
+    public void render(ShapeRenderer shapeRenderer) {
+        // if (inventory.getEquippedWeapon() != null && camera != null) {
+       
+        //     shapeRenderer.setProjectionMatrix(camera.combined);
+        //     weaponSystem.renderMiraArma(shapeRenderer);
+        // }
     }
-
     public void dispose(){
         shapeRenderer.dispose();
     }

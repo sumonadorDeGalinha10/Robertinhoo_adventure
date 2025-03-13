@@ -91,7 +91,7 @@ public class PlayerRenderer {
         for (int i = 0; i < 6; i++) {
             runUpFrames[i] = new TextureRegion(runUpSheet, i * frameWidthRunUp, 0, frameWidthRunUp, frameHeightRunUp);
         }
-        runUpAnimation = new Animation<>(0.1f, runUpFrames);
+        runUpAnimation = new Animation<>(0.1f, runUpFrames);;;
         runUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
      
