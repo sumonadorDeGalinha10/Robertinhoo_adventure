@@ -1,169 +1,92 @@
 package io.github.some_example_name.Entities.Renderer;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.MapRenderer;
 
-public class PlayerRenderer {
-   
-    private float animationTime = 0f; // Tempo de animação
-    private Texture idleDowSheet; // Textura padrão
-    private Texture leftSheet; // Textura para esquerda
-    private Texture rigthSheet; // Textura para direita
-    private Texture runUpSheet;
-    private Texture runDownSheet;
-    private Animation<TextureRegion> playerAnimation; // Animação padrão (idle)
-    private Animation<TextureRegion> playerAnimationleft; // Animação para esquerda
-    private Animation<TextureRegion> playerAnimationRigth; // An
 
-    private Animation<TextureRegion> runUpAnimation;
-    private Animation<TextureRegion> runDownAnimation;
-    private Animation<TextureRegion> runSideAnimation;
-    
-    // Animações idle
-    private Animation<TextureRegion> idleUpAnimation;
-    private Animation<TextureRegion> idleDownAnimation;
-    private Animation<TextureRegion> idleSideAnimation;
-    private Texture idleUpSheet;
-    private Texture idleDownSheet;
-    private Texture idleSideSheet;
+
+
+public class PlayerRenderer {
+    private float animationTime = 0f;
+    private final PlayerAnimations animations;
 
     public PlayerRenderer() {
-        // Carregar as texturas
-        idleDowSheet = new Texture("rober/idle/1_Template_Idle_Down-Sheet.png");
-        leftSheet = new Texture("rober/run/2_Template_Run_Left-Sheet.png");
-        rigthSheet = new Texture("rober/run/2_Template_Run_Left-Sheet.png");
-        runUpSheet = new Texture ("rober/run/2_Template_Run_Up-Sheet.png");
-        runDownSheet = new Texture ("rober/run/2_Template_Run_Down-Sheet.png");
+        animations = new PlayerAnimations();
+    }
 
-
-        idleUpSheet = new Texture("rober/idle/1_Template_Idle_Up-Sheet.png");
-        idleDownSheet = new Texture("rober/idle/1_Template_Idle_Down-Sheet.png");
-        idleSideSheet = new Texture("rober/idle/1_Template_Idle_Left-Sheet.png");
-
-    // Criar animação idle para cima
-        int frameWidthIdleUp = idleUpSheet.getWidth() / 6;
-        int frameHeightIdleUp = idleUpSheet.getHeight();
-        TextureRegion[] idleUpFrames = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            idleUpFrames[i] = new TextureRegion(idleUpSheet, i * frameWidthIdleUp, 0, frameWidthIdleUp, frameHeightIdleUp);
+    private Animation<TextureRegion> selectAnimation(Robertinhoo player) {
+        if (player.state == Robertinhoo.DASH) {
+            return getDashAnimation(player);
         }
-        idleUpAnimation = new Animation<>(0.2f, idleUpFrames);
-        idleUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        return getMovementAnimation(player);
+    }
 
-        // Criar animação idle para baixo
-        int frameWidthIdleDown = idleDownSheet.getWidth() / 6;
-        int frameHeightIdleDown = idleDownSheet.getHeight();
-        TextureRegion[] idleDownFrames = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            idleDownFrames[i] = new TextureRegion(idleDownSheet, i * frameWidthIdleDown, 0, frameWidthIdleDown, frameHeightIdleDown);
+    private Animation<TextureRegion> getDashAnimation(Robertinhoo player) {
+        switch (player.dashDirection) {
+            case Robertinhoo.UP:
+                return animations.dash_top;
+            case Robertinhoo.DOWN:
+                return animations.dash_down;
+            case Robertinhoo.LEFT:
+            case Robertinhoo.RIGHT:
+                return animations.dash_sides;
+            default:
+                return animations.idleDown;
         }
-        idleDownAnimation = new Animation<>(0.2f, idleDownFrames);
-        idleDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
+    }
 
-        // Criar animação idle para os lados (esquerda)
-        int frameWidthIdleSide = idleSideSheet.getWidth() / 6;
-        int frameHeightIdleSide = idleSideSheet.getHeight();
-        TextureRegion[] idleSideFrames = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            idleSideFrames[i] = new TextureRegion(idleSideSheet, i * frameWidthIdleSide, 0, frameWidthIdleSide, frameHeightIdleSide);
+    private Animation<TextureRegion> getMovementAnimation(Robertinhoo player) {
+        switch (player.dir) {
+            case Robertinhoo.RIGHT:
+                return animations.runLeft;
+            case Robertinhoo.LEFT:
+                return animations.runRight;
+            case Robertinhoo.UP:
+                return animations.runUp;
+            case Robertinhoo.DOWN:
+                return animations.runDown;
+            default:
+                return getIdleAnimation(player);
         }
-        idleSideAnimation = new Animation<>(0.2f, idleSideFrames);
-        idleSideAnimation.setPlayMode(Animation.PlayMode.LOOP);
+    }
 
-        int frameWidthRunUp = runUpSheet.getWidth() / 6;
-        int frameHeightRunUp = runUpSheet.getHeight();
-        TextureRegion[] runUpFrames = new TextureRegion[6];
-
-        int frameWidthRunDown = runDownSheet.getWidth() / 6;
-        int frameHeightRunDown = runDownSheet.getHeight();
-        TextureRegion[] runDownFrames = new TextureRegion[6];
-
-        for (int i = 0; i < 6; i++) {
-            runDownFrames[i] = new TextureRegion(runDownSheet, i * frameWidthRunDown, 0, frameWidthRunDown, frameHeightRunDown);
+    private Animation<TextureRegion> getIdleAnimation(Robertinhoo player) {
+        switch (player.lastDir) {
+            case Robertinhoo.UP:
+                return animations.idleUp;
+            case Robertinhoo.DOWN:
+                return animations.idleDown;
+            case Robertinhoo.LEFT:
+            case Robertinhoo.RIGHT:
+                return animations.idleSide;
+            default:
+                return animations.idleDown;
         }
-        runDownAnimation = new Animation<>(0.1f, runDownFrames);
-        runDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
-
-        for (int i = 0; i < 6; i++) {
-            runUpFrames[i] = new TextureRegion(runUpSheet, i * frameWidthRunUp, 0, frameWidthRunUp, frameHeightRunUp);
-        }
-        runUpAnimation = new Animation<>(0.1f, runUpFrames);;;
-        runUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
-
-     
-        int frameWidth = idleDowSheet.getWidth() / 6;
-        int frameHeight = idleDowSheet.getHeight();
-        TextureRegion[] animationFrames = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            animationFrames[i] = new TextureRegion(idleDowSheet, i * frameWidth, 0, frameWidth, frameHeight);
-        }
-        playerAnimation = new Animation<>(0.2f, animationFrames);
-        playerAnimation.setPlayMode(Animation.PlayMode.LOOP);
-
-     
-        int frameWidthLeft = leftSheet.getWidth() / 6;
-        int frameHeightLeft = leftSheet.getHeight();
-        TextureRegion[] animationleft = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            animationleft[i] = new TextureRegion(leftSheet, i * frameWidthLeft, 0, frameWidthLeft, frameHeightLeft);
-            animationleft[i].flip(true, false);
-        }
-        playerAnimationleft = new Animation<>(0.1f, animationleft);
-        playerAnimationleft.setPlayMode(Animation.PlayMode.LOOP);
-
-        int frameWidthRigth = rigthSheet.getWidth() / 6;
-        int frameHeightRight = rigthSheet.getHeight();
-        TextureRegion[] animationRigth = new TextureRegion[6];
-        for (int i = 0; i < 6; i++) {
-            animationRigth[i] = new TextureRegion(rigthSheet, i * frameWidthRigth, 0, frameWidthRigth, frameHeightRight);
-        }
-        playerAnimationRigth = new Animation<>(0.1f, animationRigth);
-        playerAnimationRigth.setPlayMode(Animation.PlayMode.LOOP);
     }
 
     public void render(SpriteBatch batch, Robertinhoo player, float delta, float offsetX, float offsetY) {
         animationTime += delta;
 
-        Animation<TextureRegion> selectedAnimation;
-        if (player.dir == player.RIGHT) {
-            selectedAnimation = playerAnimationleft;
-
-        } else if (player.dir == player.LEFT) {
-            selectedAnimation = playerAnimationRigth;
-
-        } 
-        else if (player.dir == player.UP){
-            selectedAnimation = runUpAnimation;
-
-        }
-
-        else if (player.dir == player.DOWN){
-            selectedAnimation = runDownAnimation;
-
-        }
-        else {
-            selectedAnimation = playerAnimation;
-        }
-
-  
+        Animation<TextureRegion> selectedAnimation = selectAnimation(player);
         TextureRegion frame = selectedAnimation.getKeyFrame(animationTime, true);
 
-   
         float x = offsetX + player.bounds.x * MapRenderer.TILE_SIZE;
         float y = offsetY + player.bounds.y * MapRenderer.TILE_SIZE;
+        float width = player.bounds.width * MapRenderer.TILE_SIZE;
+        float height = player.bounds.height * MapRenderer.TILE_SIZE;
 
       
-        batch.draw(frame, x, y, player.bounds.width * MapRenderer.TILE_SIZE, player.bounds.height * MapRenderer.TILE_SIZE);
+        if (player.state == Robertinhoo.DASH && player.dashDirection == Robertinhoo.LEFT) {
+            batch.draw(frame, x + width, y, -width, height);
+        } else {
+            batch.draw(frame, x, y, width, height);
+        }
     }
 
     public void dispose() {
-     
-        idleDowSheet.dispose();
-        leftSheet.dispose();
-        rigthSheet.dispose();
+        animations.dispose();
     }
 }

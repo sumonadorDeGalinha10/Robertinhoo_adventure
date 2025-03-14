@@ -45,15 +45,16 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public static final int TOP = 1;
     public static final int DOWN = -1;
     public static final int IDLE = 6;
-    public static final float ACCELERATION = 4f;
-    public static final float DASH_DURATION = 0.1f;
+    public static final float ACCELERATION = 3f;
+    public static final float DASH_DURATION = 0.4f;
     public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 15f;
+    public static final float DASH_SPEED = 8f;
     public static final int TILE_SIZE = 1;
 
     public int state = SPAWN;
     public int dir = IDLE;
     public int lastDir = DOWN;
+    public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
 
     public final Mapa map;
@@ -62,7 +63,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
     private PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
     private Weapon weaponToPickup;
-    private MapRenderer mapRenderer;
+
     private float dashTime = 0;
     private float dashCooldownTime = 0;
     private Weapon currentWeapon;
@@ -143,7 +144,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
             dashTime -= deltaTime;
     
             if (dashTime <= 0) {
-                // Termina o dash
+           
                 state = IDLE;
                 isInvulnerable = false;
                 body.setLinearVelocity(0, 0);
@@ -161,34 +162,40 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
 
 
+     
+
+
+
 
     }
 
-    
+
 
     private void processKeys() {
         Vector2 moveDir = new Vector2();
         boolean isMoving = false;
+        
         if (Gdx.input.isKeyPressed(Keys.W)){
             moveDir.y += 1;
             isMoving = true;
             dir = UP;
             lastDir = UP;
-        } 
-    
+        }
+        
         if (Gdx.input.isKeyPressed(Keys.S)){
             isMoving = true;
             dir = DOWN;
             moveDir.y -= 1;
             lastDir = DOWN;
-        } 
-    
+        }
+        
         if (Gdx.input.isKeyPressed(Keys.D)) {
             moveDir.x += 1;
             isMoving = true;
             dir = RIGHT;
             lastDir = RIGHT;
         }
+        
         if (Gdx.input.isKeyPressed(Keys.A)) {
             moveDir.x -= 1;
             isMoving = true;
@@ -199,6 +206,24 @@ public class Robertinhoo  implements Steerable<Vector2> {
         if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
             if (!moveDir.isZero()) {
                 moveDir.nor();
+                
+                // Determinar direção primária para o dash
+                float absX = Math.abs(moveDir.x);
+                float absY = Math.abs(moveDir.y);
+                
+                if (absX > absY) {
+                    dashDirection = (moveDir.x > 0) ? RIGHT : LEFT;
+                } else {
+                    dashDirection = (moveDir.y > 0) ? UP : DOWN;
+                }
+                
+                // Ajustar velocidade para manter apenas a direção primária
+                if (dashDirection == LEFT || dashDirection == RIGHT) {
+                    moveDir.set(dashDirection == RIGHT ? 1 : -1, 0);
+                } else {
+                    moveDir.set(0, dashDirection == UP ? 1 : -1);
+                }
+                
                 state = DASH;
                 dashTime = DASH_DURATION;
                 dashCooldownTime = DASH_COOLDOWN;
@@ -216,6 +241,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 dir = IDLE;
             }
         }
+    
 
         if(Gdx.input.isKeyJustPressed(Keys.E)) {
           
