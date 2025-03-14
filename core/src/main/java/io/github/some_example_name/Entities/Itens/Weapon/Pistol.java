@@ -182,7 +182,7 @@ public class Pistol extends Weapon {
             }
             return frame;
         }
-        // Estado IDLE: Em vez de usar o idleTexture, retorna o primeiro frame da animação de tiro
+      
         return shootAnim.getKeyFrame(0);
     }
 
@@ -200,7 +200,7 @@ public class Pistol extends Weapon {
 
     public Vector2 getMuzzleOffset() {
    
-        return new Vector2(0.8f, 0.1f); // 0.4 para frente, 0.1 para cima
+        return new Vector2(0.8f, 0.1f);
     }
     @Override
     public void destroyBody() {

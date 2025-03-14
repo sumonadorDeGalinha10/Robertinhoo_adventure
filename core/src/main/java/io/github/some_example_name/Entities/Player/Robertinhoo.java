@@ -1,14 +1,18 @@
 package io.github.some_example_name.Entities.Player;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.MapRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -22,6 +26,8 @@ import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.MapRenderer;
+import io.github.some_example_name.Camera.Camera;
+
 
 
 public class Robertinhoo  implements Steerable<Vector2> {
@@ -39,32 +45,31 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public static final int TOP = 1;
     public static final int DOWN = -1;
     public static final int IDLE = 6;
-    public static final float ACCELERATION = 4f;
-    public static final float DASH_DURATION = 0.1f;
+    public static final float ACCELERATION = 3f;
+    public static final float DASH_DURATION = 0.4f;
     public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 15f;
+    public static final float DASH_SPEED = 8f;
     public static final int TILE_SIZE = 1;
 
     public int state = SPAWN;
     public int dir = IDLE;
     public int lastDir = DOWN;
+    public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
 
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
     private PlayerWeaponSystem weaponSystem;
-     private OrthographicCamera camera;
-     private Weapon weaponToPickup;
-     private MapRenderer mapRenderer;
+    private OrthographicCamera camera;
+    private Weapon weaponToPickup;
 
- 
     private float dashTime = 0;
     private float dashCooldownTime = 0;
-
     private Weapon currentWeapon;
     private Inventory inventory;
-
+    private ShapeRenderer shapeRenderer;
+;
     public Robertinhoo(Mapa map, int x, int y,MapRenderer mapRenderer) {
         this.map = map;
         pos.set(x, y);
@@ -72,10 +77,9 @@ public class Robertinhoo  implements Steerable<Vector2> {
         state = SPAWN;
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
         this.inventory = new Inventory(this);
-        
-    
+        shapeRenderer = new ShapeRenderer();
 
-       
+
         createBody(x, y);
 
         
@@ -132,15 +136,15 @@ public class Robertinhoo  implements Steerable<Vector2> {
         if (currentWeapon != null) {
             currentWeapon.update(deltaTime);
         }
-        // Reduz o cooldown do dash
+
         if (dashCooldownTime > 0) dashCooldownTime -= deltaTime;
     
-        // Verifica se está no estado de dash
+  
         if (dashTime > 0) {
             dashTime -= deltaTime;
     
             if (dashTime <= 0) {
-                // Termina o dash
+           
                 state = IDLE;
                 isInvulnerable = false;
                 body.setLinearVelocity(0, 0);
@@ -154,47 +158,72 @@ public class Robertinhoo  implements Steerable<Vector2> {
         linearVelocity.set(body.getLinearVelocity());
    
         angularVelocity = body.getAngularVelocity();
+        render(shapeRenderer);
+
+
+
+     
 
 
 
 
     }
 
-    
+
 
     private void processKeys() {
         Vector2 moveDir = new Vector2();
         boolean isMoving = false;
+        
         if (Gdx.input.isKeyPressed(Keys.W)){
             moveDir.y += 1;
             isMoving = true;
             dir = UP;
-            lastDir = UP; // Atualiza lastDir
-        } 
-    
+            lastDir = UP;
+        }
+        
         if (Gdx.input.isKeyPressed(Keys.S)){
             isMoving = true;
             dir = DOWN;
             moveDir.y -= 1;
-            lastDir = DOWN; // Atualiza lastDir
-        } 
-    
+            lastDir = DOWN;
+        }
+        
         if (Gdx.input.isKeyPressed(Keys.D)) {
             moveDir.x += 1;
             isMoving = true;
             dir = RIGHT;
-            lastDir = RIGHT; // Atualiza lastDir
+            lastDir = RIGHT;
         }
+        
         if (Gdx.input.isKeyPressed(Keys.A)) {
             moveDir.x -= 1;
             isMoving = true;
             dir = LEFT;
-            lastDir = LEFT; // Atualiza lastDir
+            lastDir = LEFT;
         }
     
         if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
             if (!moveDir.isZero()) {
                 moveDir.nor();
+                
+                // Determinar direção primária para o dash
+                float absX = Math.abs(moveDir.x);
+                float absY = Math.abs(moveDir.y);
+                
+                if (absX > absY) {
+                    dashDirection = (moveDir.x > 0) ? RIGHT : LEFT;
+                } else {
+                    dashDirection = (moveDir.y > 0) ? UP : DOWN;
+                }
+                
+                // Ajustar velocidade para manter apenas a direção primária
+                if (dashDirection == LEFT || dashDirection == RIGHT) {
+                    moveDir.set(dashDirection == RIGHT ? 1 : -1, 0);
+                } else {
+                    moveDir.set(0, dashDirection == UP ? 1 : -1);
+                }
+                
                 state = DASH;
                 dashTime = DASH_DURATION;
                 dashCooldownTime = DASH_COOLDOWN;
@@ -212,6 +241,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 dir = IDLE;
             }
         }
+    
 
         if(Gdx.input.isKeyJustPressed(Keys.E)) {
           
@@ -224,7 +254,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 }
             }
         }
-        if (Gdx.input.isKeyJustPressed(Keys.M)) {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = getCurrentWeapon();
             if (currentWeapon != null) {
          
@@ -406,6 +436,15 @@ public Vector2 angleToVector(Vector2 outVector, float angle) {
         return body.getAngle(); // Assuming you're using Box2D for physics
     }
 
- 
+    public void render(ShapeRenderer shapeRenderer) {
+        // if (inventory.getEquippedWeapon() != null && camera != null) {
+       
+        //     shapeRenderer.setProjectionMatrix(camera.combined);
+        //     weaponSystem.renderMiraArma(shapeRenderer);
+        // }
+    }
+    public void dispose(){
+        shapeRenderer.dispose();
+    }
 
 }

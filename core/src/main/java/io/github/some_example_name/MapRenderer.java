@@ -52,10 +52,8 @@ public class MapRenderer {
         shapeRenderer = new ShapeRenderer();
         spriteBatch = new SpriteBatch();
         
-        // Inicializa o CameraController
         cameraController = new Camera();
         
-        // Carrega as texturas
         Texture floorTexture = new Texture("Tiles/tile_0028.png");
         Texture wallTexture = new Texture("Tiles/tile_0015.png");
         this.tileRenderer = new TileRenderer(mapa, floorTexture, wallTexture, TILE_SIZE);
@@ -81,7 +79,6 @@ public class MapRenderer {
         tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
         projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
         playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
-       
         for (Enemy enemy : mapa.getEnemies()) {
             enemy.update(delta);
             TextureRegion frame = enemy.getCurrentFrame(delta);
@@ -112,8 +109,10 @@ public class MapRenderer {
         rayHandler.setCombinedMatrix(cameraController.getCamera());
         rayHandler.updateAndRender();
 
-        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
-        player.getWeaponSystem().renderDebug(shapeRenderer);
+        if (player.getInventory().getEquippedWeapon() != null) {
+            shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+            player.getWeaponSystem().renderMiraArma(shapeRenderer);
+        }
         spriteBatch.begin();
         player.getWeaponSystem().renderWeapon(spriteBatch, delta);
         spriteBatch.end();
