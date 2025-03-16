@@ -27,6 +27,7 @@ public class Pistol extends Weapon {
     private Texture reloadTexture;
     private float animationTime = 0f;
     private int maxAmmo;
+    private int pistolMaxAmmo = 15; 
 
     private Animation<TextureRegion> shootAnim;
     private Animation<TextureRegion> reloadAnim;
@@ -45,11 +46,16 @@ public class Pistol extends Weapon {
 
 
     public Pistol(Mapa mapa, int x, int y) {
+        super(); 
+        this.maxAmmo = 15; // Deve vir ANTES de inicializar 'ammo'
+        this.ammo = this.maxAmmo;
         this.position = new Vector2(x, y);
         this.mapa = mapa;
         this.fireRate = 2f;
         this.damage = 10f;
-        this.ammo = 15;
+
+        this.icon = new TextureRegion(new Texture("ITENS/Pistol/icon.png"));
+   
 
 
         createBody(this.position);
@@ -78,9 +84,15 @@ public class Pistol extends Weapon {
 
 
 
+    @Override
+    public int getMaxAmmo() {
+        return pistolMaxAmmo;
+    }
 
     public void reload() {
         if (currentState != State.RELOADING) {
+            reloading = true;
+            reloadProgress = 0;
             System.out.println("Iniciando recarga");
             currentState = State.RELOADING;
             animationTime = 0f;
@@ -110,6 +122,13 @@ public class Pistol extends Weapon {
                 System.out.println("Recarregado");
             }
         }
+
+        if(reloading) {
+            reloadProgress += delta / reloadAnim.getAnimationDuration();
+            if(reloadProgress >= 1) {
+                reloading = false;
+            }
+        }
     }
 
     
@@ -117,7 +136,7 @@ public class Pistol extends Weapon {
     public void createBody(Vector2 position) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.KinematicBody;
-        bodyDef.position.set(position); 
+        bodyDef.position.set(position);
 
         body = mapa.world.createBody(bodyDef);
 
@@ -133,6 +152,8 @@ public class Pistol extends Weapon {
         body.setLinearVelocity(0, verticalSpeed);
         body.setUserData(this);
     }
+
+    
 
 
     private void loadTexturesAndAnimations() {

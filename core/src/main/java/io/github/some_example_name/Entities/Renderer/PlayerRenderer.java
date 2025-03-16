@@ -12,9 +12,11 @@ import io.github.some_example_name.MapRenderer;
 public class PlayerRenderer {
     private float animationTime = 0f;
     private final PlayerAnimations animations;
+    private Animation<TextureRegion> currentAnimation;
 
     public PlayerRenderer() {
         animations = new PlayerAnimations();
+        currentAnimation = null; 
     }
 
     private Animation<TextureRegion> selectAnimation(Robertinhoo player) {
@@ -59,9 +61,12 @@ public class PlayerRenderer {
                 return animations.idleUp;
             case Robertinhoo.DOWN:
                 return animations.idleDown;
+
             case Robertinhoo.LEFT:
+                return animations.idleLeft;
+
             case Robertinhoo.RIGHT:
-                return animations.idleSide;
+                return animations.idleRigth;
             default:
                 return animations.idleDown;
         }
@@ -71,14 +76,26 @@ public class PlayerRenderer {
         animationTime += delta;
 
         Animation<TextureRegion> selectedAnimation = selectAnimation(player);
-        TextureRegion frame = selectedAnimation.getKeyFrame(animationTime, true);
+
+
+        if (selectedAnimation != currentAnimation) {
+            animationTime = 0f;
+            currentAnimation = selectedAnimation;
+        }
+
+
+        boolean isDashAnimation = currentAnimation == animations.dash_down 
+                                || currentAnimation == animations.dash_top 
+                                || currentAnimation == animations.dash_sides;
+
+
+        TextureRegion frame = currentAnimation.getKeyFrame(animationTime, !isDashAnimation);
 
         float x = offsetX + player.bounds.x * MapRenderer.TILE_SIZE;
         float y = offsetY + player.bounds.y * MapRenderer.TILE_SIZE;
         float width = player.bounds.width * MapRenderer.TILE_SIZE;
         float height = player.bounds.height * MapRenderer.TILE_SIZE;
 
-      
         if (player.state == Robertinhoo.DASH && player.dashDirection == Robertinhoo.LEFT) {
             batch.draw(frame, x + width, y, -width, height);
         } else {

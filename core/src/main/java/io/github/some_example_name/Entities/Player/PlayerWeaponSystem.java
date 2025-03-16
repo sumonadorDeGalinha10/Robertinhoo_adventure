@@ -111,8 +111,8 @@ public float getAimAngle() {
             float drawY = baseY + rotatedOffset.y;
             
           
-            float originX = 8;
-            float originY = 4;
+            float originX = 6;
+            float originY = 3;
             float angle = getAimAngle();
             boolean flip = angle > 90 && angle < 270;
             float scaleY = flip ? -1 : 1;
@@ -123,8 +123,8 @@ public float getAimAngle() {
                 drawY - originY,
                 originX,
                 originY,
-                14,
-                8,
+                10,
+                5,
                 1 ,
                 scaleY,
                 angle

@@ -9,7 +9,8 @@ import com.badlogic.gdx.graphics.Texture;
 public class PlayerAnimations implements Disposable {
     public final Animation<TextureRegion> idleDown;
     public final Animation<TextureRegion> idleUp;
-    public final Animation<TextureRegion> idleSide;
+    public final Animation<TextureRegion> idleLeft;
+    public final Animation<TextureRegion> idleRigth;
     public final Animation<TextureRegion> runLeft;
     public final Animation<TextureRegion> runRight;
     public final Animation<TextureRegion> runUp;
@@ -35,7 +36,8 @@ public class PlayerAnimations implements Disposable {
 
         idleDown = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Down-Sheet.png", 0.2f, false, 6);
         idleUp = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Up-Sheet.png", 0.2f, false, 6);
-        idleSide = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Left-Sheet.png", 0.2f, false, 6);
+        idleLeft = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Left-Sheet.png", 0.2f, false, 6);
+        idleRigth = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Left-Sheet.png", 0.2f, true, 6);
         runLeft = AnimationLoader.loadAnimation("rober/run/2_Template_Run_Left-Sheet.png", 0.1f, true, 6);
         runRight = AnimationLoader.loadAnimation("rober/run/2_Template_Run_Left-Sheet.png", 0.1f, false, 6);
         runUp = AnimationLoader.loadAnimation("rober/run/2_Template_Run_Up-Sheet.png", 0.1f, false, 6);

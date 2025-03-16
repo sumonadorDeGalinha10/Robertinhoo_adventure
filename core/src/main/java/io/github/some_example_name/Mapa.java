@@ -190,7 +190,7 @@ public class Mapa {
 
 
     public void update(float deltaTime) {
-        System.err.println("updade do meu papa chamando");
+      
 
 
         java.util.Iterator<Projectile> it = projectiles.iterator();

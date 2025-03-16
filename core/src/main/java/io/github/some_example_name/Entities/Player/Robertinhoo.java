@@ -6,13 +6,13 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.MathUtils;
+
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.MapRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+
 
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -25,8 +25,6 @@ import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Inventory.Inventory;
-import io.github.some_example_name.MapRenderer;
-import io.github.some_example_name.Camera.Camera;
 
 
 
@@ -111,7 +109,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
         body = map.world.createBody(bodyDef);
 
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(0.5f, 0.5f); // Tamanho do corpo (1x1 tile)
+        shape.setAsBox(0.2f, 0.2f);
 
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
@@ -217,7 +215,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
                     dashDirection = (moveDir.y > 0) ? UP : DOWN;
                 }
                 
-                // Ajustar velocidade para manter apenas a direção primária
+                
                 if (dashDirection == LEFT || dashDirection == RIGHT) {
                     moveDir.set(dashDirection == RIGHT ? 1 : -1, 0);
                 } else {
@@ -414,7 +412,7 @@ public void clearWeaponToPickup() {
 
 @Override
 public float vectorToAngle(Vector2 vector) {
-    return (float) Math.atan2(vector.y, vector.x); // Removido o "-" do eixo Y
+    return (float) Math.atan2(vector.y, vector.x);
 }
 @Override
 public Vector2 angleToVector(Vector2 outVector, float angle) {
