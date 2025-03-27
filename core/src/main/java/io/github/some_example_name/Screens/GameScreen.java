@@ -63,6 +63,7 @@ public class GameScreen extends CatScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // Atualiza a posição e animação do jogador
+      
         robertinhoo.update(delta);
 
         mapa.update(delta);

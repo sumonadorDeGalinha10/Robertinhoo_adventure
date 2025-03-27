@@ -85,7 +85,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
     public void equipWeapon(Weapon weapon) {
         this.currentWeapon = weapon;
-           if (weapon instanceof Pistol) {
+        if (weapon instanceof Pistol) {
  
   
     }
@@ -157,6 +157,8 @@ public class Robertinhoo  implements Steerable<Vector2> {
    
         angularVelocity = body.getAngularVelocity();
         render(shapeRenderer);
+      
+        
 
 
 
@@ -293,11 +295,15 @@ public class Robertinhoo  implements Steerable<Vector2> {
     }
 
 
-public void applyAimRotation() {
+public float applyAimRotation() {
+    float angle = weaponSystem.getAimAngle();
     if (inventory.getEquippedWeapon() != null) {
-        float angle = weaponSystem.getAimAngle();
+       
         body.setTransform(body.getPosition(), (float) Math.toRadians(angle));
+     
+  
     }
+    return angle;
 }
 
 public void setMapRenderer(MapRenderer mapRenderer) {

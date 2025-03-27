@@ -13,7 +13,7 @@ import io.github.some_example_name.Mapa;
 
 
 public abstract class Weapon {
-    protected float fireRate; // Tiros por segundo
+    protected float fireRate;
     protected float damage;
     protected int ammo;
     protected float timeSinceLastShot = 0f;
