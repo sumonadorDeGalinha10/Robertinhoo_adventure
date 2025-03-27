@@ -58,14 +58,15 @@ public class MapRenderer {
         Texture wallTexture = new Texture("Tiles/tile_0015.png");
         this.tileRenderer = new TileRenderer(mapa, floorTexture, wallTexture, TILE_SIZE);
         this.projectileRenderer = new ProjectileRenderer(mapa, TILE_SIZE);
-        this.playerRenderer = new PlayerRenderer();
+
+        this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
         
         mapa.robertinhoo.setCamera(cameraController.getCamera());
     }
 
     public void render(float delta, Robertinhoo player) {
-        // Atualiza a posição da câmera centralizando no player
-        calculateOffsets(); // Atualiza os offsets
+      
+        calculateOffsets(); 
         cameraController.centerOnPlayer(player, offsetX, offsetY);
         spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
     
@@ -78,7 +79,20 @@ public class MapRenderer {
     
         tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
         projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
-        playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+        float aimAngle = player.applyAimRotation();
+        System.out.println(aimAngle);
+    
+        if (aimAngle >= 45 && aimAngle < 135) {
+            // Arma por trás do jogador (renderize a arma primeiro)
+            player.getWeaponSystem().renderWeapon(spriteBatch, delta);
+            playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+        } else {
+            // Arma por cima do jogador (renderize o jogador primeiro)
+            playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+            player.getWeaponSystem().renderWeapon(spriteBatch, delta);
+        }
+
+        
         for (Enemy enemy : mapa.getEnemies()) {
             enemy.update(delta);
             TextureRegion frame = enemy.getCurrentFrame(delta);
@@ -113,9 +127,7 @@ public class MapRenderer {
             shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
             player.getWeaponSystem().renderMiraArma(shapeRenderer);
         }
-        spriteBatch.begin();
-        player.getWeaponSystem().renderWeapon(spriteBatch, delta);
-        spriteBatch.end();
+
     }
 
     public void calculateOffsets() {

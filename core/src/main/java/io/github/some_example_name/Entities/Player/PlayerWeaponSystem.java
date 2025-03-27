@@ -15,6 +15,8 @@ public class PlayerWeaponSystem {
     private final Robertinhoo player;
     private final Vector2 aimDirection = new Vector2();
     private final Vector2 mousePosition = new Vector2();
+    private float currentAimAngle = 0; 
+
 
 
 
@@ -27,6 +29,7 @@ public class PlayerWeaponSystem {
 
     public void update(float deltaTime) {
         updateAimDirection();
+   
     }
 
 
@@ -41,9 +44,16 @@ private void updateAimDirection() {
     Vector2 diff = new Vector2(mouseX - centerX, correctedMouseY - centerY);
     
 
-    if (diff.len() != 0) {
-        aimDirection.set(diff.nor());
-    }
+ // Condição única para evitar redundância
+ if (!diff.isZero()) {
+    aimDirection.set(diff.nor());
+    currentAimAngle = (float) Math.toDegrees(Math.atan2(aimDirection.y, aimDirection.x));
+    currentAimAngle = (currentAimAngle + 360) % 360;
+} else {
+    aimDirection.set(1, 0);
+    currentAimAngle = 0;
+}
+    
 }
 
 public float getAimAngle() {
@@ -95,42 +105,54 @@ public float getAimAngle() {
         if (currentWeapon != null) {
             TextureRegion frame = currentWeapon.getCurrentFrame(delta);
             
-  
             Vector2 playerWorldPos = player.body.getPosition();
             
-        
             float baseX = mapRenderer.offsetX + (playerWorldPos.x * MapRenderer.TILE_SIZE);
             float baseY = mapRenderer.offsetY + (playerWorldPos.y * MapRenderer.TILE_SIZE);
             
-       
-            Vector2 muzzleOffset = currentWeapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE);
+            // Ajuste 1: Reduza o offset da arma
+            Vector2 muzzleOffset = currentWeapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE * 0.5f); // 70% do tamanho original
             Vector2 rotatedOffset = new Vector2(muzzleOffset).rotateDeg(getAimAngle());
             
-    
-            float drawX = baseX + rotatedOffset.x;
-            float drawY = baseY + rotatedOffset.y;
+            // Ajuste 2: Centralize a origem da arma
+            float originX = 5; // Metade da largura da textura (10px / 2)
+            float originY = 2.5f; // Metade da altura da textura (5px / 2)
             
-          
-            float originX = 8;
-            float originY = 4;
             float angle = getAimAngle();
             boolean flip = angle > 90 && angle < 270;
             float scaleY = flip ? -1 : 1;
-    
+            
             batch.draw(
                 frame,
-                drawX - originX,
-                drawY - originY,
+                baseX + rotatedOffset.x - originX, // Posição ajustada
+                baseY + rotatedOffset.y - originY,
                 originX,
                 originY,
-                14,
-                8,
-                1 ,
+                10,
+                5,
+                1,
                 scaleY,
                 angle
             );
         }
     }
+
+    public float getAimAngleForRenderer() {
+        Gdx.app.log("AIM_DEBUG", "Ângulo Retornado: " + currentAimAngle);
+        return currentAimAngle;
+    }
+    public boolean isAiming() {
+        float centerX = Gdx.graphics.getWidth() / 2f;
+    float centerY = Gdx.graphics.getHeight() / 2f;
+    int mouseX = Gdx.input.getX();
+    int mouseY = Gdx.input.getY();
+    float correctedMouseY = Gdx.graphics.getHeight() - mouseY; // Correção do Y
+
+    // Use as coordenadas corrigidas para o cálculo da distância
+    float distance = Vector2.dst(mouseX, correctedMouseY, centerX, centerY);
+    return distance > 10f;
+    }
+
     public void logAimInfo() {
         Gdx.app.log("AIM_DEBUG", "Mouse World: " + mousePosition.toString());
         Gdx.app.log("AIM_DEBUG", "Direction: " + aimDirection.toString());

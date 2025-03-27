@@ -3,11 +3,15 @@ package io.github.some_example_name.Screens;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Interface.WeaponHUD;
 import io.github.some_example_name.MapRenderer;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+
 
 public class GameScreen extends CatScreen {
 
@@ -15,6 +19,9 @@ public class GameScreen extends CatScreen {
     private MapRenderer renderer;
     private Robertinhoo robertinhoo;
     private Pistol pistol;
+    private WeaponHUD weaponHUD;
+    private SpriteBatch hudBatch;
+    private OrthographicCamera hudCamera;
 
     public GameScreen(Game game) {
         super(game);
@@ -25,9 +32,22 @@ public class GameScreen extends CatScreen {
         mapa = new Mapa();
         robertinhoo = mapa.robertinhoo; // Robertinhoo é criado dentro do Mapa
         renderer = new MapRenderer(mapa);
+        hudBatch = new SpriteBatch();
+        weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
+        
+    
+        hudCamera = new OrthographicCamera();
+        hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        
+        // Configurar o batch da HUD com a câmera correta
+        hudBatch = new SpriteBatch();
+        hudBatch.setProjectionMatrix(hudCamera.combined);
+        
+        weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
     
         // Configurar o MapRenderer no Robertinhoo após a criação
         robertinhoo.setMapRenderer(renderer);
+  
         
     
         System.out.println("MapRenderer configurado no Robertinhoo.");
@@ -43,20 +63,30 @@ public class GameScreen extends CatScreen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         // Atualiza a posição e animação do jogador
+      
         robertinhoo.update(delta);
 
         mapa.update(delta);
+   
 
         // Renderiza o mapa e o jogador
         renderer.render(delta, robertinhoo);
+        hudBatch.setProjectionMatrix(hudCamera.combined);
+        weaponHUD.update(delta);
+        weaponHUD.draw();
+        
     }
 
     @Override
     public void resize(int width, int height) {
       
         
-
         renderer.resize(width, height);
+        weaponHUD.resize(width, height);
+        
+
+        hudCamera.setToOrtho(false, width, height);
+        hudCamera.update();
     }
 
     @Override
@@ -65,6 +95,12 @@ public class GameScreen extends CatScreen {
         if (renderer != null) {
             System.out.println("Destruindo MapRenderer...");
             renderer.dispose();
+        }
+        if (weaponHUD != null) {
+            weaponHUD.dispose();
+        }
+        if (hudBatch != null) {
+            hudBatch.dispose();
         }
     }
 }
