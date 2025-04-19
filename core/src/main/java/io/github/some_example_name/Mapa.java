@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.physics.box2d.World;
+
+import box2dLight.RayHandler;
+
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -41,19 +44,22 @@ public class Mapa {
  private List<Enemy> enemies;
  private List<Weapon> weapons;
  private List<Projectile> projectiles = new ArrayList<>();
-   private boolean toBeDestroyed = false;
+
 
     public World world;
     public WallOtimizations agruparParedes;
 
-  // Valores corrigidos para RGBA8888
+    public static final short CATEGORY_PROJECTILE = 0x0002; 
+    public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE; 
+
+
   static int TILE = 0x000000; // #000000 (tiles normais)
     static int START = 0xFF0000; // #FF0000 (ponto de início)
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)
     public static int ENEMY = 0X913d77; // #913d77 (inimigos)
     public static  int REVOLVER = 0X22ff00; //#22ff00
 
-    ArrayList<Vector2> wallPositions = new ArrayList<>(); // Lista de coordenadas das paredes
+    ArrayList<Vector2> wallPositions = new ArrayList<>();
 
     public int mapWidth;
     public int mapHeight;
@@ -63,12 +69,23 @@ public class Mapa {
 
     public Robertinhoo robertinhoo;
     public Ratinho ratinho;
+       private RayHandler rayHandler; 
+
+ 
+    public void setRayHandler(RayHandler rayHandler) {
+        this.rayHandler = rayHandler;
+    }
+
+    public RayHandler getRayHandler() {
+        return rayHandler;
+    }
 
     public Mapa() {
         enemies = new ArrayList<>();
         world = new World(new Vector2(0, 0), true);
         weapons = new ArrayList<>();
         agruparParedes = new WallOtimizations(this);
+        
 
 
         loadImageMap("assets/maps/TesteMap.png");
@@ -196,6 +213,7 @@ public class Mapa {
         java.util.Iterator<Projectile> it = projectiles.iterator();
         while(it.hasNext()) {
             Projectile p = it.next();
+            p.update(deltaTime);
             if(p.isMarkedForDestruction()) {
                 p.destroy();
                 it.remove();
@@ -216,4 +234,6 @@ public class Mapa {
     boolean match(int src, int dst) {
         return src == dst;
     }
+
+    
 }

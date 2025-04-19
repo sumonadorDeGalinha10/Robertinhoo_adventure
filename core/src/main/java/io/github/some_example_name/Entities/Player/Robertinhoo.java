@@ -54,6 +54,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public int lastDir = DOWN;
     public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
+    public static boolean IsUsingOneHandWeapon = false;
 
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
@@ -67,7 +68,23 @@ public class Robertinhoo  implements Steerable<Vector2> {
     private Weapon currentWeapon;
     private Inventory inventory;
     private ShapeRenderer shapeRenderer;
-;
+
+
+    public boolean placementMode = false;
+    private Weapon currentPlacementWeapon;
+    private int placementGridX = 0;
+    private int placementGridY = 0;
+    private boolean validPlacement = false;
+
+    public boolean inventoryOpen = false;
+    private int selectedSlot = 0;
+
+
+    
+
+
+
+
     public Robertinhoo(Mapa map, int x, int y,MapRenderer mapRenderer) {
         this.map = map;
         pos.set(x, y);
@@ -78,6 +95,8 @@ public class Robertinhoo  implements Steerable<Vector2> {
         shapeRenderer = new ShapeRenderer();
 
 
+
+
         createBody(x, y);
 
         
@@ -85,14 +104,19 @@ public class Robertinhoo  implements Steerable<Vector2> {
 
     public void equipWeapon(Weapon weapon) {
         this.currentWeapon = weapon;
-        if (weapon instanceof Pistol) {
- 
-  
+        if (weapon.getTipoMao() == Weapon.TipoMao.UMA_MAO) {
+            IsUsingOneHandWeapon = true;
     }
 
     }
     public Inventory getInventory() { return inventory; }
+
+
     public Weapon getCurrentWeapon() { 
+        if (weaponToPickup instanceof Pistol){
+
+            
+        }
         return inventory.getEquippedWeapon();
     }
 
@@ -125,6 +149,10 @@ public class Robertinhoo  implements Steerable<Vector2> {
     }
 
     public void update(float deltaTime) {
+        if (placementMode) {
+            updatePlacementMode();
+            return; // Pausa outras atualizações
+        }
         if (weaponSystem != null) {
             weaponSystem.update(deltaTime);
             applyAimRotation();
@@ -142,7 +170,6 @@ public class Robertinhoo  implements Steerable<Vector2> {
             dashTime -= deltaTime;
     
             if (dashTime <= 0) {
-           
                 state = IDLE;
                 isInvulnerable = false;
                 body.setLinearVelocity(0, 0);
@@ -154,23 +181,9 @@ public class Robertinhoo  implements Steerable<Vector2> {
         pos.set(body.getPosition().x - 0.5f, body.getPosition().y - 0.5f);
         bounds.setPosition(pos);
         linearVelocity.set(body.getLinearVelocity());
-   
         angularVelocity = body.getAngularVelocity();
         render(shapeRenderer);
-      
-        
-
-
-
-     
-
-
-
-
     }
-
-
-
     private void processKeys() {
         Vector2 moveDir = new Vector2();
         boolean isMoving = false;
@@ -251,9 +264,17 @@ public class Robertinhoo  implements Steerable<Vector2> {
                     weaponToPickup.destroyBody();
                     map.getWeapons().remove(weaponToPickup);
                     clearWeaponToPickup();
+                  
                 }
             }
         }
+
+        if (Gdx.input.isKeyJustPressed(Keys.T)) {
+            if (weaponToPickup != null) {
+                enterPlacementMode(weaponToPickup);
+            }
+        }
+    
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = getCurrentWeapon();
             if (currentWeapon != null) {
@@ -272,6 +293,81 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 currentWeapon.shoot(firePosition, aimDirection);
             }
         }
+
+        if (Gdx.input.isKeyJustPressed(Keys.Q)) {
+            if (inventory.getEquippedWeapon() != null) {
+                inventory.dropWeapon();
+                IsUsingOneHandWeapon =false;
+            }}
+        }
+
+
+        private void updatePlacementMode() {
+        
+            if (Gdx.input.isKeyJustPressed(Keys.LEFT)) {
+                placementGridX = Math.max(0, placementGridX - 1);
+                updatePlacementValidity();
+            }
+            if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
+                placementGridX = Math.min(inventory.gridCols - currentPlacementWeapon.getGridWidth(), placementGridX + 1);
+                updatePlacementValidity();
+            }
+            if (Gdx.input.isKeyJustPressed(Keys.UP)) {
+                placementGridY = Math.min(inventory.gridRows - currentPlacementWeapon.getGridHeight(), placementGridY + 1);
+                updatePlacementValidity();
+            }
+            if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
+                placementGridY = Math.max(0, placementGridY - 1);
+                updatePlacementValidity();
+            }
+            if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
+                if (validPlacement) {
+                    inventory.placeWeapon(currentPlacementWeapon, placementGridX, placementGridY);
+                    System.out.println(weaponToPickup);
+                    if(weaponToPickup != null) {
+                        if (inventory.addWeapon(weaponToPickup)) {
+                            weaponToPickup.destroyBody();
+                            map.getWeapons().remove(weaponToPickup);
+                            clearWeaponToPickup();
+                        }
+                    }
+                    exitPlacementMode(true);
+                }
+            }
+            if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
+                exitPlacementMode(false);
+            }
+
+            if (Gdx.input.isKeyJustPressed(Keys.TAB)) {
+                inventoryOpen = !inventoryOpen;
+            }
+    }
+
+    private void enterPlacementMode(Weapon weapon) {
+        placementMode = true;
+        currentPlacementWeapon = weapon;
+        placementGridX = 0;
+        placementGridY = 0;
+        updatePlacementValidity();
+    }
+
+    private void updatePlacementValidity() {
+        validPlacement = inventory.canPlaceAt(placementGridX, placementGridY, currentPlacementWeapon);
+    }
+    
+    private void exitPlacementMode(boolean success) {
+        placementMode = false;
+        if (success) {
+            if (weaponToPickup != null) {
+                weaponToPickup.destroyBody();
+                map.getWeapons().remove(weaponToPickup);
+                clearWeaponToPickup();
+            }
+            if (currentPlacementWeapon != null) {
+                inventory.equipWeapon(currentPlacementWeapon);
+            }
+        }
+        currentPlacementWeapon = null;
     }
 
     public PlayerWeaponSystem getWeaponSystem() {
@@ -298,10 +394,7 @@ public class Robertinhoo  implements Steerable<Vector2> {
 public float applyAimRotation() {
     float angle = weaponSystem.getAimAngle();
     if (inventory.getEquippedWeapon() != null) {
-       
         body.setTransform(body.getPosition(), (float) Math.toRadians(angle));
-     
-  
     }
     return angle;
 }
@@ -311,6 +404,7 @@ public void setMapRenderer(MapRenderer mapRenderer) {
 }
 
 public void setWeaponToPickup(Weapon weapon) {
+
     this.weaponToPickup = weapon;
 }
 
@@ -330,7 +424,7 @@ public void clearWeaponToPickup() {
 
     @Override
     public Vector2 getLinearVelocity() {
-     
+
         return body.getLinearVelocity();
     }
 
@@ -404,13 +498,12 @@ public void clearWeaponToPickup() {
     }
     @Override
     public void setOrientation(float orientation) {
-       
             body.setTransform(body.getPosition(), orientation);
         
         
     }
 
-      @Override
+    @Override
     public Location<Vector2> newLocation() {
         return new Box2dLocation();
     }
@@ -439,16 +532,36 @@ public Vector2 angleToVector(Vector2 outVector, float angle) {
     public float getOrientation() {
         return body.getAngle(); // Assuming you're using Box2D for physics
     }
+    
 
     public void render(ShapeRenderer shapeRenderer) {
-        // if (inventory.getEquippedWeapon() != null && camera != null) {
-       
-        //     shapeRenderer.setProjectionMatrix(camera.combined);
-        //     weaponSystem.renderMiraArma(shapeRenderer);
-        // }
+    
     }
+
+
     public void dispose(){
         shapeRenderer.dispose();
+    }
+
+
+    public boolean isInPlacementMode() {
+        return placementMode;
+    }
+    
+    public Weapon getCurrentPlacementWeapon() {
+        return currentPlacementWeapon;
+    }
+    
+    public int getPlacementGridX() {
+        return placementGridX;
+    }
+    
+    public int getPlacementGridY() {
+        return placementGridY;
+    }
+    
+    public boolean isValidPlacement() {
+        return validPlacement;
     }
 
 }

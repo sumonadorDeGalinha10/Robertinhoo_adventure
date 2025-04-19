@@ -10,30 +10,31 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
-import box2dLight.PointLight;
-import box2dLight.RayHandler;
+
 import io.github.some_example_name.Mapa;
-import io.github.some_example_name.Entities.Player.PlayerWeaponSystem;
+
 
 public class Pistol extends Weapon {
-    private PointLight collectibleLight; // Luz pulsante
-    private Texture pistolTexture;
+    
     private Mapa mapa;
-    private float verticalSpeed = 0f; 
-     private PlayerWeaponSystem playerWeaponSystem;
-    private RayHandler rayHandler; // Para criar efeitos de luz com Box2DLights
+    private float verticalSpeed = 0f;
     private Texture idleTexture;
     private Texture shootTexture;
     private Texture reloadTexture;
     private float animationTime = 0f;
     private int maxAmmo;
-    private int pistolMaxAmmo = 15; 
+    private int pistolMaxAmmo = 15;
 
     private Animation<TextureRegion> shootAnim;
     private Animation<TextureRegion> reloadAnim;
-    
+    @Override
+    public TipoMao getTipoMao() {
+        return TipoMao.UMA_MAO;
+    }
+
     
     protected Vector2 position;
+
     private enum State {
         IDLE,
         SHOOTING,
@@ -42,39 +43,28 @@ public class Pistol extends Weapon {
 
     private State currentState = State.IDLE;
 
-    private float minY;
-
-
     public Pistol(Mapa mapa, int x, int y) {
-        super(); 
-        this.maxAmmo = 15; // Deve vir ANTES de inicializar 'ammo'
+        super();
+        this.maxAmmo = 15;
         this.ammo = this.maxAmmo;
         this.position = new Vector2(x, y);
         this.mapa = mapa;
         this.fireRate = 2f;
         this.damage = 10f;
-
         this.icon = new TextureRegion(new Texture("ITENS/Pistol/icon.png"));
-   
-
-
         createBody(this.position);
-  
         loadTexturesAndAnimations();
-
+        this.gridWidth = 2;
+        this.gridHeight = 1;
         
- 
     }
-
     
-
     @Override
     public void shoot(Vector2 position, Vector2 direction) {
- 
         if (canShoot && ammo > 0) {
             System.out.println("ATIROU");
             
-            new Projectile(mapa, position, direction.nor().scl(20f), damage);
+            new Projectile(mapa, position, direction.nor().scl(15f), damage);
             currentState = State.SHOOTING;
             ammo--;
             canShoot = false;
@@ -157,14 +147,13 @@ public class Pistol extends Weapon {
 
 
     private void loadTexturesAndAnimations() {
- 
         idleTexture = new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png");
 
         shootTexture = new Texture("ITENS/Pistol/[FULL]PistolV1.01.png");
 
         reloadTexture = new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png");
         
-        shootAnim = createAnimation(shootTexture, 12, 0.1f);
+        shootAnim = createAnimation(shootTexture, 10, 0.1f);
         reloadAnim = createAnimation(reloadTexture, 6, 0.15f);
     }
 
@@ -203,7 +192,6 @@ public class Pistol extends Weapon {
             }
             return frame;
         }
-      
         return shootAnim.getKeyFrame(0);
     }
 
@@ -213,25 +201,16 @@ public class Pistol extends Weapon {
         }
         return position;
     }
-
-
-    
-
-    
-
     public Vector2 getMuzzleOffset() {
-   
         return new Vector2(0.8f, 0.1f);
     }
     @Override
     public void destroyBody() {
-        if (body != null) {
-            mapa.world.destroyBody(body);
-            body = null;
+        if (this.body != null) {
+            this.body.getWorld().destroyBody(this.body);
+            this.body = null;
         }
     }
-
-
 
     public void dispose() {
         if (idleTexture != null) idleTexture.dispose();

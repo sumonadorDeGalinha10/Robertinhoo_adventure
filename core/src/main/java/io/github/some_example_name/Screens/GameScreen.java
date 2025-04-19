@@ -91,7 +91,6 @@ public class GameScreen extends CatScreen {
 
     @Override
     public void hide() {
-        // Descarrega recursos ao sair da tela
         if (renderer != null) {
             System.out.println("Destruindo MapRenderer...");
             renderer.dispose();

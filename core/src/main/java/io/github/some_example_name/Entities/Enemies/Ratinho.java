@@ -14,6 +14,7 @@ import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import com.badlogic.gdx.graphics.Color;
 
 
 
@@ -25,22 +26,23 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     private final Pursue<Vector2> pursueBehavior;
     public final Robertinhoo target;
     
+    
 
 
     
 
 
 
-    private float maxLinearSpeed = 4f;       // Velocidade aumentada
-    private float maxLinearAcceleration = 2f; // Resposta mais rápida
+    private float maxLinearSpeed = 4f;
+    private float maxLinearAcceleration = 2f;
     private static final float ZERO_LINEAR_SPEED_THRESHOLD = 0.01f;
 
-    public static final float DETECTION_RANGE = 10f; // Em tiles
+    public static final float DETECTION_RANGE = 10f;
     private static final float ATTACK_RANGE = 1.5f;
     public final Vector2 pos = new Vector2();
-    // Adicione novos campos na classe Ratinho
-    private static final float DASH_DURATION = 0.3f; // Tempo que o dash dura
-    private static final float DASH_COOLDOWN = 2f;   // Tempo entre dashes
+
+    private static final float DASH_DURATION = 0.2f;
+    private static final float DASH_COOLDOWN = 2f;
     private float dashTimer = 0f;
     private static final float DASH_FORCE = 10f;
     private boolean isDashing = false;
@@ -48,8 +50,18 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
 
     
     private Animation<TextureRegion> ratAnimation;
-    private TextureRegion[] ratFrames;
+
     private float animationTime = 0f;
+    private State state = State.IDLE;
+    private int directionX = 1;
+    private int directionY = 1;
+      
+    private boolean movingDown = false;
+    private float damageAnimationDuration = 1f;
+    private float damageTimer = 0f;
+    private boolean isTakingDamage = false;
+
+  
     
     public Ratinho(Mapa mapa, int x, int y, Robertinhoo target) {
         super(x, y, 20, 2);
@@ -58,7 +70,6 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         this.body = createBody(x, y);
         
         this.pursueBehavior = setupAI();
-        loadAnimation();
         this.pursueBehavior.setOwner(this);
 
         body.setUserData(this); // Identificação do corpo
@@ -67,21 +78,27 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     private Body createBody(int x, int y) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(x,y );
+        bodyDef.position.set(x + 0.5f, y + 0.5f);
         
         Body body = mapa.world.createBody(bodyDef);
+        
+      
+        float halfWidth = 0.2f;
+        float halfHeight = 0.2f;
+        
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(0.2f, 0.2f);
+        shape.setAsBox(halfWidth, halfHeight);
         
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
-        fixtureDef.density = 2.0f; // Aumente para maior inércia
-        fixtureDef.friction = 0.0f; // Reduza o atrito
+        fixtureDef.density = 2.0f;
+        fixtureDef.friction = 0.0f;
+        
         body.createFixture(fixtureDef);
-        body.setLinearDamping(2f); // Amortecimento mínimo para movimento fluido
-        body.setAngularDamping(2f); // Sem amortecimento angular
         shape.dispose();
-    
+        
+        body.setLinearDamping(2f);
+        body.setAngularDamping(2f);
         body.setUserData(this);
         
         return body;
@@ -94,44 +111,47 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     
     private Pursue<Vector2> setupAI() {
         Pursue<Vector2> pursue = new Pursue<>(this, target);
-        pursue.setMaxPredictionTime(0.1f); // Foco na posição atual do alvo
+        pursue.setMaxPredictionTime(0.1f);
         return pursue;
     }
     
-    
-    private void loadAnimation() {
-        Texture ratSheet = new Texture("enemies/Enemy_rat-sheet.png");
-        int frameWidth = ratSheet.getWidth() / 5;
-        int frameHeight = ratSheet.getHeight();
-        ratFrames = new TextureRegion[5];
-        
-        for (int i = 0; i < 5; i++) {
-            ratFrames[i] = new TextureRegion(ratSheet, i * frameWidth, 0, frameWidth, frameHeight);
-        }
-        
-        ratAnimation = new Animation<>(0.2f, ratFrames);
-        ratAnimation.setPlayMode(Animation.PlayMode.LOOP);
+    public enum State {
+        IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN,GOT_DAMAGE
     }
-
-
-
     
-    
+
+    public float getAnimationTime() {
+        return animationTime;
+    }
 
     public void update(float deltaTime) {
         Vector2 playerPos = target.getPosition();
         Vector2 myPos = body.getPosition();
 
     
-        // 1. Calcula distância
+
         float distance = myPos.dst(playerPos);
+
+  
+           if(isTakingDamage) {
+            damageTimer -= deltaTime;
+            if(damageTimer <= 0) {
+                isTakingDamage = false;
+                state = State.IDLE; 
+            }
+        }
+
+        if(!isTakingDamage) {
+
+        
+
     
-        // 2. Atualiza timers
+  
         if (isDashing) {
             dashTimer -= deltaTime;
             if (dashTimer <= 0) {
                 isDashing = false;
-                // Restaura a velocidade normal após o dash
+              
                 body.setLinearVelocity(body.getLinearVelocity().scl(0.2f));
             }
         }
@@ -140,7 +160,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
             dashCooldown -= deltaTime;
         }
     
-        // 3. Lógica de perseguição (só ocorre se não estiver em dash)
+
         if (!isDashing && dashCooldown <= 0 && distance <= DETECTION_RANGE) {
             SteeringAcceleration<Vector2> steering = new SteeringAcceleration<>(new Vector2());
             pursueBehavior.calculateSteering(steering);
@@ -148,13 +168,70 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
             Vector2 force = steering.linear.scl(body.getMass());
             body.applyForceToCenter(force, true);
         }
-    
-        // 4. Lógica de ataque
+
         if (!isDashing && dashCooldown <= 0 && distance <= ATTACK_RANGE) {
             executeDashAttack(playerPos);
         }
 
+    }
+
+        animationTime += deltaTime;
+        updateState();
+
         
+    }
+
+
+    @Override
+    public void takeDamage(float damage) {
+        super.takeDamage(damage);
+        // Reinicia o timer e ativa o estado
+        damageTimer = damageAnimationDuration;
+        isTakingDamage = true;
+        state = State.GOT_DAMAGE;
+    }
+
+ 
+
+
+
+    public void updateState() {
+        if(isTakingDamage) return;
+        Vector2 velocity = body.getLinearVelocity();
+        
+        if (velocity.isZero(ZERO_LINEAR_SPEED_THRESHOLD)) {
+            state = State.IDLE;
+        } else {
+            // Verifica se o movimento é predominante vertical
+            boolean isVerticalMovement = Math.abs(velocity.y) > Math.abs(velocity.x);
+            
+            if(isVerticalMovement) {
+                state = State.RUNNING_DOWN;
+                // Define direção Y baseada no sinal da velocidade
+                directionY = velocity.y > 0 ? -1 : 1;
+            } else {
+                state = State.RUNNING_HORIZONTAL;
+                directionX = velocity.x > 0 ? 1 : -1;
+            }
+        }
+    }
+
+    public float getDamageAnimationTime() {
+        return damageAnimationDuration - damageTimer;
+    }
+    public State getState() {
+        return state;
+    }
+
+    public int getDirectionX() {
+        return directionX;
+    }
+
+    public int getDirectionY() {
+        return directionY;
+    }
+    public boolean isMovingDown() {
+        return movingDown;
     }
 
     private void executeDashAttack(Vector2 targetPos) {
@@ -172,32 +249,37 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         return ratAnimation.getKeyFrame(animationTime);
     }
 
-    // Adicione este método para debug visual
-public void debugDraw(ShapeRenderer shapeRenderer) {
-    // Desenha o círculo de detecção
-    shapeRenderer.setColor(1, 0, 0, 0.3f); // Vermelho transparente
-    shapeRenderer.circle(
-        body.getPosition().x, 
-        body.getPosition().y, 
-        DETECTION_RANGE, 
-        32 // Segmentos do círculo
-    );
 
-    // Desenha a linha de perseguição (do rato ao alvo)
-    shapeRenderer.setColor(1, 1, 0, 1); // Amarelo
-    shapeRenderer.line(
-        body.getPosition(), 
-        target.getPosition()
-    );
+    public void debugDraw(ShapeRenderer shapeRenderer) {
+      
+        Vector2 position = body.getPosition();
+        float angle = body.getAngle();
+        
+      
+        shapeRenderer.set(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.RED);
+        
+   
+        PolygonShape shape = (PolygonShape) body.getFixtureList().first().getShape();
+        
+  
+        Vector2[] vertices = new Vector2[shape.getVertexCount()];
+        for(int i = 0; i < shape.getVertexCount(); i++) {
+            Vector2 vertex = new Vector2();
+            shape.getVertex(i, vertex);
+            // Aplica rotação e posição
+            vertices[i] = vertex.cpy().rotateRad(angle).add(position);
+        }
+        
+    
+        for(int i = 0; i < vertices.length; i++) {
+            Vector2 current = vertices[i];
+            Vector2 next = vertices[(i + 1) % vertices.length];
+            shapeRenderer.line(current, next);
+        }
+    }
 
-    // Desenha a velocidade atual (vetor verde)
-    shapeRenderer.setColor(0, 1, 0, 1); // Verde
-    Vector2 velocity = body.getLinearVelocity().cpy().nor().scl(1f); // Normaliza e escala
-    shapeRenderer.line(
-        body.getPosition(), 
-        body.getPosition().cpy().add(velocity)
-    );
-}
+
     
     @Override
     public Vector2 getLinearVelocity() {

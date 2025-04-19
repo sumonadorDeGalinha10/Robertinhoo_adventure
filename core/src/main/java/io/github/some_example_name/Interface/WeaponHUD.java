@@ -55,7 +55,7 @@ public class WeaponHUD {
     private Skin createBasicSkin() {
         Skin skin = new Skin();
         
-        // Textura da barra de fundo (CORREÇÃO)
+
         Pixmap barBg = new Pixmap(300, 20, Pixmap.Format.RGBA8888);
         barBg.setColor(new Color(0.2f, 0.2f, 0.2f, 1)); // Cinza escuro
         barBg.fill();
@@ -92,8 +92,7 @@ public class WeaponHUD {
         Weapon weapon = player.getCurrentWeapon();
         
         if(weapon != null) {
-            System.out.println("Tipo da arma: " + weapon.getClass().getSimpleName());
-            System.out.println("MaxAmmo via getter: " + weapon.getMaxAmmo());
+          
             
             weaponIcon.setDrawable(new TextureRegionDrawable(weapon.getIcon()));
             ammoLabel.setText(String.format("AMMO: %d/%d", weapon.getAmmo(), weapon.getMaxAmmo()));

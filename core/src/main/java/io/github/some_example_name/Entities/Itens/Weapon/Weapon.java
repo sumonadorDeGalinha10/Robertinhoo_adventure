@@ -24,7 +24,20 @@ public abstract class Weapon {
     protected TextureRegion icon;
     protected boolean reloading = false;
     protected float reloadProgress = 0;
-    protected int maxAmmo; 
+    protected int maxAmmo;
+
+
+    protected int gridWidth;
+    protected int gridHeight;
+
+    public int getGridWidth() { return gridWidth; }
+    public int getGridHeight() { return gridHeight; }
+    
+    public enum TipoMao {
+        UMA_MAO, DUAS_MAOS;
+    }
+
+    public abstract TipoMao getTipoMao();
 
     public TextureRegion getIcon() {
         return icon;
@@ -65,6 +78,12 @@ public abstract class Weapon {
     public void destroyBody() {
       
     }
+
+
+    public void setPosition(Vector2 position) {
+        this.position = position.cpy();
+    }
+
 
     public abstract Vector2 getMuzzleOffset();
     

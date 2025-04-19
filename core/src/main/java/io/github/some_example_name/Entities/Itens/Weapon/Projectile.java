@@ -10,9 +10,12 @@ import io.github.some_example_name.Mapa;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
+import box2dLight.PointLight;
 import java.util.List;
+import com.badlogic.gdx.graphics.Color;
 
 public class Projectile {
     private Body body;
@@ -21,9 +24,28 @@ public class Projectile {
     private float timeAlive = 0f;
     private float stateTime = 0f;
     private float angle;
-    private static final float WIDTH = 0.4f;
-    private static final float HEIGHT = 0.4f;
+    private static final float WIDTH = 0.5f;
+    private static final float HEIGHT = 0.5f;
+
+
+
+
+private static final float HITBOX_RADIUS = 0.1f; // Rai
     private boolean toBeDestroyed = false;
+
+
+    
+    private boolean isDestroying = false;
+    private float destructionTime = 0f;
+    private Vector2 lastPosition;
+    public float destructionAngle;
+
+    private PointLight light;
+
+    public PointLight getLight() { return light; }
+    public void setLight(PointLight light) {
+        this.light = light;
+    }
 
 
     private List<Vector2> trailPositions = new ArrayList<>();
@@ -44,6 +66,9 @@ public class Projectile {
         this.damage = damage;
         createBody(mapa, position, velocity);
         mapa.addProjectile(this);
+
+    
+        
     }
     
     public void updateStateTime(float delta) {
@@ -55,29 +80,44 @@ public class Projectile {
     }
 
     private void createBody(Mapa mapa, Vector2 position, Vector2 velocity) {
-       
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(position);
         body = mapa.world.createBody(bodyDef);
-
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(WIDTH/2, HEIGHT/2); 
-
+    
+        CircleShape shape = new CircleShape();
+        shape.setRadius(HITBOX_RADIUS);
+        
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 0.5f;
+        
+  
+        fixtureDef.filter.categoryBits = Mapa.CATEGORY_PROJECTILE;
+        fixtureDef.filter.maskBits = Mapa.MASK_PROJECTILE;
+        
         body.createFixture(fixtureDef);
         shape.dispose();
-
+        
+   
         body.setLinearVelocity(velocity);
         body.setUserData(this);
     }
 
     public void update(float delta) {
-        timeAlive += delta;
-        if (timeAlive >= lifespan) {
-            destroy();
+        if (isDestroying) {
+            destructionTime += delta;
+            if (destructionTime >= 0.5f) {
+                markForDestruction();
+            }
+        } else {
+            timeAlive += delta;
+            if (timeAlive >= lifespan) {
+                startDestruction();
+            }    
+            if (body != null) {
+                lastPosition = body.getPosition().cpy();
+            }
         }
 
         trailPositions.add(new Vector2(getPosition()));
@@ -85,7 +125,6 @@ public class Projectile {
             trailPositions.remove(0);
         }
     }
-
     public List<Vector2> getTrailPositions() {
         return trailPositions;
     }
@@ -94,6 +133,10 @@ public class Projectile {
         if (body != null) {
             body.getWorld().destroyBody(body);
             body = null;
+        }
+        if (light != null) {
+            light.remove();
+            light = null;
         }
         markForDestruction();
     }
@@ -105,9 +148,12 @@ public class Projectile {
 
 
     public Vector2 getPosition() {
-        return body.getPosition();
+        if (body != null) {
+            return body.getPosition();
+        } else {
+            return lastPosition;
+        }
     }
-
 
     public float getWidth() {
         return WIDTH;
@@ -122,5 +168,34 @@ public class Projectile {
     
     public float getAngle() {
         return angle;
+    }
+
+
+    public boolean isDestroying() {
+        return isDestroying;
+    }
+
+    public float getDestructionTime() {
+        return destructionTime;
+    }
+
+    public void startDestruction() {
+        if (!isDestroying) {
+            isDestroying = true;
+            destructionTime = 0f;
+            if (body != null) {
+             
+                body.setLinearVelocity(0, 0);
+                body.setAngularVelocity(0);
+              
+     
+                lastPosition = body.getPosition().cpy();
+                destructionAngle = angle;
+            }
+            if (light != null) {
+                light.remove();
+                light = null;
+            }
+        }
     }
 }
