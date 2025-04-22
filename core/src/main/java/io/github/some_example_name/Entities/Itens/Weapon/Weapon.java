@@ -25,6 +25,7 @@ public abstract class Weapon {
     protected boolean reloading = false;
     protected float reloadProgress = 0;
     protected int maxAmmo;
+    protected Vector2[] occupiedCells;
 
 
     protected int gridWidth;
@@ -86,6 +87,31 @@ public abstract class Weapon {
 
 
     public abstract Vector2 getMuzzleOffset();
+
+
+    public void rotate() {
+        int temp = gridWidth;
+        gridWidth = gridHeight;
+        gridHeight = temp;
+    }
+
+
+    public Vector2[] getOccupiedCells() {
+        // Retorna um retângulo padrão se não for sobrescrito
+        Vector2[] cells = new Vector2[gridWidth * gridHeight];
+        for (int y = 0; y < gridHeight; y++) {
+            for (int x = 0; x < gridWidth; x++) {
+                cells[y * gridWidth + x] = new Vector2(x, y);
+            }
+        }
+        return cells;
+    }
+
+
+    public void setGridSize(int width, int height) {
+        this.gridWidth = width;
+        this.gridHeight = height;
+    }
     
 
 

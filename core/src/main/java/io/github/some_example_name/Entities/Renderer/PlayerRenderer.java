@@ -20,21 +20,16 @@ public class PlayerRenderer {
         animations = new PlayerAnimations();
         currentAnimation = null;
     }
-
     private Animation<TextureRegion> selectAnimation(Robertinhoo player) {
         if (player.state == Robertinhoo.DASH) {
             return getDashAnimation(player);
         }
-
-        // Prioriza a mira mesmo durante movimento
         if (weaponSystem.isAiming() && player.getInventory().getEquippedWeapon() != null) {
-            return getAimedAnimation(player, (player.dir != Robertinhoo.IDLE)); // Passa true se estiver se movendo
+            return getAimedAnimation(player, (player.dir != Robertinhoo.IDLE));
         }
-
         if (player.dir != Robertinhoo.IDLE) {
             return getMovementAnimation(player);
         }
-
         return getIdleAnimation(player);
     }
     
@@ -69,7 +64,7 @@ public class PlayerRenderer {
                 case Robertinhoo.LEFT:
                     return isOneHand ? animations.runLeftWeaponOneHand : animations.runLeft;
                 case Robertinhoo.UP:
-                     return isOneHand ? animations.runDownWeaponOneHand : animations.runUp;
+                     return isOneHand ? animations.runUpWeaponOneHand : animations.runUp;
                 case Robertinhoo.DOWN:
                     return isOneHand ? animations.runDownWeaponOneHand : animations.runDown;
                 default:
@@ -96,7 +91,8 @@ public class PlayerRenderer {
     private Animation<TextureRegion> getAimedAnimation(Robertinhoo player, boolean isMoving) {
         float aimAngle = player.applyAimRotation();
         int direction = getDirectionFromAngle(aimAngle);
-        return getDirectionalAnimation(direction, isMoving); // Usa isMoving para escolher animação
+        return getDirectionalAnimation(direction, isMoving);
+        
     }
     private int getDirectionFromAngle(float angle) {
         angle = (angle + 360) % 360;
@@ -115,9 +111,9 @@ public class PlayerRenderer {
                (dir1 == Robertinhoo.DOWN && dir2 == Robertinhoo.UP) ||
                (dir1 == Robertinhoo.LEFT && dir2 == Robertinhoo.RIGHT) ||
                (dir1 == Robertinhoo.RIGHT && dir2 == Robertinhoo.LEFT);
+               
+
     }
-
-
 
     private boolean shouldReverseAnimation(Robertinhoo player) {
         if (player.dir == Robertinhoo.IDLE || !weaponSystem.isAiming() || player.getInventory().getEquippedWeapon() == null) {
@@ -155,6 +151,14 @@ public class PlayerRenderer {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle > 90 && aimAngle < 270);
         } else if (currentAnimation == animations.idleUpWeaponOneHand) {
+            float aimAngle = player.applyAimRotation();
+            shouldFlip = (aimAngle < 270 && aimAngle > 90);
+        }
+        else if (currentAnimation == animations.runDownWeaponOneHand) {
+            float aimAngle = player.applyAimRotation();
+            shouldFlip = (aimAngle < 270 && aimAngle > 90);
+        }
+        else if (currentAnimation == animations.runUpWeaponOneHand) {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle < 270 && aimAngle > 90);
         }

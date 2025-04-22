@@ -27,7 +27,7 @@ public class PlayerAnimations implements Disposable {
     public final Animation<TextureRegion> idleRightWeaponOneHand;
     public final Animation<TextureRegion> runLeftWeaponOneHand;
     public final Animation<TextureRegion> runRightWeaponOneHand;
-    // public final Animation<TextureRegion> runUpWeapon;
+    public final Animation<TextureRegion> runUpWeaponOneHand;
     public final Animation<TextureRegion> runDownWeaponOneHand;
 
     private final Texture[] loadedTextures;
@@ -48,7 +48,8 @@ public class PlayerAnimations implements Disposable {
             AnimationLoader.loadTexture("rober/idle_with_weapon/idle_left_with_weapon.png"),
             AnimationLoader.loadTexture("rober/idle_with_weapon/1_Template_Idle_Up_with_weapon-Sheet.png"),
             AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png"),
-            AnimationLoader.loadTexture("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png")
+            AnimationLoader.loadTexture("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png"),
+            AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Up_With_One_HandWEAPON-Sheet.png")
             
             
         };
@@ -71,9 +72,7 @@ public class PlayerAnimations implements Disposable {
         runLeftWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png", 0.1f, false, 6);
         runRightWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png", 0.1f, true, 6);
         runDownWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png", 0.1f, false, 6);
-        
-
-
+        runUpWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Up_With_One_HandWEAPON-Sheet.png", 0.1f, true, 6);
     }
 
     @Override

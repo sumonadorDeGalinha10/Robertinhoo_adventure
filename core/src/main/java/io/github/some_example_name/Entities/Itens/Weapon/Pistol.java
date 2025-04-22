@@ -1,7 +1,5 @@
 package io.github.some_example_name.Entities.Itens.Weapon;
 
-
-
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -13,9 +11,8 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 
 import io.github.some_example_name.Mapa;
 
-
 public class Pistol extends Weapon {
-    
+
     private Mapa mapa;
     private float verticalSpeed = 0f;
     private Texture idleTexture;
@@ -24,15 +21,16 @@ public class Pistol extends Weapon {
     private float animationTime = 0f;
     private int maxAmmo;
     private int pistolMaxAmmo = 15;
+   
 
     private Animation<TextureRegion> shootAnim;
     private Animation<TextureRegion> reloadAnim;
+
     @Override
     public TipoMao getTipoMao() {
         return TipoMao.UMA_MAO;
     }
 
-    
     protected Vector2 position;
 
     private enum State {
@@ -51,19 +49,30 @@ public class Pistol extends Weapon {
         this.mapa = mapa;
         this.fireRate = 2f;
         this.damage = 10f;
-        this.icon = new TextureRegion(new Texture("ITENS/Pistol/icon.png"));
+        this.icon = new TextureRegion(new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png"));
         createBody(this.position);
         loadTexturesAndAnimations();
         this.gridWidth = 2;
-        this.gridHeight = 1;
+        this.gridHeight = 2;
+        this.occupiedCells = new Vector2[]{
+            new Vector2(0, 0), // Célula base
+            new Vector2(1, 0), // Extensão para direita
+            new Vector2(0, 1)  // Extensão para cima
+        };
         
+
     }
-    
+
+    @Override
+    public Vector2[] getOccupiedCells() {
+        return occupiedCells;
+    }
+
     @Override
     public void shoot(Vector2 position, Vector2 direction) {
         if (canShoot && ammo > 0) {
             System.out.println("ATIROU");
-            
+
             new Projectile(mapa, position, direction.nor().scl(15f), damage);
             currentState = State.SHOOTING;
             ammo--;
@@ -71,8 +80,6 @@ public class Pistol extends Weapon {
             System.out.println("renderizou tiro");
         }
     }
-
-
 
     @Override
     public int getMaxAmmo() {
@@ -95,7 +102,6 @@ public class Pistol extends Weapon {
         if (timeSinceLastShot >= 1 / fireRate) {
             canShoot = true;
         }
-        
 
         if (currentState == State.SHOOTING) {
             animationTime += delta;
@@ -113,15 +119,13 @@ public class Pistol extends Weapon {
             }
         }
 
-        if(reloading) {
+        if (reloading) {
             reloadProgress += delta / reloadAnim.getAnimationDuration();
-            if(reloadProgress >= 1) {
+            if (reloadProgress >= 1) {
                 reloading = false;
             }
         }
     }
-
-    
 
     public void createBody(Vector2 position) {
         BodyDef bodyDef = new BodyDef();
@@ -143,20 +147,16 @@ public class Pistol extends Weapon {
         body.setUserData(this);
     }
 
-    
-
-
     private void loadTexturesAndAnimations() {
         idleTexture = new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png");
 
         shootTexture = new Texture("ITENS/Pistol/[FULL]PistolV1.01.png");
 
         reloadTexture = new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png");
-        
+
         shootAnim = createAnimation(shootTexture, 10, 0.1f);
         reloadAnim = createAnimation(reloadTexture, 6, 0.15f);
     }
-
 
     private Animation<TextureRegion> createAnimation(Texture texture, int frameCount, float frameDuration) {
         int frameWidth = texture.getWidth() / frameCount;
@@ -169,9 +169,6 @@ public class Pistol extends Weapon {
         anim.setPlayMode(Animation.PlayMode.NORMAL);
         return anim;
     }
-
-
-    
 
     public TextureRegion getCurrentFrame(float delta) {
         if (currentState == State.SHOOTING) {
@@ -201,9 +198,11 @@ public class Pistol extends Weapon {
         }
         return position;
     }
+
     public Vector2 getMuzzleOffset() {
         return new Vector2(0.8f, 0.1f);
     }
+
     @Override
     public void destroyBody() {
         if (this.body != null) {
@@ -213,12 +212,12 @@ public class Pistol extends Weapon {
     }
 
     public void dispose() {
-        if (idleTexture != null) idleTexture.dispose();
-        if (shootTexture != null) shootTexture.dispose();
-        if (reloadTexture != null) reloadTexture.dispose();
+        if (idleTexture != null)
+            idleTexture.dispose();
+        if (shootTexture != null)
+            shootTexture.dispose();
+        if (reloadTexture != null)
+            reloadTexture.dispose();
     }
-
-
-
 
 }

@@ -24,7 +24,6 @@ public class ProjectileRenderer {
     public ProjectileRenderer(Mapa mapa, int tileSize){
         this.mapa = mapa;
         this.tileSize = tileSize;
-     
         
         projectileTexture = new Texture("ITENS/Pistol/newShoot.png");
         destructionTexture = new Texture("ITENS/Pistol/SmallExplosion1-Sheet.png");
@@ -45,13 +44,12 @@ public class ProjectileRenderer {
         }
         
         Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
-        animation.setPlayMode(Animation.PlayMode.NORMAL); 
+        animation.setPlayMode(Animation.PlayMode.NORMAL);
         return animation;
     }
 
     public void render(SpriteBatch batch, float delta, float offsetX, float offsetY) {
         for (Projectile projectile : mapa.getProjectiles()) {
-            // Determina qual animação usar
             Animation<TextureRegion> currentAnimation;
             float animationTime;
             float drawAngle;
@@ -59,24 +57,18 @@ public class ProjectileRenderer {
             if (projectile.isDestroying()) {
                 currentAnimation = destructionAnimation;
                 animationTime = projectile.getDestructionTime();
-                drawAngle = projectile.destructionAngle; // Usa o ângulo no momento da colisão
+                drawAngle = projectile.destructionAngle;
             } else {
                 currentAnimation = shootAnimation;
                 animationTime = projectile.getStateTime();
-                drawAngle = projectile.getAngle(); // Ângulo normal
+                drawAngle = projectile.getAngle();
             }
-    
-            // Obtém o frame apropriado
             TextureRegion frame = currentAnimation.getKeyFrame(animationTime, false);
-    
-            // Configurações de tamanho e posição
             float width = projectile.getWidth() * tileSize;
             float height = projectile.getHeight() * tileSize;
             
             float x = offsetX + projectile.getPosition().x * tileSize - width / 2;
             float y = offsetY + projectile.getPosition().y * tileSize - height / 2;
-    
-            // Desenha o projétil
             batch.draw(
                 frame,
                 x,
@@ -85,12 +77,10 @@ public class ProjectileRenderer {
                 height / 2,
                 width,
                 height,
-                1, 
+                1,
                 1,
                 drawAngle
             );
-    
-            // Atualiza o stateTime apenas se não estiver destruindo
             if (!projectile.isDestroying()) {
                 projectile.updateStateTime(delta);
             }

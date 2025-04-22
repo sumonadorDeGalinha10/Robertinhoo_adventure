@@ -12,7 +12,7 @@ public class Inventory {
     private List<Weapon> weapons = new ArrayList<>();
     private Weapon equippedWeapon;
     private Robertinhoo robertinhoo;
-    public int gridCols = 8;
+    public int gridCols = 6;
     public int gridRows = 6;
     private List<InventorySlot> slots = new ArrayList<>();
     private boolean[][] grid;
@@ -27,18 +27,72 @@ public class Inventory {
         this.grid = new boolean[gridRows][gridCols];
     }
 
+
+    public boolean moveWeapon(Weapon weapon, int newX, int newY) {
+        boolean wasEquipped = (equippedWeapon == weapon);
+        
+        removeWeapon(weapon);
+        
+
+        boolean success = addWeaponAt(weapon, newX, newY);
+        
+        if (success && wasEquipped) {
+            equipWeapon(weapon);
+        }
+        
+        return success;
+    }
+
+        public void unequipWeapon() {
+        if (this.equippedWeapon != null) {
+            this.equippedWeapon = null;
+            if (robertinhoo != null) {
+                robertinhoo.unequipWeapon();
+            }
+        }
+    }
+    private boolean addWeaponAt(Weapon weapon, int x, int y) {
+        if (!canPlaceAt(x, y, weapon)) return false;
+        
+        markGrid(x, y, weapon, true);
+        slots.add(new InventorySlot(x, y, weapon));
+        return true;
+    }
+    public Weapon getWeaponAt(int gridX, int gridY) {
+        for (InventorySlot slot : slots) {
+            for (Vector2 cell : slot.weapon.getOccupiedCells()) {
+                int slotX = slot.x + (int) cell.x;
+                int slotY = slot.y + (int) cell.y;
+                
+                if (slotX == gridX && slotY == gridY) {
+                    return slot.weapon;
+                }
+            }
+        }
+        return null;
+    }
     public boolean isEquipped(Weapon weapon) {
         return equippedWeapon == weapon;
     }
     
     public void markGrid(int startX, int startY, Weapon weapon, boolean value) {
-        for (int y = startY; y < startY + weapon.getGridHeight(); y++) {
-            for (int x = startX; x < startX + weapon.getGridWidth(); x++) {
-                grid[y][x] = value;
+        for (InventorySlot slot : slots) {
+            if (slot.weapon == weapon) {
+                for (Vector2 cell : weapon.getOccupiedCells()) {
+                    int x = slot.x + (int) cell.x;
+                    int y = slot.y + (int) cell.y;
+                    grid[gridRows - 1 - y][x] = false;
+                }
+            }
+        }
+        for (Vector2 cell : weapon.getOccupiedCells()) {
+            int x = startX + (int) cell.x;
+            int y = startY + (int) cell.y;
+            if (x < gridCols && y < gridRows) {
+                grid[gridRows - 1 - y][x] = value;
             }
         }
     }
-
     public Boolean addWeapon(Weapon weapon) {
         int[] position = findAvailablePosition(weapon);
         if (position != null) {
@@ -64,59 +118,27 @@ public class Inventory {
         }
         return null;
     }
-
     public boolean canPlaceAt(int startX, int startY, Weapon weapon) {
-        int width = weapon.getGridWidth();
-        int height = weapon.getGridHeight();
-
-        if (startX + width > gridCols || startY + height > gridRows) {
-            return false;
-        }
-
-        for (int y = startY; y < startY + height; y++) {
-            for (int x = startX; x < startX + width; x++) {
-                if (grid[y][x]) return false;
+        for (Vector2 cell : weapon.getOccupiedCells()) {
+            int x = startX + (int) cell.x;
+            int y = startY + (int) cell.y;
+            if (x < 0 || x >= gridCols || y < 0 || y >= gridRows) {
+                return false;
+            }
+            if (grid[gridRows - 1 - y][x]) {
+                return false;
             }
         }
         return true;
     }
-
-
     public void equipWeapon(Weapon weapon) {
         this.equippedWeapon = weapon;
         robertinhoo.equipWeapon(weapon);
     }
-
     public Weapon getEquippedWeapon() {
         return equippedWeapon;
     }
 
-    public void dropWeapon() {
-        if (equippedWeapon != null) {
-            Vector2 dropPosition = robertinhoo.getPosition().cpy();
-            
-            switch (robertinhoo.lastDir) {
-                case Robertinhoo.LEFT:
-                    dropPosition.x -= 0.1;
-                    break;
-                case Robertinhoo.RIGHT:
-                    dropPosition.x += 0.1;
-                    break;
-                case Robertinhoo.UP:
-                    dropPosition.y += 0.1;
-                    break;
-                case Robertinhoo.DOWN:
-                    dropPosition.y -= 0.1;
-                    break;
-            }
-            equippedWeapon.setPosition(dropPosition);
-            equippedWeapon.createBody(dropPosition);
-            robertinhoo.map.getWeapons().add(equippedWeapon);
-            
-            weapons.remove(equippedWeapon);
-            equippedWeapon = null;
-        }
-    }
 
     public boolean removeWeapon(Weapon weapon) {
         for (InventorySlot slot : new ArrayList<>(slots)) {
@@ -132,25 +154,22 @@ public class Inventory {
         return false;
     }
 
-    public void dropWeapon2(Weapon weapon, Vector2 dropPosition) {
-        if (removeWeapon(weapon)) {
-            weapon.setPosition(dropPosition);
-            weapon.createBody(dropPosition);
-            robertinhoo.map.getWeapons().add(weapon);
-        }
-    }
 
-    public void placeWeapon(Weapon weapon, int x, int y) {
-        if (!canPlaceAt(x, y, weapon)) return;
-
-        for (int iy = y; iy < y + weapon.getGridHeight(); iy++) {
-            for (int ix = x; ix < x + weapon.getGridWidth(); ix++) {
-                grid[iy][ix] = true;
-            }
+    public void placeWeapon(Weapon weapon, int newX, int newY) {
+        if (weapons.contains(weapon)) {
+            removeWeapon(weapon);
         }
+        
+        if (!canPlaceAt(newX, newY, weapon)) return;
+        
+        markGrid(newX, newY, weapon, true);
+        slots.add(new InventorySlot(newX, newY, weapon));
         weapons.add(weapon);
+        
+        if (equippedWeapon == null) {
+            equipWeapon(weapon);
+        }
     }
-
     public List<Weapon> getWeapons() {
         return weapons;
     }
