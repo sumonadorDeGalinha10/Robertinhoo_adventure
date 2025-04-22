@@ -24,7 +24,21 @@ public abstract class Weapon {
     protected TextureRegion icon;
     protected boolean reloading = false;
     protected float reloadProgress = 0;
-    protected int maxAmmo; 
+    protected int maxAmmo;
+    protected Vector2[] occupiedCells;
+
+
+    protected int gridWidth;
+    protected int gridHeight;
+
+    public int getGridWidth() { return gridWidth; }
+    public int getGridHeight() { return gridHeight; }
+    
+    public enum TipoMao {
+        UMA_MAO, DUAS_MAOS;
+    }
+
+    public abstract TipoMao getTipoMao();
 
     public TextureRegion getIcon() {
         return icon;
@@ -66,7 +80,38 @@ public abstract class Weapon {
       
     }
 
+
+    public void setPosition(Vector2 position) {
+        this.position = position.cpy();
+    }
+
+
     public abstract Vector2 getMuzzleOffset();
+
+
+    public void rotate() {
+        int temp = gridWidth;
+        gridWidth = gridHeight;
+        gridHeight = temp;
+    }
+
+
+    public Vector2[] getOccupiedCells() {
+        // Retorna um retângulo padrão se não for sobrescrito
+        Vector2[] cells = new Vector2[gridWidth * gridHeight];
+        for (int y = 0; y < gridHeight; y++) {
+            for (int x = 0; x < gridWidth; x++) {
+                cells[y * gridWidth + x] = new Vector2(x, y);
+            }
+        }
+        return cells;
+    }
+
+
+    public void setGridSize(int width, int height) {
+        this.gridWidth = width;
+        this.gridHeight = height;
+    }
     
 
 

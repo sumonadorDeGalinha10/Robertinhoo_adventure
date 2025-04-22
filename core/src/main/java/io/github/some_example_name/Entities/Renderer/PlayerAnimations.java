@@ -19,7 +19,19 @@ public class PlayerAnimations implements Disposable {
     public final Animation<TextureRegion> dash_top;
     public final Animation<TextureRegion> dash_sides;
 
+
+
+    public final Animation<TextureRegion> idleDownWeaponOneHand;
+    public final Animation<TextureRegion> idleUpWeaponOneHand;
+    public final Animation<TextureRegion> idleLeftWeaponOneHand;
+    public final Animation<TextureRegion> idleRightWeaponOneHand;
+    public final Animation<TextureRegion> runLeftWeaponOneHand;
+    public final Animation<TextureRegion> runRightWeaponOneHand;
+    public final Animation<TextureRegion> runUpWeaponOneHand;
+    public final Animation<TextureRegion> runDownWeaponOneHand;
+
     private final Texture[] loadedTextures;
+    
 
     public PlayerAnimations() {
         loadedTextures = new Texture[]{
@@ -32,6 +44,14 @@ public class PlayerAnimations implements Disposable {
             AnimationLoader.loadTexture("rober/dash/dash_top.png"),
             AnimationLoader.loadTexture("rober/dash/dash_down.png"),
             AnimationLoader.loadTexture("rober/dash/dash_sides.png"),
+            AnimationLoader.loadTexture("rober/idle_with_weapon/Idle_down_With_weapon-Sheet.png"),
+            AnimationLoader.loadTexture("rober/idle_with_weapon/idle_left_with_weapon.png"),
+            AnimationLoader.loadTexture("rober/idle_with_weapon/1_Template_Idle_Up_with_weapon-Sheet.png"),
+            AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png"),
+            AnimationLoader.loadTexture("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png"),
+            AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Up_With_One_HandWEAPON-Sheet.png")
+            
+            
         };
 
         idleDown = AnimationLoader.loadAnimation("rober/idle/1_Template_Idle_Down-Sheet.png", 0.2f, false, 6);
@@ -45,6 +65,14 @@ public class PlayerAnimations implements Disposable {
         dash_down = AnimationLoader.loadAnimation("rober/dash/dash_down.png", 0.04f, false, 9);
         dash_top = AnimationLoader.loadAnimation("rober/dash/dash_top.png", 0.05f, false, 10);
         dash_sides = AnimationLoader.loadAnimation("rober/dash/dash_sides.png", 0.06f, false, 8);
+        idleDownWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/Idle_down_With_weapon-Sheet.png", 0.2f, false, 6);
+        idleLeftWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/idle_left_with_weapon.png", 0.2f, false, 6);
+        idleRightWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/idle_left_with_weapon.png", 0.2f, true, 6);
+        idleUpWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/1_Template_Idle_Up_with_weapon-Sheet.png", 0.2f, true, 6);
+        runLeftWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png", 0.1f, false, 6);
+        runRightWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png", 0.1f, true, 6);
+        runDownWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png", 0.1f, false, 6);
+        runUpWeaponOneHand = AnimationLoader.loadAnimation("rober/run_with_weapon/2_Template_Run_Up_With_One_HandWEAPON-Sheet.png", 0.1f, true, 6);
     }
 
     @Override

@@ -13,7 +13,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.MapRenderer;
 
-
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
@@ -24,12 +23,11 @@ import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
+import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Inventory.Inventory;
+import io.github.some_example_name.Entities.Inventory.InventoryController;
 
-
-
-public class Robertinhoo  implements Steerable<Vector2> {
-    
+public class Robertinhoo implements Steerable<Vector2> {
 
     public Body body;
     public static final int RUN = 1;
@@ -54,21 +52,24 @@ public class Robertinhoo  implements Steerable<Vector2> {
     public int lastDir = DOWN;
     public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
+    public static boolean IsUsingOneHandWeapon = false;
 
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
     private PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
-    private Weapon weaponToPickup;
+    public Weapon weaponToPickup;
 
     private float dashTime = 0;
     private float dashCooldownTime = 0;
     private Weapon currentWeapon;
     private Inventory inventory;
     private ShapeRenderer shapeRenderer;
-;
-    public Robertinhoo(Mapa map, int x, int y,MapRenderer mapRenderer) {
+
+    private InventoryController inventoryController;
+
+    public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer) {
         this.map = map;
         pos.set(x, y);
         bounds.set(pos.x, pos.y, TILE_SIZE, TILE_SIZE);
@@ -76,31 +77,32 @@ public class Robertinhoo  implements Steerable<Vector2> {
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
         this.inventory = new Inventory(this);
         shapeRenderer = new ShapeRenderer();
-
+        this.inventoryController = new InventoryController(this, inventory, map);
 
         createBody(x, y);
 
-        
     }
 
     public void equipWeapon(Weapon weapon) {
         this.currentWeapon = weapon;
-        if (weapon instanceof Pistol) {
- 
-  
-    }
+        if (weapon.getTipoMao() == Weapon.TipoMao.UMA_MAO) {
+            IsUsingOneHandWeapon = true;
+        }
 
     }
-    public Inventory getInventory() { return inventory; }
-    public Weapon getCurrentWeapon() { 
+
+    public void unequipWeapon() {
+        this.currentWeapon = null;
+    }
+
+    public Weapon getCurrentWeapon() {
+        if (weaponToPickup instanceof Pistol) {
+
+        }
         return inventory.getEquippedWeapon();
     }
 
-
-    
-
-
-      private void createBody(int x, int y) {
+    private void createBody(int x, int y) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.DynamicBody;
         bodyDef.position.set(x, y);
@@ -125,6 +127,12 @@ public class Robertinhoo  implements Steerable<Vector2> {
     }
 
     public void update(float deltaTime) {
+        inventoryController.update(deltaTime);
+
+        if (inventoryController.isInPlacementMode()) {
+            return;
+        }
+
         if (weaponSystem != null) {
             weaponSystem.update(deltaTime);
             applyAimRotation();
@@ -135,14 +143,13 @@ public class Robertinhoo  implements Steerable<Vector2> {
             currentWeapon.update(deltaTime);
         }
 
-        if (dashCooldownTime > 0) dashCooldownTime -= deltaTime;
-    
-  
+        if (dashCooldownTime > 0)
+            dashCooldownTime -= deltaTime;
+
         if (dashTime > 0) {
             dashTime -= deltaTime;
-    
+
             if (dashTime <= 0) {
-           
                 state = IDLE;
                 isInvulnerable = false;
                 body.setLinearVelocity(0, 0);
@@ -154,76 +161,62 @@ public class Robertinhoo  implements Steerable<Vector2> {
         pos.set(body.getPosition().x - 0.5f, body.getPosition().y - 0.5f);
         bounds.setPosition(pos);
         linearVelocity.set(body.getLinearVelocity());
-   
         angularVelocity = body.getAngularVelocity();
         render(shapeRenderer);
-      
-        
-
-
-
-     
-
-
-
-
     }
-
-
 
     private void processKeys() {
         Vector2 moveDir = new Vector2();
         boolean isMoving = false;
-        
-        if (Gdx.input.isKeyPressed(Keys.W)){
+
+        if (Gdx.input.isKeyPressed(Keys.W)) {
             moveDir.y += 1;
             isMoving = true;
             dir = UP;
             lastDir = UP;
         }
-        
-        if (Gdx.input.isKeyPressed(Keys.S)){
+
+        if (Gdx.input.isKeyPressed(Keys.S)) {
             isMoving = true;
             dir = DOWN;
             moveDir.y -= 1;
             lastDir = DOWN;
         }
-        
+
         if (Gdx.input.isKeyPressed(Keys.D)) {
             moveDir.x += 1;
             isMoving = true;
             dir = RIGHT;
             lastDir = RIGHT;
         }
-        
+
         if (Gdx.input.isKeyPressed(Keys.A)) {
             moveDir.x -= 1;
             isMoving = true;
             dir = LEFT;
             lastDir = LEFT;
         }
-    
+
         if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
             if (!moveDir.isZero()) {
                 moveDir.nor();
-                
+
                 // Determinar direção primária para o dash
                 float absX = Math.abs(moveDir.x);
                 float absY = Math.abs(moveDir.y);
-                
+
                 if (absX > absY) {
                     dashDirection = (moveDir.x > 0) ? RIGHT : LEFT;
                 } else {
                     dashDirection = (moveDir.y > 0) ? UP : DOWN;
                 }
-                
-                
+
                 if (dashDirection == LEFT || dashDirection == RIGHT) {
                     moveDir.set(dashDirection == RIGHT ? 1 : -1, 0);
                 } else {
                     moveDir.set(0, dashDirection == UP ? 1 : -1);
                 }
-                
+
                 state = DASH;
                 dashTime = DASH_DURATION;
                 dashCooldownTime = DASH_COOLDOWN;
@@ -241,37 +234,49 @@ public class Robertinhoo  implements Steerable<Vector2> {
                 dir = IDLE;
             }
         }
-    
+        
 
-        if(Gdx.input.isKeyJustPressed(Keys.E)) {
-          
-            System.out.println(weaponToPickup);
-            if(weaponToPickup != null) {
-                if (inventory.addWeapon(weaponToPickup)) {
-                    weaponToPickup.destroyBody();
-                    map.getWeapons().remove(weaponToPickup);
-                    clearWeaponToPickup();
-                }
+        // if (Gdx.input.isKeyJustPressed(Keys.E)) {
+
+        //     System.out.println(weaponToPickup);
+        //     if (weaponToPickup != null) {
+        //         if (inventory.addWeapon(weaponToPickup)) {
+        //             weaponToPickup.destroyBody();
+        //             map.getWeapons().remove(weaponToPickup);
+        //             clearWeaponToPickup();
+
+        //         }
+        //     }
+        // }
+        if (Gdx.input.isKeyJustPressed(Keys.T)) {
+            if (weaponToPickup != null) {
+                inventoryController.enterPlacementMode(weaponToPickup);
             }
         }
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = getCurrentWeapon();
             if (currentWeapon != null) {
-         
-                Vector2 firePosition = body.getPosition().cpy();
-                
-          
-                Vector2 rotatedOffset = currentWeapon.getMuzzleOffset().cpy()
-                    .rotateDeg(weaponSystem.getAimAngle());
-   
-                firePosition.add(rotatedOffset);
-            
-                Vector2 aimDirection = weaponSystem.getAimDirection().cpy().nor();
-                
-            
-                currentWeapon.shoot(firePosition, aimDirection);
+                Vector2 firePosition = weaponSystem.getTrueMuzzlePosition();
+                Vector2 direction = weaponSystem.getAimDirection().cpy().nor();
+                currentWeapon.shoot(firePosition, direction);
             }
         }
+
+
+        // if (Gdx.input.isKeyJustPressed(Keys.Q)) {
+        //     if (inventory.getEquippedWeapon() != null) {
+        //         inventory.dropWeapon();
+        //         IsUsingOneHandWeapon = false;
+        //     }
+        // }
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public InventoryController getInventoryController() {
+        return inventoryController;
     }
 
     public PlayerWeaponSystem getWeaponSystem() {
@@ -287,38 +292,33 @@ public class Robertinhoo  implements Steerable<Vector2> {
     }
 
     public void updateCameraViewport(int width, int height) {
-        if(camera != null) {
+        if (camera != null) {
             camera.viewportWidth = width;
             camera.viewportHeight = height;
             camera.update();
         }
     }
 
-
-public float applyAimRotation() {
-    float angle = weaponSystem.getAimAngle();
-    if (inventory.getEquippedWeapon() != null) {
-       
-        body.setTransform(body.getPosition(), (float) Math.toRadians(angle));
-     
-  
+    public float applyAimRotation() {
+        float angle = weaponSystem.getAimAngle();
+        if (inventory.getEquippedWeapon() != null) {
+            body.setTransform(body.getPosition(), (float) Math.toRadians(angle));
+        }
+        return angle;
     }
-    return angle;
-}
 
-public void setMapRenderer(MapRenderer mapRenderer) {
-    this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
-}
+    public void setMapRenderer(MapRenderer mapRenderer) {
+        this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
+    }
 
-public void setWeaponToPickup(Weapon weapon) {
-    this.weaponToPickup = weapon;
-}
+    public void setWeaponToPickup(Weapon weapon) {
 
-public void clearWeaponToPickup() {
-    this.weaponToPickup = null;
-}
+        this.weaponToPickup = weapon;
+    }
 
-
+    public void clearWeaponToPickup() {
+        this.weaponToPickup = null;
+    }
 
     private Vector2 linearVelocity = new Vector2();
     private float angularVelocity = 0f;
@@ -330,18 +330,14 @@ public void clearWeaponToPickup() {
 
     @Override
     public Vector2 getLinearVelocity() {
-     
+
         return body.getLinearVelocity();
     }
-
-
 
     @Override
     public float getAngularVelocity() {
         return angularVelocity;
     }
-
-
 
     @Override
     public float getMaxLinearSpeed() {
@@ -402,29 +398,29 @@ public void clearWeaponToPickup() {
     public Vector2 getPosition() {
         return body.getPosition();
     }
+
     @Override
     public void setOrientation(float orientation) {
-       
-            body.setTransform(body.getPosition(), orientation);
-        
-        
+        body.setTransform(body.getPosition(), orientation);
+
     }
 
-      @Override
+    @Override
     public Location<Vector2> newLocation() {
         return new Box2dLocation();
     }
-    
 
-@Override
-public float vectorToAngle(Vector2 vector) {
-    return (float) Math.atan2(vector.y, vector.x);
-}
-@Override
-public Vector2 angleToVector(Vector2 outVector, float angle) {
-    outVector.set((float)Math.cos(angle), (float)Math.sin(angle));
-    return outVector;
-}
+    @Override
+    public float vectorToAngle(Vector2 vector) {
+        return (float) Math.atan2(vector.y, vector.x);
+    }
+
+    @Override
+    public Vector2 angleToVector(Vector2 outVector, float angle) {
+        outVector.set((float) Math.cos(angle), (float) Math.sin(angle));
+        return outVector;
+    }
+
     @Override
     public float getZeroLinearSpeedThreshold() {
         return 0.1f; // Example value
@@ -441,13 +437,10 @@ public Vector2 angleToVector(Vector2 outVector, float angle) {
     }
 
     public void render(ShapeRenderer shapeRenderer) {
-        // if (inventory.getEquippedWeapon() != null && camera != null) {
-       
-        //     shapeRenderer.setProjectionMatrix(camera.combined);
-        //     weaponSystem.renderMiraArma(shapeRenderer);
-        // }
+
     }
-    public void dispose(){
+
+    public void dispose() {
         shapeRenderer.dispose();
     }
 

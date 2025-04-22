@@ -9,13 +9,17 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import box2dLight.RayHandler;
 import box2dLight.PointLight;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.ProjectileRenderer;
+import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.RatRenderer;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Camera.Camera;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -28,113 +32,133 @@ public class MapRenderer {
     private SpriteBatch spriteBatch;
     private ProjectileRenderer projectileRenderer;
     private PlayerRenderer playerRenderer;
-    
-    // Usaremos o CameraController para gerenciar a câmera
+    private RatRenderer ratRenderer;
     private Camera cameraController;
-    
+    public RenderInventory renderInventory;
+    private PointLight debugLight;
+
     public static final int TILE_SIZE = 16;
     public float offsetX;
     public float offsetY;
-    
+
     private TileRenderer tileRenderer;
 
     public MapRenderer(Mapa mapa) {
         this.mapa = mapa;
 
-        // Configuração das luzes
-        rayHandler = new RayHandler(mapa.world);
-        rayHandler.setAmbientLight(0.7f);
-        rayHandler.setShadows(true);
-        playerLight = new PointLight(rayHandler, 100, Color.BLUE, 30, 0, 0);
+        if (mapa.getRayHandler() == null) {
+            mapa.initializeLights();
+        }
+
+        if (mapa.getRayHandler() == null) {
+            Gdx.app.error("MapRenderer", "RayHandler não inicializado!");
+            mapa.initializeLights();
+        }
+
+        playerLight = new PointLight(mapa.getRayHandler(), 100, Color.BLUE, 15, 0, 0);
         playerLight.setSoft(true);
-        playerLight.setSoftnessLength(2f);
+        playerLight.setSoftnessLength(8f);
         
         shapeRenderer = new ShapeRenderer();
         spriteBatch = new SpriteBatch();
-        
         cameraController = new Camera();
-        
         Texture floorTexture = new Texture("Tiles/tile_0028.png");
         Texture wallTexture = new Texture("Tiles/tile_0015.png");
         this.tileRenderer = new TileRenderer(mapa, floorTexture, wallTexture, TILE_SIZE);
         this.projectileRenderer = new ProjectileRenderer(mapa, TILE_SIZE);
-
         this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
-        
+        ratRenderer = new RatRenderer();
+        this.renderInventory = new RenderInventory(
+                mapa.robertinhoo.getInventory(),
+                32,
+                new Vector2(100, 100));
+
         mapa.robertinhoo.setCamera(cameraController.getCamera());
     }
 
     public void render(float delta, Robertinhoo player) {
-      
-        calculateOffsets(); 
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        calculateOffsets();
         cameraController.centerOnPlayer(player, offsetX, offsetY);
         spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
-    
+
         spriteBatch.begin();
         mapa.world.step(delta, 6, 2);
         playerLight.setPosition(
-            offsetX + player.pos.x * TILE_SIZE + TILE_SIZE / 2f,
-            offsetY + player.pos.y * TILE_SIZE + TILE_SIZE / 2f
-        );
-    
+                offsetX + player.pos.x * TILE_SIZE + TILE_SIZE / 2f,
+                offsetY + player.pos.y * TILE_SIZE + TILE_SIZE / 2f);
+
         tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
         projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
-        float aimAngle = player.applyAimRotation();
-        System.out.println(aimAngle);
-    
-        if (aimAngle >= 45 && aimAngle < 135) {
-            // Arma por trás do jogador (renderize a arma primeiro)
-            player.getWeaponSystem().renderWeapon(spriteBatch, delta);
-            playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
-        } else {
-            // Arma por cima do jogador (renderize o jogador primeiro)
-            playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
-            player.getWeaponSystem().renderWeapon(spriteBatch, delta);
-        }
 
-        
+        player.getWeaponSystem().renderWeapon(spriteBatch, delta);
+        playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+
         for (Enemy enemy : mapa.getEnemies()) {
             enemy.update(delta);
-            TextureRegion frame = enemy.getCurrentFrame(delta);
-            spriteBatch.draw(
-                frame,
-                offsetX + enemy.getPosition().x * TILE_SIZE,
-                offsetY + enemy.getPosition().y * TILE_SIZE,
-                8,
-                8
-            );
+            if (enemy instanceof Ratinho) {
+                Ratinho rat = (Ratinho) enemy;
+                boolean flip = rat.getDirectionX() < 0 && rat.getState() == Ratinho.State.RUNNING_HORIZONTAL;
+                TextureRegion frame = ratRenderer.getFrame(rat, flip);
+
+                spriteBatch.draw(
+                        frame,
+                        offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
+                        offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
+                        12,
+                        12);
+            }
         }
-        
-      
-   
-        
-        // Render weapons
-        for(Weapon weapon : mapa.getWeapons()) {
+
+        for (Weapon weapon : mapa.getWeapons()) {
             TextureRegion frame = weapon.getCurrentFrame(delta);
             spriteBatch.draw(
-                frame,
-                offsetX + weapon.getPosition().x * TILE_SIZE,
-                offsetY + weapon.getPosition().y * TILE_SIZE,
-                8, 8
-            );
+                    frame,
+                    offsetX + weapon.getPosition().x * TILE_SIZE,
+                    offsetY + weapon.getPosition().y * TILE_SIZE,
+                    10, 6);
         }
         spriteBatch.end();
-
-        rayHandler.setCombinedMatrix(cameraController.getCamera());
-        rayHandler.updateAndRender();
-
-        if (player.getInventory().getEquippedWeapon() != null) {
+        if (player.getInventoryController().GetIsOpen()) {
             shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
-            player.getWeaponSystem().renderMiraArma(shapeRenderer);
+            renderInventory.render(
+                null,               // placementWeapon
+                0,                  // placementX
+                0,                  // placementY
+                false,              // isValid
+                player.getInventoryController().getSelectedItem(),
+                player.getInventoryController().getOriginalGridX(),
+                player.getInventoryController().getOriginalGridY(),
+                player.getInventoryController().getCursorGridX(),
+                player.getInventoryController().getCursorGridY()
+            );
         }
-
+        
+        if (player.getInventoryController().isInPlacementMode()) {
+            shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+            renderInventory.render(
+                player.getInventoryController().getCurrentPlacementWeapon(),
+                player.getInventoryController().getPlacementGridX(),
+                player.getInventoryController().getPlacementGridY(),
+                player.getInventoryController().isValidPlacement(),
+                null,                // selectedItem
+                -1,                  // originalGridX
+                -1,                  // originalGridY
+                player.getInventoryController().getPlacementGridX(), // cursorGridX
+                player.getInventoryController().getPlacementGridY()  // cursorGridY
+            );
+        }
+        mapa.getRayHandler().setCombinedMatrix(cameraController.getCamera());
+        mapa.getRayHandler().updateAndRender();
+        
+        
     }
 
     public void calculateOffsets() {
-    
+
         float viewportWidth = cameraController.getCamera().viewportWidth;
         float viewportHeight = cameraController.getCamera().viewportHeight;
-        
+
         offsetX = (viewportWidth - (mapa.mapWidth * TILE_SIZE)) / 2f;
         offsetY = (viewportHeight - (mapa.mapHeight * TILE_SIZE)) / 2f;
     }
@@ -143,11 +167,26 @@ public class MapRenderer {
         cameraController.resize(width, height);
         calculateOffsets();
     }
-    
+
+    private void debugRender() {
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        for (Enemy enemy : mapa.getEnemies()) {
+            if (enemy instanceof Ratinho) {
+                Ratinho rat = (Ratinho) enemy;
+                rat.debugDraw(shapeRenderer);
+            }
+        }
+
+        shapeRenderer.end();
+    }
+
     public void dispose() {
         shapeRenderer.dispose();
         spriteBatch.dispose();
         tileRenderer.dispose();
         playerRenderer.dispose();
+
     }
 }

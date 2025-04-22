@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.physics.box2d.World;
+
+import box2dLight.RayHandler;
+
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -41,19 +44,22 @@ public class Mapa {
  private List<Enemy> enemies;
  private List<Weapon> weapons;
  private List<Projectile> projectiles = new ArrayList<>();
-   private boolean toBeDestroyed = false;
+
 
     public World world;
     public WallOtimizations agruparParedes;
 
-  // Valores corrigidos para RGBA8888
+    public static final short CATEGORY_PROJECTILE = 0x0002; 
+    public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE; 
+
+
   static int TILE = 0x000000; // #000000 (tiles normais)
     static int START = 0xFF0000; // #FF0000 (ponto de início)
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)
     public static int ENEMY = 0X913d77; // #913d77 (inimigos)
-    public static  int REVOLVER = 0X22ff00; //#22ff00
+    public static  int REVOLVER = 0X22ff00; // #22ff00
 
-    ArrayList<Vector2> wallPositions = new ArrayList<>(); // Lista de coordenadas das paredes
+    ArrayList<Vector2> wallPositions = new ArrayList<>();
 
     public int mapWidth;
     public int mapHeight;
@@ -63,18 +69,46 @@ public class Mapa {
 
     public Robertinhoo robertinhoo;
     public Ratinho ratinho;
+    private RayHandler rayHandler; 
+    private boolean lightsInitialized = false;
+
+    public void setRayHandler(RayHandler rayHandler) {
+        this.rayHandler = rayHandler;
+    }
+
+    public RayHandler getRayHandler() {
+        return rayHandler;
+    }
 
     public Mapa() {
-        enemies = new ArrayList<>();
         world = new World(new Vector2(0, 0), true);
+        enemies = new ArrayList<>();
         weapons = new ArrayList<>();
         agruparParedes = new WallOtimizations(this);
 
+        initializeLights();
 
-        loadImageMap("assets/maps/TesteMap.png");
+
+        try {
+            loadImageMap("assets/maps/TesteMap.png");
+        } catch (Exception e) {
+            Gdx.app.error("Mapa", "Erro crítico: " + e.getMessage());
+        }
+
         world.setContactListener(new GameContactListener(robertinhoo));
-      
+        
     }
+    public void initializeLights() {
+        if (rayHandler == null) {
+            rayHandler = new RayHandler(world);
+            rayHandler.setAmbientLight(0.8f);
+            rayHandler.setShadows(true);
+            rayHandler.setBlurNum(3);
+            lightsInitialized = true;
+            Gdx.app.log("Mapa", "RayHandler inicializado com sucesso!");
+        }
+    }
+    
 
 
     public List<Enemy> getEnemies() {
@@ -90,9 +124,8 @@ public class Mapa {
             mapWidth = image.getWidth();
             mapHeight = image.getHeight();
             tiles = new int[mapWidth][mapHeight];
+
             Vector2 tempVector = new Vector2();
-    
-            // --- PRIMEIRA ETAPA: PROCURA O TILE START ---
             boolean spawnEncontrado = false;
             for (int y = 0; y < mapHeight; y++) {
                 for (int x = 0; x < mapWidth; x++) {
@@ -113,8 +146,6 @@ public class Mapa {
             if (!spawnEncontrado) {
                 throw new RuntimeException("Mapa não tem ponto de início (START)!");
             }
-    
-            // --- SEGUNDA ETAPA: PAREDES E INIMIGOS ---
             for (int y = 0; y < mapHeight; y++) {
                 for (int x = 0; x < mapWidth; x++) {
                     int color = image.getRGB(x, y) & 0xFFFFFF;
@@ -152,12 +183,11 @@ public class Mapa {
     }
 
     private void createWallBody(Rectangle ret) {
-        float escala = 1.0f; // Alterado para 1.0f
+        float escala = 1.0f;
     
         BodyDef bodyDef = new BodyDef();
         
         bodyDef.type = BodyType.StaticBody;
-       
         float posY = (mapHeight - ret.y - ret.height/2) * escala;
         bodyDef.position.set(
             (ret.x + ret.width/2) * escala,
@@ -190,12 +220,10 @@ public class Mapa {
 
 
     public void update(float deltaTime) {
-      
-
-
         java.util.Iterator<Projectile> it = projectiles.iterator();
         while(it.hasNext()) {
             Projectile p = it.next();
+            p.update(deltaTime);
             if(p.isMarkedForDestruction()) {
                 p.destroy();
                 it.remove();
@@ -216,4 +244,11 @@ public class Mapa {
     boolean match(int src, int dst) {
         return src == dst;
     }
+
+    public void dispose() {
+        if (rayHandler != null) {
+            rayHandler.dispose();
+        }
+    }
+    
 }

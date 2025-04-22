@@ -8,27 +8,30 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 
 import io.github.some_example_name.Mapa;
-import io.github.some_example_name.Entities.Itens.Weapon.Projectile;;
+import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
+
+
 
 public class ProjectileRenderer {
     private final Mapa mapa;
     private final Animation<TextureRegion> shootAnimation;
     private final Texture projectileTexture;
     private final int tileSize;
-    private final Texture glowTexture; // Nova textura para o brilho
-    private final float GLOW_SCALE = 1.2f; // Escala do brilho em relação ao projétil
-    private final TextureRegion glowRegion;
+    private final Animation<TextureRegion> destructionAnimation;
 
-    public ProjectileRenderer(Mapa mapa, int tileSize) {
+    private final Texture destructionTexture;
+
+    public ProjectileRenderer(Mapa mapa, int tileSize){
         this.mapa = mapa;
         this.tileSize = tileSize;
         
-        projectileTexture = new Texture("ITENS/Pistol/shoot.png");
+        projectileTexture = new Texture("ITENS/Pistol/newShoot.png");
+        destructionTexture = new Texture("ITENS/Pistol/SmallExplosion1-Sheet.png");
+
         System.out.println(projectileTexture);
-        this.shootAnimation = createAnimation(projectileTexture, 4, 0.2f);
-        glowTexture = new Texture("ITENS/Pistol/glow_yellow.png");
-        glowRegion = new TextureRegion(glowTexture); 
-        
+        this.shootAnimation = createAnimation(projectileTexture, 5, 0.2f);
+        this.destructionAnimation = createAnimation(destructionTexture, 8, 0.1f);
+
     }
 
     private Animation<TextureRegion> createAnimation(Texture texture, int frameCount, float frameDuration) {
@@ -41,27 +44,31 @@ public class ProjectileRenderer {
         }
         
         Animation<TextureRegion> animation = new Animation<>(frameDuration, frames);
-        animation.setPlayMode(Animation.PlayMode.NORMAL); 
+        animation.setPlayMode(Animation.PlayMode.NORMAL);
         return animation;
     }
 
     public void render(SpriteBatch batch, float delta, float offsetX, float offsetY) {
         for (Projectile projectile : mapa.getProjectiles()) {
-            TextureRegion frame = shootAnimation.getKeyFrame(projectile.getStateTime(), false);
-            float pulse = (float) (Math.sin(projectile.getStateTime() * 10) * 0.2f + 0.8f);
-               // Renderiza o brilho primeiro
-            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE); // Modo de blending aditivo
-            renderGlow(batch, projectile, offsetX, offsetY, pulse);
-            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA); // Reset par
-            
+            Animation<TextureRegion> currentAnimation;
+            float animationTime;
+            float drawAngle;
+    
+            if (projectile.isDestroying()) {
+                currentAnimation = destructionAnimation;
+                animationTime = projectile.getDestructionTime();
+                drawAngle = projectile.destructionAngle;
+            } else {
+                currentAnimation = shootAnimation;
+                animationTime = projectile.getStateTime();
+                drawAngle = projectile.getAngle();
+            }
+            TextureRegion frame = currentAnimation.getKeyFrame(animationTime, false);
             float width = projectile.getWidth() * tileSize;
             float height = projectile.getHeight() * tileSize;
             
-        
             float x = offsetX + projectile.getPosition().x * tileSize - width / 2;
             float y = offsetY + projectile.getPosition().y * tileSize - height / 2;
-            
-   
             batch.draw(
                 frame,
                 x,
@@ -70,45 +77,21 @@ public class ProjectileRenderer {
                 height / 2,
                 width,
                 height,
-                1, 1,
-                projectile.getAngle()
+                1,
+                1,
+                drawAngle
             );
-            
-            projectile.updateStateTime(delta);
+            if (!projectile.isDestroying()) {
+                projectile.updateStateTime(delta);
+            }
         }
     }
 
-
-    private void renderGlow(SpriteBatch batch, Projectile projectile, float offsetX, float offsetY, float alphaMultiplier) {
-        float scaleFactor = 0.5f; // Reduz o tamanho em 20%
-        float baseSize = Math.max(projectile.getWidth(), projectile.getHeight()) * tileSize * scaleFactor;
-        float glowWidth = baseSize * GLOW_SCALE;  // GLOW_SCALE pode ser ajustado para 1.2f, por exemplo
-        float glowHeight = baseSize * GLOW_SCALE;
-    
-        float x = offsetX + (projectile.getPosition().x * tileSize) - glowWidth / 2;
-        float y = offsetY + (projectile.getPosition().y * tileSize) - glowHeight / 2;
-
-        batch.setColor(1, 0.2f, 0.9f, 0.4f * alphaMultiplier); // RGBA (amarelo + transparência)
-        
-        batch.draw(
-            glowRegion,
-            x,
-            y,
-            glowWidth / 2,
-            glowHeight / 2,
-            glowWidth,
-            glowHeight,
-            1,
-            1,
-            projectile.getAngle()
-        );
-        
-        batch.setColor(1, 1, 1, 1); // Reset da cor
-    }
-    
-
     public void dispose() {
-        glowTexture.dispose();
+    
         projectileTexture.dispose();
+        destructionTexture.dispose();
+
+        
     }
 }

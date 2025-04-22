@@ -46,7 +46,7 @@ public class GameContactListener implements ContactListener {
             Projectile projectile = (dataA instanceof Projectile) ? 
                 (Projectile) dataA : (Projectile) dataB;
             
-            projectile.markForDestruction();
+                projectile.startDestruction();
         }
 
 
@@ -58,11 +58,10 @@ public class GameContactListener implements ContactListener {
             Ratinho ratinho = (dataB instanceof Ratinho) ? 
                 (Ratinho) dataB : (Ratinho) dataA;
 
-            // Aplicar dano ao Ratinho
+       
             ratinho.takeDamage(projectile.getDamage());
-            // Marcar projétil para destruição
-            projectile.markForDestruction();
-
+         
+            projectile.startDestruction();
             // Verificar se o Ratinho morreu
             if (ratinho.getHealth() <= 0) {
                 ratinho.destroy();

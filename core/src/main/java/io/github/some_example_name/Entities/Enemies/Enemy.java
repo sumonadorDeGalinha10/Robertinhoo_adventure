@@ -18,15 +18,13 @@ public abstract class Enemy {
         this.health = health;
         this.speed = speed;
         this.isAlive = true;
-
-
-        
     }
     public abstract void update(float deltaTime);
     public abstract TextureRegion getCurrentFrame(float deltaTime);
 
     public void takeDamage(float damage) {
         health -= damage;
+        
         if (health <= 0) {
             isAlive = false;
         }
