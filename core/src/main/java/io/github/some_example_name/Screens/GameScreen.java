@@ -30,7 +30,7 @@ public class GameScreen extends CatScreen {
     @Override
     public void show() {
         mapa = new Mapa();
-        robertinhoo = mapa.robertinhoo; // Robertinhoo é criado dentro do Mapa
+        robertinhoo = mapa.robertinhoo;
         renderer = new MapRenderer(mapa);
         hudBatch = new SpriteBatch();
         weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
@@ -39,13 +39,11 @@ public class GameScreen extends CatScreen {
         hudCamera = new OrthographicCamera();
         hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         
-        // Configurar o batch da HUD com a câmera correta
+       
         hudBatch = new SpriteBatch();
         hudBatch.setProjectionMatrix(hudCamera.combined);
         
         weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
-    
-        // Configurar o MapRenderer no Robertinhoo após a criação
         robertinhoo.setMapRenderer(renderer);
   
         

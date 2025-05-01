@@ -109,6 +109,8 @@ public class Pistol extends Weapon {
 
     @Override
     public void update(float delta) {
+
+        updateFloatation(delta); 
         timeSinceLastShot += delta;
         if (timeSinceLastShot >= 1 / fireRate) {
             canShoot = true;

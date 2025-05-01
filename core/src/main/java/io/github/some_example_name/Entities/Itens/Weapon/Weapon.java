@@ -22,6 +22,10 @@ public abstract class Weapon implements Item {
     protected Vector2 position;
     public Body body;
 
+    private float floatTime = 0f;
+    private static final float FLOAT_SPEED = 2f;
+    private static final float FLOAT_AMPLITUDE = 1f;
+
     protected TextureRegion icon;
     protected boolean reloading = false;
     protected float reloadProgress = 0;
@@ -99,6 +103,15 @@ public abstract class Weapon implements Item {
     }
 
     public abstract void reload();
+
+    public void updateFloatation(float delta) {
+        floatTime += delta * FLOAT_SPEED;
+    }
+
+    public float getFloatOffset() {
+        return (float) Math.sin(floatTime) * FLOAT_AMPLITUDE;
+    }
+
     
 
 }

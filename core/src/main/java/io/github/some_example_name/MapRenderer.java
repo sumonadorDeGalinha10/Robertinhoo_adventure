@@ -112,12 +112,18 @@ public class MapRenderer {
         }
 
         for (Weapon weapon : mapa.getWeapons()) {
+            weapon.update(delta);
             TextureRegion frame = weapon.getCurrentFrame(delta);
+            
+            // Aplique o offset de flutuação no Y
+            float floatY = weapon.getPosition().y * TILE_SIZE + weapon.getFloatOffset();
+            
             spriteBatch.draw(
-                    frame,
-                    offsetX + weapon.getPosition().x * TILE_SIZE,
-                    offsetY + weapon.getPosition().y * TILE_SIZE,
-                    10, 6);
+                frame,
+                offsetX + weapon.getPosition().x * TILE_SIZE,
+                offsetY + floatY,
+                10, 6
+            );
         }
 
         ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
