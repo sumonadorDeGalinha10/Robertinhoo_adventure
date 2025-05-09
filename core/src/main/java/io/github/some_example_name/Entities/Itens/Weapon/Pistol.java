@@ -10,10 +10,12 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Inventory.Inventory;
 
 public class Pistol extends Weapon {
 
     private Mapa mapa;
+    private Inventory inventory;
     private float verticalSpeed = 0f;
     private Texture idleTexture;
     private Texture shootTexture;
@@ -41,12 +43,13 @@ public class Pistol extends Weapon {
 
     private State currentState = State.IDLE;
 
-    public Pistol(Mapa mapa, int x, int y) {
+    public Pistol(Mapa mapa, int x, int y, Inventory inventory) {
         super();
         this.maxAmmo = 15;
         this.ammo = this.maxAmmo;
         this.position = new Vector2(x, y);
         this.mapa = mapa;
+        this.inventory = inventory;
         this.fireRate = 2f;
         this.damage = 10f;
         this.icon = new TextureRegion(new Texture("ITENS/Pistol/GUN_01_[square_frame]_01_V1.00.png"));
@@ -55,9 +58,9 @@ public class Pistol extends Weapon {
         this.gridWidth = 2;
         this.gridHeight = 2;
         this.occupiedCells = new Vector2[]{
-            new Vector2(0, 0), // Célula base
-            new Vector2(1, 0), // Extensão para direita
-            new Vector2(0, 1)  // Extensão para cima
+            new Vector2(0, 0),
+            new Vector2(1, 0),
+            new Vector2(0, 1)
         };
         
 
@@ -86,18 +89,28 @@ public class Pistol extends Weapon {
         return pistolMaxAmmo;
     }
 
+ 
+    @Override
     public void reload() {
-        if (currentState != State.RELOADING) {
-            reloading = true;
-            reloadProgress = 0;
-            System.out.println("Iniciando recarga");
-            currentState = State.RELOADING;
-            animationTime = 0f;
+        if (currentState != State.RELOADING && inventory != null) {
+            int needed = maxAmmo - ammo;
+            String requiredType = "9mm";
+            int available = inventory.getAmmoCount(requiredType);
+            int toReload = Math.min(needed, available);
+            
+            if (toReload > 0) {
+                inventory.consumeAmmo(requiredType, toReload);
+                ammo += toReload;
+                currentState = State.RELOADING;
+                animationTime = 0f;
+            }
         }
     }
 
     @Override
     public void update(float delta) {
+
+        updateFloatation(delta); 
         timeSinceLastShot += delta;
         if (timeSinceLastShot >= 1 / fireRate) {
             canShoot = true;
@@ -126,7 +139,7 @@ public class Pistol extends Weapon {
             }
         }
     }
-
+    
     public void createBody(Vector2 position) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.KinematicBody;
@@ -202,6 +215,16 @@ public class Pistol extends Weapon {
     public Vector2 getMuzzleOffset() {
         return new Vector2(0.8f, 0.1f);
     }
+
+
+    @Override
+    public void rotate() {
+        int temp = gridWidth;
+        gridWidth = gridHeight;
+        gridHeight = temp;
+    }
+
+ 
 
     @Override
     public void destroyBody() {

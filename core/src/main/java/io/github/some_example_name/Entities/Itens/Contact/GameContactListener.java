@@ -7,6 +7,9 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 
 import io.github.some_example_name.Entities.Enemies.Ratinho;
+import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
@@ -38,6 +41,13 @@ public class GameContactListener implements ContactListener {
                     player.setWeaponToPickup((Weapon) dataA);
                 }
             }
+
+
+            if (dataA instanceof Ammo && "PLAYER".equals(dataB)) {
+                player.setAmmoToPickup((Ammo) dataA);
+            } else if (dataB instanceof Ammo && "PLAYER".equals(dataA)) {
+                player.setAmmoToPickup((Ammo) dataB);
+            }
             System.out.println("dataA"+dataA);
             System.out.println("DataB"+dataB);
             if ((dataA instanceof Projectile && "WALL".equals(dataB)) || 
@@ -62,10 +72,12 @@ public class GameContactListener implements ContactListener {
             ratinho.takeDamage(projectile.getDamage());
          
             projectile.startDestruction();
-            // Verificar se o Ratinho morreu
+
             if (ratinho.getHealth() <= 0) {
                 ratinho.destroy();
         }
+
+        
     }
         }
 
@@ -82,7 +94,14 @@ public class GameContactListener implements ContactListener {
             } else if(fixB.getUserData().equals("PLAYER") && fixA.getUserData() instanceof Weapon) {
                 player.clearWeaponToPickup();
             }
+
+            if(fixA.getUserData().equals("PLAYER") && fixB.getUserData() instanceof Item) {
+                player.clearItemToPickup();
+            } else if(fixB.getUserData().equals("PLAYER") && fixA.getUserData() instanceof Item) {
+                player.clearItemToPickup();
+            }
         }
+        
     }
 
 

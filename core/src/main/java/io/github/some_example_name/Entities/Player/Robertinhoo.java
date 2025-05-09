@@ -21,11 +21,13 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Inventory.InventoryController;
+import io.github.some_example_name.Entities.Inventory.Item;
 
 public class Robertinhoo implements Steerable<Vector2> {
 
@@ -53,6 +55,7 @@ public class Robertinhoo implements Steerable<Vector2> {
     public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
     public static boolean IsUsingOneHandWeapon = false;
+    private Item itemToPickup;
 
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
@@ -60,6 +63,7 @@ public class Robertinhoo implements Steerable<Vector2> {
     private PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
     public Weapon weaponToPickup;
+     public  Ammo ammoToPickup;
 
     private float dashTime = 0;
     private float dashCooldownTime = 0;
@@ -84,12 +88,14 @@ public class Robertinhoo implements Steerable<Vector2> {
     }
 
     public void equipWeapon(Weapon weapon) {
-        this.currentWeapon = weapon;
+        this.currentWeapon =(Weapon) weapon;
         if (weapon.getTipoMao() == Weapon.TipoMao.UMA_MAO) {
             IsUsingOneHandWeapon = true;
         }
 
     }
+
+    
 
     public void unequipWeapon() {
         this.currentWeapon = null;
@@ -236,22 +242,24 @@ public class Robertinhoo implements Steerable<Vector2> {
         }
         
 
-        // if (Gdx.input.isKeyJustPressed(Keys.E)) {
-
-        //     System.out.println(weaponToPickup);
-        //     if (weaponToPickup != null) {
-        //         if (inventory.addWeapon(weaponToPickup)) {
-        //             weaponToPickup.destroyBody();
-        //             map.getWeapons().remove(weaponToPickup);
-        //             clearWeaponToPickup();
-
-        //         }
-        //     }
-        // }
         if (Gdx.input.isKeyJustPressed(Keys.T)) {
             if (weaponToPickup != null) {
                 inventoryController.enterPlacementMode(weaponToPickup);
+                clearWeaponToPickup();
+            } else if (ammoToPickup != null) {
+                inventoryController.enterPlacementMode(ammoToPickup);
+                clearAmmoToPickup();
             }
+        }
+
+        if (Gdx.input.isKeyJustPressed(Keys.R)) {
+        
+            if (currentWeapon != null) {
+                System.out.println("Tipo da arma: " + currentWeapon.getClass().getSimpleName());
+                System.out.println("recarregando");
+              currentWeapon.reload();
+              
+            } 
         }
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = getCurrentWeapon();
@@ -261,14 +269,6 @@ public class Robertinhoo implements Steerable<Vector2> {
                 currentWeapon.shoot(firePosition, direction);
             }
         }
-
-
-        // if (Gdx.input.isKeyJustPressed(Keys.Q)) {
-        //     if (inventory.getEquippedWeapon() != null) {
-        //         inventory.dropWeapon();
-        //         IsUsingOneHandWeapon = false;
-        //     }
-        // }
     }
 
     public Inventory getInventory() {
@@ -319,6 +319,24 @@ public class Robertinhoo implements Steerable<Vector2> {
     public void clearWeaponToPickup() {
         this.weaponToPickup = null;
     }
+
+    public void setAmmoToPickup(Ammo ammo) {
+        this.ammoToPickup = ammo;
+    }
+    
+    public void clearAmmoToPickup() {
+        this.ammoToPickup = null;
+    }
+
+    public void setItemToPickup(Item item) {
+        this.itemToPickup = item;
+    }
+    
+    public void clearItemToPickup() {
+        this.itemToPickup = null;
+    }
+    
+
 
     private Vector2 linearVelocity = new Vector2();
     private float angularVelocity = 0f;

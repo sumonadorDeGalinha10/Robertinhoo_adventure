@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.math.Vector2;
 
-
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
@@ -18,7 +18,7 @@ public class InventoryController {
     private boolean isOpen = false;
     private int selectedSlot = 0;
     private boolean placementMode = false;
-    private Weapon currentPlacementWeapon;
+    private Item currentPlacementItem; 
     private int placementGridX = 0;
     private int placementGridY = 0;
     private boolean validPlacement = false;
@@ -31,7 +31,7 @@ public class InventoryController {
     private int cursorGridX = 0;
     private int cursorGridY = 0;
     private int originalGridX, originalGridY;
-    private Weapon selectedItem = null;
+    private Item selectedItem = null;
 
 
     public InventoryController(Robertinhoo player, Inventory inventory, Mapa mapa) {
@@ -78,13 +78,14 @@ public class InventoryController {
     
         if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
             if (selectedItem == null) {
-                selectedItem = inventory.getWeaponAt(cursorGridX, cursorGridY);
+
+                selectedItem = inventory.getItemAt(cursorGridX, cursorGridY);
                 if (selectedItem != null) {
                     originalGridX = cursorGridX;
                     originalGridY = cursorGridY;
                 }
             } else {
-                if (inventory.moveWeapon(selectedItem, cursorGridX, cursorGridY)) {
+                if (inventory.moveItem(selectedItem, cursorGridX, cursorGridY)) {
                     selectedItem = null;
                 }
             }
@@ -92,7 +93,7 @@ public class InventoryController {
         if (Gdx.input.isKeyJustPressed(Keys.R)) {
             if (selectedItem != null) {
                 selectedItem.rotate();
-                inventory.moveWeapon(selectedItem, cursorGridX, cursorGridY);
+                inventory.moveItem(selectedItem, cursorGridX, cursorGridY);
             }
         }
         if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
@@ -108,15 +109,14 @@ public class InventoryController {
         }
     }
     private void rotateItem() {
-        if (currentPlacementWeapon != null) {
-            currentPlacementWeapon.rotate();
-            if (placementGridX + currentPlacementWeapon.getGridWidth() > inventory.gridCols) {
-                placementGridX = inventory.gridCols - currentPlacementWeapon.getGridWidth();
-            }
-            if (placementGridY + currentPlacementWeapon.getGridHeight() > inventory.gridRows) {
-                placementGridY = inventory.gridRows - currentPlacementWeapon.getGridHeight();
-            }
-
+        if (currentPlacementItem != null) {
+            currentPlacementItem.rotate();
+            int newWidth = currentPlacementItem.getGridWidth();
+            int newHeight = currentPlacementItem.getGridHeight();
+            
+            placementGridX = Math.min(placementGridX, inventory.gridCols - newWidth);
+            placementGridY = Math.min(placementGridY, inventory.gridRows - newHeight);
+            
             updatePlacementValidity();
         }
     }
@@ -144,11 +144,11 @@ public class InventoryController {
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
-            placementGridX = Math.min(inventory.gridCols - currentPlacementWeapon.getGridWidth(), placementGridX + 1);
+            placementGridX = Math.min(inventory.gridCols - currentPlacementItem.getGridWidth(), placementGridX + 1);
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
-            placementGridY = Math.min(inventory.gridRows - currentPlacementWeapon.getGridHeight(), placementGridY + 1);
+            placementGridY = Math.min(inventory.gridRows - currentPlacementItem.getGridHeight(), placementGridY + 1);
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.UP)) {
@@ -159,31 +159,55 @@ public class InventoryController {
         if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
             if (validPlacement) {
                 if (itemSelected) {
-                    inventory.removeWeapon(selectedItem);
+                    inventory.removeItem(selectedItem);
                     itemSelected = false;
                 }
 
-                inventory.placeWeapon(currentPlacementWeapon, placementGridX, placementGridY);
-
-                exitPlacementMode(true);
+   
+                if (inventory.placeItem(currentPlacementItem, placementGridX, placementGridY)) {
+                    
+                    if (currentPlacementItem instanceof Weapon) {
+                        ((Weapon) currentPlacementItem).destroyBody();
+                        mapa.getWeapons().remove(currentPlacementItem);
+                    }
+                    else if (currentPlacementItem instanceof Ammo) {
+                        Ammo ammo = (Ammo) currentPlacementItem;
+                        ammo.destroyBody();
+                        mapa.getAmmo().remove(ammo);
+                        System.out.println("Munição " + ammo.getCaliber() + " adicionada ao inventário!");
+                    }
+                    
+                    exitPlacementMode(true);
+                }
             }
         }
+    
     }
 
-    private void dropItem(Weapon weapon) {
-        if (inventory.removeWeapon(weapon)) {
-            if (inventory.getEquippedWeapon() == weapon) {
+    private void dropItem(Item item) {
+        if (inventory.removeItem(item)) {
+    
+            if (item instanceof Weapon && inventory.getEquippedWeapon() == item) {
                 inventory.unequipWeapon();
             }
             Vector2 dropPosition = player.getPosition().cpy();
-            weapon.setPosition(dropPosition);
-            weapon.createBody(dropPosition);
-            mapa.getWeapons().add(weapon);
+            
+            if (item instanceof Weapon) {
+                Weapon weapon = (Weapon) item;
+                weapon.setPosition(dropPosition);
+                weapon.createBody(dropPosition);
+                mapa.getWeapons().add(weapon);
+            }
+            else if (item instanceof Ammo) {
+                Ammo ammo = (Ammo) item;
+                ammo.setPosition(dropPosition);
+                ammo.createBody(dropPosition);
+                mapa.getAmmo().add(ammo);
+            }
         }
     }
-
     private void updatePlacementValidity() {
-        validPlacement = inventory.canPlaceAt(placementGridX, placementGridY, currentPlacementWeapon);
+        validPlacement = inventory.canPlaceAt(placementGridX, placementGridY, currentPlacementItem);
     }
 
     private void exitPlacementMode(boolean success) {
@@ -196,19 +220,28 @@ public class InventoryController {
                 lastPlacementX = placementGridX;
                 lastPlacementY = placementGridY;
             }
-            if (currentPlacementWeapon != null) {
-                inventory.equipWeapon(currentPlacementWeapon);
+            if (currentPlacementItem != null && currentPlacementItem instanceof Weapon) {
+                inventory.equipWeapon((Weapon)currentPlacementItem);
             }
         }
-        currentPlacementWeapon = null;
+        currentPlacementItem = null;
     }
 
-    public void enterPlacementMode(Weapon weapon) {
-        placementMode = true;
-        currentPlacementWeapon = weapon;
-        placementGridX = lastPlacementX;
-        placementGridY = lastPlacementY;
-        updatePlacementValidity();
+    public void enterPlacementMode(Item item) {
+        if (item != null) {
+            placementMode = true;
+            currentPlacementItem = item;
+            
+            if (item instanceof Weapon) {
+                mapa.getWeapons().remove(item);
+            } else if (item instanceof Ammo) {
+                mapa.getAmmo().remove(item);
+            }
+            
+            placementGridX = lastPlacementX;
+            placementGridY = lastPlacementY;
+            updatePlacementValidity();
+        }
     }
 
     public boolean GetIsOpen() {
@@ -223,8 +256,8 @@ public class InventoryController {
         return placementMode;
     }
 
-    public Weapon getCurrentPlacementWeapon() {
-        return currentPlacementWeapon;
+    public Item getCurrentPlacementItem() {
+        return currentPlacementItem;
     }
 
     public int getPlacementGridX() {
@@ -240,7 +273,7 @@ public class InventoryController {
     }
 
 
-    public Weapon getSelectedItem() {
+    public Item getSelectedItem() {
         return selectedItem;
     }
 

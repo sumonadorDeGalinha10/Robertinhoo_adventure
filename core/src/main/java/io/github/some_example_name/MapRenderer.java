@@ -19,6 +19,7 @@ import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.ProjectileRenderer;
 import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
+import io.github.some_example_name.Entities.Renderer.AmmoRenderer.AmmoRenderer;
 import io.github.some_example_name.Entities.Renderer.EnemiRenderer.RatRenderer;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Camera.Camera;
@@ -34,9 +35,9 @@ public class MapRenderer {
     private PlayerRenderer playerRenderer;
     private RatRenderer ratRenderer;
     private Camera cameraController;
+    private AmmoRenderer ammoRenderer;
     public RenderInventory renderInventory;
     private PointLight debugLight;
-
     public static final int TILE_SIZE = 16;
     public float offsetX;
     public float offsetY;
@@ -45,6 +46,7 @@ public class MapRenderer {
 
     public MapRenderer(Mapa mapa) {
         this.mapa = mapa;
+       
 
         if (mapa.getRayHandler() == null) {
             mapa.initializeLights();
@@ -58,19 +60,18 @@ public class MapRenderer {
         playerLight = new PointLight(mapa.getRayHandler(), 100, Color.BLUE, 15, 0, 0);
         playerLight.setSoft(true);
         playerLight.setSoftnessLength(8f);
-        
+
         shapeRenderer = new ShapeRenderer();
         spriteBatch = new SpriteBatch();
         cameraController = new Camera();
-        Texture floorTexture = new Texture("Tiles/tile_0028.png");
-        Texture wallTexture = new Texture("Tiles/tile_0015.png");
-        this.tileRenderer = new TileRenderer(mapa, floorTexture, wallTexture, TILE_SIZE);
+        this.tileRenderer = new TileRenderer(mapa, TILE_SIZE);
         this.projectileRenderer = new ProjectileRenderer(mapa, TILE_SIZE);
         this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
+        this.ammoRenderer = new AmmoRenderer(TILE_SIZE);
         ratRenderer = new RatRenderer();
         this.renderInventory = new RenderInventory(
                 mapa.robertinhoo.getInventory(),
-                32,
+            64,
                 new Vector2(100, 100));
 
         mapa.robertinhoo.setCamera(cameraController.getCamera());
@@ -111,47 +112,53 @@ public class MapRenderer {
         }
 
         for (Weapon weapon : mapa.getWeapons()) {
+            weapon.update(delta);
             TextureRegion frame = weapon.getCurrentFrame(delta);
+            
+            // Aplique o offset de flutuação no Y
+            float floatY = weapon.getPosition().y * TILE_SIZE + weapon.getFloatOffset();
+            
             spriteBatch.draw(
-                    frame,
-                    offsetX + weapon.getPosition().x * TILE_SIZE,
-                    offsetY + weapon.getPosition().y * TILE_SIZE,
-                    10, 6);
+                frame,
+                offsetX + weapon.getPosition().x * TILE_SIZE,
+                offsetY + floatY,
+                10, 6
+            );
         }
+
+        ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
+
         spriteBatch.end();
         if (player.getInventoryController().GetIsOpen()) {
             shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
             renderInventory.render(
-                null,               // placementWeapon
-                0,                  // placementX
-                0,                  // placementY
-                false,              // isValid
-                player.getInventoryController().getSelectedItem(),
-                player.getInventoryController().getOriginalGridX(),
-                player.getInventoryController().getOriginalGridY(),
-                player.getInventoryController().getCursorGridX(),
-                player.getInventoryController().getCursorGridY()
-            );
+                    null,
+                    0,
+                    0,
+                    false,
+                    player.getInventoryController().getSelectedItem(),
+                    player.getInventoryController().getOriginalGridX(),
+                    player.getInventoryController().getOriginalGridY(),
+                    player.getInventoryController().getCursorGridX(),
+                    player.getInventoryController().getCursorGridY());
         }
-        
+
         if (player.getInventoryController().isInPlacementMode()) {
             shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
             renderInventory.render(
-                player.getInventoryController().getCurrentPlacementWeapon(),
-                player.getInventoryController().getPlacementGridX(),
-                player.getInventoryController().getPlacementGridY(),
-                player.getInventoryController().isValidPlacement(),
-                null,                // selectedItem
-                -1,                  // originalGridX
-                -1,                  // originalGridY
-                player.getInventoryController().getPlacementGridX(), // cursorGridX
-                player.getInventoryController().getPlacementGridY()  // cursorGridY
-            );
+                    player.getInventoryController().getCurrentPlacementItem(),
+                    player.getInventoryController().getPlacementGridX(),
+                    player.getInventoryController().getPlacementGridY(),
+                    player.getInventoryController().isValidPlacement(),
+                    null,
+                    -1,
+                    -1,
+                    player.getInventoryController().getPlacementGridX(),
+                    player.getInventoryController().getPlacementGridY());
         }
         mapa.getRayHandler().setCombinedMatrix(cameraController.getCamera());
         mapa.getRayHandler().updateAndRender();
-        
-        
+
     }
 
     public void calculateOffsets() {

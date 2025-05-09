@@ -10,9 +10,10 @@ import com.badlogic.gdx.physics.box2d.Body;
 
 
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Inventory.Item;
 
 
-public abstract class Weapon {
+public abstract class Weapon implements Item {
     protected float fireRate;
     protected float damage;
     protected int ammo;
@@ -20,6 +21,10 @@ public abstract class Weapon {
     public boolean canShoot = true;
     protected Vector2 position;
     public Body body;
+
+    private float floatTime = 0f;
+    private static final float FLOAT_SPEED = 2f;
+    private static final float FLOAT_AMPLITUDE = 1f;
 
     protected TextureRegion icon;
     protected boolean reloading = false;
@@ -37,31 +42,23 @@ public abstract class Weapon {
     public enum TipoMao {
         UMA_MAO, DUAS_MAOS;
     }
-
     public abstract TipoMao getTipoMao();
 
     public TextureRegion getIcon() {
         return icon;
     }
-
     public boolean isReloading() {
         return reloading;
     }
-
     public float getReloadProgress() {
         return reloadProgress;
     }
     public int getMaxAmmo() {
         return maxAmmo;
     }
-
-
     protected Weapon() {
         this.maxAmmo = 30;
     }
-
-    
-
     public abstract void shoot(Vector2 position, Vector2 direction);
     public abstract void update(float delta);
 
@@ -84,20 +81,13 @@ public abstract class Weapon {
     public void setPosition(Vector2 position) {
         this.position = position.cpy();
     }
-
-
     public abstract Vector2 getMuzzleOffset();
-
-
     public void rotate() {
         int temp = gridWidth;
         gridWidth = gridHeight;
         gridHeight = temp;
     }
-
-
     public Vector2[] getOccupiedCells() {
-        // Retorna um retângulo padrão se não for sobrescrito
         Vector2[] cells = new Vector2[gridWidth * gridHeight];
         for (int y = 0; y < gridHeight; y++) {
             for (int x = 0; x < gridWidth; x++) {
@@ -107,12 +97,21 @@ public abstract class Weapon {
         return cells;
     }
 
-
     public void setGridSize(int width, int height) {
         this.gridWidth = width;
         this.gridHeight = height;
     }
-    
 
+    public abstract void reload();
+
+    public void updateFloatation(float delta) {
+        floatTime += delta * FLOAT_SPEED;
+    }
+
+    public float getFloatOffset() {
+        return (float) Math.sin(floatTime) * FLOAT_AMPLITUDE;
+    }
+
+    
 
 }

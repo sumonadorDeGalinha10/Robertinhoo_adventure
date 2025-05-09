@@ -17,6 +17,8 @@ import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -32,7 +34,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType; 
 import com.badlogic.gdx.math.Rectangle;
 
 
@@ -43,6 +45,7 @@ public class Mapa {
 
  private List<Enemy> enemies;
  private List<Weapon> weapons;
+ private List<Ammo> ammo;
  private List<Projectile> projectiles = new ArrayList<>();
 
 
@@ -58,6 +61,7 @@ public class Mapa {
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)
     public static int ENEMY = 0X913d77; // #913d77 (inimigos)
     public static  int REVOLVER = 0X22ff00; // #22ff00
+    public static int AMMO09MM = 0Xffffff;  // #FFFFFF
 
     ArrayList<Vector2> wallPositions = new ArrayList<>();
 
@@ -84,11 +88,10 @@ public class Mapa {
         world = new World(new Vector2(0, 0), true);
         enemies = new ArrayList<>();
         weapons = new ArrayList<>();
+        ammo = new ArrayList<>();
         agruparParedes = new WallOtimizations(this);
 
         initializeLights();
-
-
         try {
             loadImageMap("assets/maps/TesteMap.png");
         } catch (Exception e) {
@@ -160,15 +163,19 @@ public class Mapa {
                         tiles[x][y] = TILE;
                     }
                     else if(color == REVOLVER){
-                        Pistol pistol = new Pistol(this,x,y);
+                        Pistol pistol = new Pistol(this,x,y,robertinhoo.getInventory());
                         weapons.add(pistol);
                         
                         tiles[x][y] = PAREDE;
-
                     }
+
+                   else if (color == AMMO09MM ){
+                    Ammo9mm ammo9mm = new Ammo9mm(this, x, y);
+                    this.ammo.add(ammo9mm);
+                    tiles[x][y] = TILE;
+        }
                 }
             }
-    
             agruparEPCriarParedes();
         } catch (IOException e) {
             Gdx.app.error("Mapa", "Erro ao carregar imagem: " + e.getMessage());
@@ -216,6 +223,10 @@ public class Mapa {
     public List<Projectile> getProjectiles() {
         return projectiles;
     }    
+
+    public List<Ammo> getAmmo() {
+        return ammo;
+    }
 
 
 
