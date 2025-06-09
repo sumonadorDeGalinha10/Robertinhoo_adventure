@@ -4,6 +4,7 @@ import io.github.some_example_name.MapRenderer;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import com.badlogic.gdx.graphics.GL20;
@@ -90,45 +91,29 @@ public class PlayerWeaponSystem {
 
     public void renderWeapon(SpriteBatch batch, float delta) {
         Weapon currentWeapon = player.getInventory().getEquippedWeapon();
-        if (player.state == Robertinhoo.DASH) {
+        if (currentWeapon == null || player.state == Robertinhoo.DASH)
             return;
-        }
-    
-        if (currentWeapon != null) {
-            TextureRegion frame = currentWeapon.getCurrentFrame(delta);
-            Vector2 playerWorldPos = player.body.getPosition();
 
-            float baseX = mapRenderer.offsetX + (playerWorldPos.x * MapRenderer.TILE_SIZE);
-            float baseY = mapRenderer.offsetY + (playerWorldPos.y * MapRenderer.TILE_SIZE);
-            Vector2 muzzleOffset = currentWeapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE * 0.5f);
+        // Atualiza a arma (que atualiza automaticamente o renderer)
+        currentWeapon.update(delta, getAimDirection());
 
-            float originX = frame.getRegionWidth() / 5f;
-            float originY = frame.getRegionHeight() / 5f;
+        Vector2 renderPosition = calculateWeaponPosition(currentWeapon);
 
-            float angle = getAimAngle();
-            boolean flip = angle > 90 && angle < 270;
-            float scaleY = flip ? -0.2f : 0.2f;
+        // Renderiza usando o renderer da arma
+        currentWeapon.getRenderer().render(
+                batch,
+                renderPosition,
+                mapRenderer.offsetX,
+                mapRenderer.offsetY);
+    }
 
-            if (flip) {
-                muzzleOffset.x *= -1;
-            }
+    private Vector2 calculateWeaponPosition(Weapon weapon) {
+        Vector2 playerWorldPos = player.body.getPosition();
+        Vector2 muzzleOffset = weapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE);
 
-            float posX = baseX + muzzleOffset.x;
-            float posY = baseY + muzzleOffset.y;
-            float ajustx = flip ? -1.9f : 1.9f;
-
-            batch.draw(
-                    frame,
-                    posX - originX - ajustx,
-                    posY - originY - 2,
-                    originX,
-                    originY,
-                    frame.getRegionWidth(),
-                    frame.getRegionHeight(),
-                    0.2f,
-                    scaleY,
-                    angle);
-        }
+        return new Vector2(
+                (playerWorldPos.x * MapRenderer.TILE_SIZE) + muzzleOffset.x,
+                (playerWorldPos.y * MapRenderer.TILE_SIZE) + muzzleOffset.y);
     }
 
     public float getAimAngleForRenderer() {
@@ -152,27 +137,21 @@ public class PlayerWeaponSystem {
         if (weapon == null)
             return player.body.getPosition();
 
-        float angle = getAimAngle();
-        boolean flip = angle > 90 && angle < 270;
-        Vector2 muzzleOffset = weapon.getMuzzleOffset().cpy().scl(MapRenderer.TILE_SIZE * 0.5f);
-        float ajustx = flip ? -1.9f : 1.9f;
-
-        if (flip) {
-            muzzleOffset.x = -muzzleOffset.x;
-            muzzleOffset.x -= ajustx;
-        } else {
-            muzzleOffset.x += ajustx;
-        }
-        Vector2 worldOffset = new Vector2(
-                muzzleOffset.x / MapRenderer.TILE_SIZE,
-                muzzleOffset.y / MapRenderer.TILE_SIZE);
-
-        float rotationAngle = flip ? angle - 180 : angle;
-        Vector2 rotatedOffset = worldOffset.rotateDeg(rotationAngle);
         Vector2 playerWorldPos = player.body.getPosition();
-        return new Vector2(
-                playerWorldPos.x + rotatedOffset.x,
-                playerWorldPos.y + rotatedOffset.y);
+        Vector2 direction = getAimDirection().cpy().nor();
+        Vector2 muzzleOffset = weapon.getMuzzleOffset();
+
+        float angle = direction.angleRad();
+        Vector2 rotatedOffset = new Vector2(
+                muzzleOffset.x * MathUtils.cos(angle) - muzzleOffset.y * MathUtils.sin(angle),
+                muzzleOffset.x * MathUtils.sin(angle) + muzzleOffset.y * MathUtils.cos(angle));
+
+        float safetyMargin = 0.05f;
+        Vector2 safetyOffset = direction.cpy().scl(safetyMargin);
+
+        return playerWorldPos.cpy()
+                .add(rotatedOffset)
+                .add(safetyOffset);
     }
 
     public Vector2 getAimDirection() {

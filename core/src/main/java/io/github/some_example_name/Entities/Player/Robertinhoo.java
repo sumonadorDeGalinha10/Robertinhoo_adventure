@@ -22,8 +22,9 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
-import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
+import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
+import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Inventory.InventoryController;
@@ -43,11 +44,16 @@ public class Robertinhoo implements Steerable<Vector2> {
     public static final int TOP = 1;
     public static final int DOWN = -1;
     public static final int IDLE = 6;
-    public static final float ACCELERATION = 3f;
+    public static final float ACCELERATION = 1.5f;
     public static final float DASH_DURATION = 0.4f;
     public static final float DASH_COOLDOWN = 1f;
     public static final float DASH_SPEED = 8f;
     public static final int TILE_SIZE = 1;
+
+    public static final int NORTH_WEST = 10;
+    public static final int NORTH_EAST = 11;
+    public static final int SOUTH_WEST = 12;
+    public static final int SOUTH_EAST = 13;
 
     public int state = SPAWN;
     public int dir = IDLE;
@@ -94,8 +100,6 @@ public class Robertinhoo implements Steerable<Vector2> {
         }
 
     }
-
-    
 
     public void unequipWeapon() {
         this.currentWeapon = null;
@@ -147,6 +151,7 @@ public class Robertinhoo implements Steerable<Vector2> {
         Weapon currentWeapon = getCurrentWeapon();
         if (currentWeapon != null) {
             currentWeapon.update(deltaTime);
+                currentWeapon.getCurrentState();
         }
 
         if (dashCooldownTime > 0)
@@ -172,64 +177,71 @@ public class Robertinhoo implements Steerable<Vector2> {
     }
 
     private void processKeys() {
-        Vector2 moveDir = new Vector2();
-        boolean isMoving = false;
+    Vector2 moveDir = new Vector2();
+    boolean wPressed = Gdx.input.isKeyPressed(Keys.W);
+    boolean sPressed = Gdx.input.isKeyPressed(Keys.S);
+    boolean aPressed = Gdx.input.isKeyPressed(Keys.A);
+    boolean dPressed = Gdx.input.isKeyPressed(Keys.D);
+    boolean isMoving = false;
 
-        if (Gdx.input.isKeyPressed(Keys.W)) {
-            moveDir.y += 1;
-            isMoving = true;
-            dir = UP;
-            lastDir = UP;
-        }
+    // Verifica combinações de teclas para diagonais primeiro
+    if (wPressed && dPressed) { // Noroeste
+        dir = NORTH_EAST;
+        moveDir.set(1, 1);
+        isMoving = true;
+          lastDir = NORTH_EAST;
+    } else if (wPressed && aPressed) { // Nordeste
+        dir = NORTH_WEST;
+        moveDir.set(-1, 1);
+        isMoving = true;
+         lastDir = NORTH_WEST;
+    } else if (sPressed && dPressed) { // Sudoeste
+        dir = SOUTH_EAST;
+        moveDir.set(1, -1);
+        isMoving = true;
+        lastDir=SOUTH_EAST;
+    } else if (sPressed && aPressed) { // Sudeste
+        dir = SOUTH_WEST;
+        moveDir.set(-1, -1);
+        isMoving = true;
+        lastDir=SOUTH_WEST;
+    } else if (wPressed) { // Cima
+        dir = UP;
+        moveDir.set(0, 1);
+        isMoving = true;
+    } else if (sPressed) { // Baixo
+        dir = DOWN;
+        moveDir.set(0, -1);
+        isMoving = true;
+    } else if (dPressed) { // Direita
+        dir = RIGHT;
+        moveDir.set(1, 0);
+        isMoving = true;
+    } else if (aPressed) { // Esquerda
+        dir = LEFT;
+        moveDir.set(-1, 0);
+        isMoving = true;
+    }
+    if (isMoving) {
+        lastDir = dir;
+    } else {
+        dir = IDLE;
+    }
+if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
+    if (!moveDir.isZero()) {
+        moveDir.nor();
 
-        if (Gdx.input.isKeyPressed(Keys.S)) {
-            isMoving = true;
-            dir = DOWN;
-            moveDir.y -= 1;
-            lastDir = DOWN;
-        }
 
-        if (Gdx.input.isKeyPressed(Keys.D)) {
-            moveDir.x += 1;
-            isMoving = true;
-            dir = RIGHT;
-            lastDir = RIGHT;
-        }
-
-        if (Gdx.input.isKeyPressed(Keys.A)) {
-            moveDir.x -= 1;
-            isMoving = true;
-            dir = LEFT;
-            lastDir = LEFT;
-        }
-
-        if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
-            if (!moveDir.isZero()) {
-                moveDir.nor();
-
-                // Determinar direção primária para o dash
-                float absX = Math.abs(moveDir.x);
-                float absY = Math.abs(moveDir.y);
-
-                if (absX > absY) {
-                    dashDirection = (moveDir.x > 0) ? RIGHT : LEFT;
-                } else {
-                    dashDirection = (moveDir.y > 0) ? UP : DOWN;
-                }
-
-                if (dashDirection == LEFT || dashDirection == RIGHT) {
-                    moveDir.set(dashDirection == RIGHT ? 1 : -1, 0);
-                } else {
-                    moveDir.set(0, dashDirection == UP ? 1 : -1);
-                }
-
-                state = DASH;
-                dashTime = DASH_DURATION;
-                dashCooldownTime = DASH_COOLDOWN;
-                isInvulnerable = true;
-                body.setLinearVelocity(moveDir.scl(DASH_SPEED));
-            }
-        } else if (!moveDir.isZero()) {
+        Vector2 dashVector = new Vector2(moveDir.x, moveDir.y);
+        
+ 
+        state = DASH;
+        dashTime = DASH_DURATION;
+        dashCooldownTime = DASH_COOLDOWN;
+        isInvulnerable = true;
+        body.setLinearVelocity(dashVector.scl(DASH_SPEED));
+    }
+}else if (!moveDir.isZero()) {
             moveDir.nor();
             state = RUN;
             body.setLinearVelocity(moveDir.scl(ACCELERATION));
@@ -256,9 +268,7 @@ public class Robertinhoo implements Steerable<Vector2> {
         
             if (currentWeapon != null) {
                 System.out.println("Tipo da arma: " + currentWeapon.getClass().getSimpleName());
-                System.out.println("recarregando");
-              currentWeapon.reload();
-              
+                currentWeapon.reload();
             } 
         }
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {

@@ -13,9 +13,9 @@ import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
 import io.github.some_example_name.Entities.Itens.Contact.ProjectileContactListenter;
-import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
+import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
@@ -112,8 +112,6 @@ public class Mapa {
         }
     }
     
-
-
     public List<Enemy> getEnemies() {
         return enemies;
     }

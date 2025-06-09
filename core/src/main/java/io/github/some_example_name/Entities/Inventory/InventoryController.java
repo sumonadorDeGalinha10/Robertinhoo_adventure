@@ -59,7 +59,6 @@ public class InventoryController {
 
     }
     private void handleInventorySelection() {
-        // Movimento do cursor
         int gridCols = inventory.gridCols;
         int gridRows = inventory.gridRows;
         

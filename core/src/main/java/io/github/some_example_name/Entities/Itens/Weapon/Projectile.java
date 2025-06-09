@@ -34,8 +34,6 @@ public class Projectile {
     public float destructionAngle;
 
     private PointLight light;
-    private static final float LIGHT_DISTANCE = 6f;
-    private static final Color LIGHT_COLOR = new Color(1, 0.8f, 0.2f, 0.7f);
 
     public PointLight getLight() {
         return light;
@@ -61,6 +59,8 @@ public class Projectile {
         this.mapa = mapa;
         createBody(mapa, position, velocity);
         mapa.addProjectile(this);
+        
+        
     }
 
     public void updateStateTime(float delta) {
@@ -91,7 +91,12 @@ public class Projectile {
         shape.dispose();
         body.setLinearVelocity(velocity);
         body.setUserData(this);
-    }
+      
+    
+   
+    
+}
+    
 
     public void update(float delta) {
         if (light != null && body != null) {
