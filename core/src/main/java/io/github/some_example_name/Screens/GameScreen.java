@@ -6,10 +6,11 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Interface.WeaponHUD;
 import io.github.some_example_name.MapRenderer;
-import io.github.some_example_name.Entities.Itens.Weapon.Pistol;
+
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 
@@ -18,7 +19,6 @@ public class GameScreen extends CatScreen {
     private Mapa mapa;
     private MapRenderer renderer;
     private Robertinhoo robertinhoo;
-    private Pistol pistol;
     private WeaponHUD weaponHUD;
     private SpriteBatch hudBatch;
     private OrthographicCamera hudCamera;
@@ -34,20 +34,15 @@ public class GameScreen extends CatScreen {
         renderer = new MapRenderer(mapa);
         hudBatch = new SpriteBatch();
         weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
-        
-    
         hudCamera = new OrthographicCamera();
         hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        
-       
         hudBatch = new SpriteBatch();
         hudBatch.setProjectionMatrix(hudCamera.combined);
         
         weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
         robertinhoo.setMapRenderer(renderer);
+
   
-        
-    
         System.out.println("MapRenderer configurado no Robertinhoo.");
     }
 

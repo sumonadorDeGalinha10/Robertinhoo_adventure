@@ -91,9 +91,9 @@ public class MapRenderer {
 
         tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
         projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
-
-        player.getWeaponSystem().renderWeapon(spriteBatch, delta);
         playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+        player.getWeaponSystem().renderWeapon(spriteBatch, delta);
+   
 
         for (Enemy enemy : mapa.getEnemies()) {
             enemy.update(delta);
@@ -114,8 +114,7 @@ public class MapRenderer {
         for (Weapon weapon : mapa.getWeapons()) {
             weapon.update(delta);
             TextureRegion frame = weapon.getCurrentFrame(delta);
-            
-            // Aplique o offset de flutuação no Y
+        
             float floatY = weapon.getPosition().y * TILE_SIZE + weapon.getFloatOffset();
             
             spriteBatch.draw(
