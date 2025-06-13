@@ -93,7 +93,6 @@ public class MapRenderer {
         projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
         playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
         player.getWeaponSystem().renderWeapon(spriteBatch, delta);
-   
 
         for (Enemy enemy : mapa.getEnemies()) {
             enemy.update(delta);

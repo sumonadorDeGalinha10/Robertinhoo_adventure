@@ -16,6 +16,7 @@ import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon.TipoMao;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,6 @@ public class Pistol extends Weapon {
     private float reloadDuration = 2.1f; // Tempo de duração da recarga em segundos
 
     private Animation<TextureRegion> shootAnim;
-    private Animation<TextureRegion> reloadAnim;
 
     @Override
     public TipoMao getTipoMao() {
@@ -47,7 +47,7 @@ public class Pistol extends Weapon {
 
     public Pistol(Mapa mapa, int x, int y, Inventory inventory) {
         super();
-        this.maxAmmo = 15;
+        this.maxAmmo = 99999;
         this.ammo = this.maxAmmo;
         this.position = new Vector2(x, y);
         this.mapa = mapa;
@@ -64,8 +64,20 @@ public class Pistol extends Weapon {
                 new Vector2(1, 0),
                 new Vector2(0, 1)
         };
+        
+
+
+        this.setMuzzleOffset(WeaponDirection.N, new Vector2(2, 2));
+        this.setMuzzleOffset(WeaponDirection.NE, new Vector2(6, 2));
+        this.setMuzzleOffset(WeaponDirection.NW, new Vector2(6, 2));
+        this.setMuzzleOffset(WeaponDirection.E, new Vector2(6, 2));
+        this.setMuzzleOffset(WeaponDirection.S, new Vector2(6, 01));
+        this.setMuzzleOffset(WeaponDirection.SW, new Vector2(6, 2));
+        this.setMuzzleOffset(WeaponDirection.SE, new Vector2(6, 4));
+        this.setMuzzleOffset(WeaponDirection.W, new Vector2(7, -2));
 
     }
+
 
     @Override
     public Vector2[] getOccupiedCells() {
@@ -102,14 +114,13 @@ public class Pistol extends Weapon {
             ammo += toReload;
             currentState = WeaponState.RELOADING;
             reloadTime = 0;
-            
+
             reloadJustTriggered = true;
             System.out.println("Recarregou " + toReload + " balas");
         } else {
             System.out.println("Carregador já está cheio");
         }
-        
-      
+
     }
 
     @Override
@@ -187,11 +198,11 @@ public class Pistol extends Weapon {
 
     @Override
     public void shoot(Vector2 position, Vector2 direction) {
-         if (currentState == WeaponState.RELOADING) {
+        if (currentState == WeaponState.RELOADING) {
             return;
         }
         if (canShoot && ammo > 0) {
-            new Projectile(mapa, position, direction.nor().scl(35f), damage);
+            new Projectile(mapa, position, direction.nor().scl(5f), damage);
 
             shotTriggered = true;
 

@@ -1,5 +1,7 @@
 package io.github.some_example_name.Entities.Itens.Weapon;
 
+import java.util.EnumMap;
+
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
@@ -10,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
 import io.github.some_example_name.Entities.Renderer.WeaponRenderer;
 
 public abstract class Weapon implements Item {
@@ -109,15 +112,13 @@ public abstract class Weapon implements Item {
 
     public abstract WeaponState getCurrentState();
 
-   public void update(float delta, Vector2 aimDirection) {
+    public void update(float delta, Vector2 aimDirection) {
         renderer.update(
-            delta, 
-            aimDirection, 
-            currentState, 
-            shotTriggered, 
-            reloadJustTriggered
-        );
-        
+                delta,
+                aimDirection,
+                currentState,
+                shotTriggered,
+                reloadJustTriggered);
 
         resetShotTrigger();
         reloadJustTriggered = false;
@@ -179,10 +180,18 @@ public abstract class Weapon implements Item {
         shotTriggered = false;
     }
 
-        public WeaponRenderer getRenderer() {
+    public WeaponRenderer getRenderer() {
         return renderer;
     }
 
-    
+    private EnumMap<WeaponDirection, Vector2> muzzleOffsets = new EnumMap<>(WeaponDirection.class);
+
+    public void setMuzzleOffset(WeaponDirection direction, Vector2 offset) {
+        muzzleOffsets.put(direction, offset);
+    }
+
+    public Vector2 getMuzzleOffset(WeaponDirection direction) {
+        return muzzleOffsets.getOrDefault(direction, new Vector2(0, 0));
+    }
 
 }

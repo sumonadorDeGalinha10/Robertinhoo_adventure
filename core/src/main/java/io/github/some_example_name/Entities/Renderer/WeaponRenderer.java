@@ -122,7 +122,6 @@ public class WeaponRenderer {
             return;
         }
 
-        // Renderização com escala e posicionamento
         float scale = 0.35f;
         float width = frame.getRegionWidth() * scale;
         float height = frame.getRegionHeight() * scale;

@@ -279,6 +279,8 @@ if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH
                 currentWeapon.shoot(firePosition, direction);
             }
         }
+
+        
     }
 
     public Inventory getInventory() {
@@ -346,8 +348,6 @@ if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH
         this.itemToPickup = null;
     }
     
-
-
     private Vector2 linearVelocity = new Vector2();
     private float angularVelocity = 0f;
     private float maxLinearSpeed = 10f;

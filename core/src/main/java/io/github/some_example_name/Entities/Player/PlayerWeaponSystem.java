@@ -2,6 +2,8 @@ package io.github.some_example_name.Entities.Player;
 
 import io.github.some_example_name.MapRenderer;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
+import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
@@ -9,8 +11,8 @@ import com.badlogic.gdx.math.Vector2;
 
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.Color;
 
 public class PlayerWeaponSystem {
     private final Robertinhoo player;
@@ -94,12 +96,10 @@ public class PlayerWeaponSystem {
         if (currentWeapon == null || player.state == Robertinhoo.DASH)
             return;
 
-        // Atualiza a arma (que atualiza automaticamente o renderer)
         currentWeapon.update(delta, getAimDirection());
 
         Vector2 renderPosition = calculateWeaponPosition(currentWeapon);
 
-        // Renderiza usando o renderer da arma
         currentWeapon.getRenderer().render(
                 batch,
                 renderPosition,
@@ -132,27 +132,33 @@ public class PlayerWeaponSystem {
         return playerWorldPos.cpy().add(rotatedOffset.scl(1f / MapRenderer.TILE_SIZE));
     }
 
-    public Vector2 getTrueMuzzlePosition() {
-        Weapon weapon = player.getInventory().getEquippedWeapon();
-        if (weapon == null)
-            return player.body.getPosition();
+   public Vector2 getTrueMuzzlePosition() {
+    Weapon weapon = player.getInventory().getEquippedWeapon();
+    if (weapon == null)
+        return player.body.getPosition();
 
-        Vector2 playerWorldPos = player.body.getPosition();
-        Vector2 direction = getAimDirection().cpy().nor();
-        Vector2 muzzleOffset = weapon.getMuzzleOffset();
+    // Obtém a direção atual baseada no ângulo de mira
+    float aimAngle = getAimAngle();
+    WeaponDirection currentDir = DirectionUtils.getDirectionFromAngle(aimAngle);
+    
+    Vector2 muzzleOffset = weapon.getMuzzleOffset(currentDir);
+    Vector2 playerWorldPos = player.body.getPosition();
+    
+    // Converte de pixels para unidades do mundo
+    Vector2 worldOffset = new Vector2(
+        muzzleOffset.x / MapRenderer.TILE_SIZE,
+        muzzleOffset.y / MapRenderer.TILE_SIZE
+    );
+    
+    // Rotaciona o offset conforme a direção
+    float angleRad = MathUtils.degreesToRadians * aimAngle;
+    Vector2 rotatedOffset = new Vector2(
+        worldOffset.x * MathUtils.cos(angleRad) - worldOffset.y * MathUtils.sin(angleRad),
+        worldOffset.x * MathUtils.sin(angleRad) + worldOffset.y * MathUtils.cos(angleRad)
+    );
 
-        float angle = direction.angleRad();
-        Vector2 rotatedOffset = new Vector2(
-                muzzleOffset.x * MathUtils.cos(angle) - muzzleOffset.y * MathUtils.sin(angle),
-                muzzleOffset.x * MathUtils.sin(angle) + muzzleOffset.y * MathUtils.cos(angle));
-
-        float safetyMargin = 0.05f;
-        Vector2 safetyOffset = direction.cpy().scl(safetyMargin);
-
-        return playerWorldPos.cpy()
-                .add(rotatedOffset)
-                .add(safetyOffset);
-    }
+    return playerWorldPos.cpy().add(rotatedOffset);
+}
 
     public Vector2 getAimDirection() {
         return aimDirection.cpy();
@@ -160,6 +166,18 @@ public class PlayerWeaponSystem {
 
     public boolean isFlipped() {
         return getAimAngle() > 90 && getAimAngle() < 270;
+    }
+
+    public void renderMuzzleDebug(ShapeRenderer shapeRenderer) {
+        Vector2 muzzlePos = getTrueMuzzlePosition();
+        Vector2 screenPos = new Vector2(
+                muzzlePos.x * MapRenderer.TILE_SIZE + mapRenderer.offsetX,
+                muzzlePos.y * MapRenderer.TILE_SIZE + mapRenderer.offsetY);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.circle(screenPos.x, screenPos.y, 5);
+        shapeRenderer.end();
     }
 
     public boolean isAiming() {
