@@ -46,7 +46,6 @@ public class MapRenderer {
 
     public MapRenderer(Mapa mapa) {
         this.mapa = mapa;
-       
 
         if (mapa.getRayHandler() == null) {
             mapa.initializeLights();
@@ -71,68 +70,98 @@ public class MapRenderer {
         ratRenderer = new RatRenderer();
         this.renderInventory = new RenderInventory(
                 mapa.robertinhoo.getInventory(),
-            64,
+                64,
                 new Vector2(100, 100));
 
         mapa.robertinhoo.setCamera(cameraController.getCamera());
     }
 
     public void render(float delta, Robertinhoo player) {
+        // Limpa a tela
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Calcula offsets e atualiza câmera
         calculateOffsets();
         cameraController.centerOnPlayer(player, offsetX, offsetY);
-        spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
 
-        spriteBatch.begin();
+        // Atualiza física do mundo
         mapa.world.step(delta, 6, 2);
+
+        // Configura luz do jogador
         playerLight.setPosition(
                 offsetX + player.pos.x * TILE_SIZE + TILE_SIZE / 2f,
                 offsetY + player.pos.y * TILE_SIZE + TILE_SIZE / 2f);
 
-        tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
-        projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
-        playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
-        player.getWeaponSystem().renderWeapon(spriteBatch, delta);
+        // --- RENDERIZAÇÃO DE SPRITES ---
+        spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
+        spriteBatch.begin();
+        {
+            // Renderiza camadas de tiles
+            tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
 
-        for (Enemy enemy : mapa.getEnemies()) {
-            enemy.update(delta);
-            if (enemy instanceof Ratinho) {
-                Ratinho rat = (Ratinho) enemy;
-                boolean flip = rat.getDirectionX() < 0 && rat.getState() == Ratinho.State.RUNNING_HORIZONTAL;
-                TextureRegion frame = ratRenderer.getFrame(rat, flip);
+            // Renderiza projéteis
+            projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
+
+            // Renderiza jogador
+            float playerX = offsetX + (player.bounds.x * TILE_SIZE) - (playerRenderer.getRenderScale() - 1) * 8;
+            float playerY = offsetY + (player.bounds.y * TILE_SIZE) - (playerRenderer.getRenderScale() - 1) * 8;
+
+            playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
+
+            // Renderiza arma do jogador
+            player.getWeaponSystem().renderWeapon(spriteBatch, delta, player, playerX, playerY);
+            // player.setPlayerRenderer(playerRenderer);
+
+            // Renderiza inimigos
+            for (Enemy enemy : mapa.getEnemies()) {
+                enemy.update(delta);
+                if (enemy instanceof Ratinho) {
+                    Ratinho rat = (Ratinho) enemy;
+                    boolean flip = rat.getDirectionX() < 0 && rat.getState() == Ratinho.State.RUNNING_HORIZONTAL;
+                    TextureRegion frame = ratRenderer.getFrame(rat, flip);
+
+                    spriteBatch.draw(
+                            frame,
+                            offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
+                            offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
+                            12, 12);
+                }
+            }
+
+            // Renderiza armas no chão
+            for (Weapon weapon : mapa.getWeapons()) {
+                weapon.update(delta);
+                TextureRegion frame = weapon.getCurrentFrame(delta);
+                float floatY = weapon.getPosition().y * TILE_SIZE + weapon.getFloatOffset();
 
                 spriteBatch.draw(
                         frame,
-                        offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
-                        offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
-                        12,
-                        12);
+                        offsetX + weapon.getPosition().x * TILE_SIZE,
+                        offsetY + floatY,
+                        10, 6);
             }
+
+            // Renderiza munições
+            ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
         }
-
-        for (Weapon weapon : mapa.getWeapons()) {
-            weapon.update(delta);
-            TextureRegion frame = weapon.getCurrentFrame(delta);
-        
-            float floatY = weapon.getPosition().y * TILE_SIZE + weapon.getFloatOffset();
-            
-            spriteBatch.draw(
-                frame,
-                offsetX + weapon.getPosition().x * TILE_SIZE,
-                offsetY + floatY,
-                10, 6
-            );
-        }
-
-        ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
-
         spriteBatch.end();
+
+        // --- RENDERIZAÇÃO DE FORMAS (MIRA E DEBUG) ---
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+
+        // Renderiza mira apenas se jogador estiver com arma equipada
+        if (player.getInventory().getEquippedWeapon() != null) {
+            player.getWeaponSystem().renderMiraArma(shapeRenderer);
+            // Opcional: descomente para debug do ponto de disparo
+            // player.getWeaponSystem().renderMuzzleDebug(shapeRenderer);
+        }
+
+        // --- RENDERIZAÇÃO DA INTERFACE ---
         if (player.getInventoryController().GetIsOpen()) {
             shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
             renderInventory.render(
                     null,
-                    0,
-                    0,
+                    0, 0,
                     false,
                     player.getInventoryController().getSelectedItem(),
                     player.getInventoryController().getOriginalGridX(),
@@ -149,14 +178,14 @@ public class MapRenderer {
                     player.getInventoryController().getPlacementGridY(),
                     player.getInventoryController().isValidPlacement(),
                     null,
-                    -1,
-                    -1,
+                    -1, -1,
                     player.getInventoryController().getPlacementGridX(),
                     player.getInventoryController().getPlacementGridY());
         }
+
+        // --- RENDERIZAÇÃO DE LUZES ---
         mapa.getRayHandler().setCombinedMatrix(cameraController.getCamera());
         mapa.getRayHandler().updateAndRender();
-
     }
 
     public void calculateOffsets() {
@@ -172,6 +201,7 @@ public class MapRenderer {
         cameraController.resize(width, height);
         calculateOffsets();
     }
+
 
     private void debugRender() {
         shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);

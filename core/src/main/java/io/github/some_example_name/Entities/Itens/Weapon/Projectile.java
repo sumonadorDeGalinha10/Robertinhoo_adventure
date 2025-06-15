@@ -21,8 +21,8 @@ public class Projectile {
     private float timeAlive = 0f;
     private float stateTime = 0f;
     private float angle;
-    private static final float WIDTH = 0.5f;
-    private static final float HEIGHT = 0.5f;
+    private static final float WIDTH = 0.4f;
+    private static final float HEIGHT = 0.3f;
     private Mapa mapa;
 
     private static final float HITBOX_RADIUS = 0.1f; // Rai
@@ -91,9 +91,6 @@ public class Projectile {
         shape.dispose();
         body.setLinearVelocity(velocity);
         body.setUserData(this);
-      
-    
-   
     
 }
     

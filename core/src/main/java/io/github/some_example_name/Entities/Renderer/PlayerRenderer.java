@@ -232,14 +232,13 @@ public class PlayerRenderer {
         return currentFlipState;
     }
 
-    public float getCurrentScale() {
-        if (currentAnimation == null)
-            return 1.4f;
-
+  public float getRenderScale() {
+        if (currentAnimation == null) return 1.4f;
+        
         if (currentAnimation == animations.walkDown ||
-                currentAnimation == animations.idleDown ||
-                currentAnimation == animations.walkUp ||
-                currentAnimation == animations.idleUp) {
+            currentAnimation == animations.idleDown ||
+            currentAnimation == animations.walkUp ||
+            currentAnimation == animations.idleUp) {
             return 1.2f;
         }
         return 1.4f;

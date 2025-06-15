@@ -99,7 +99,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         
         body.setLinearDamping(2f);
         body.setAngularDamping(2f);
-        body.setUserData(this);
+        body.setUserData("ENEMY");
         
         return body;
     }

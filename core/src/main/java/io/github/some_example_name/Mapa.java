@@ -137,7 +137,7 @@ public class Mapa {
                             Gdx.app.error("Mapa", "Mapa tem múltiplos pontos de início (START)!");
                         }
                         startPosition = new Vector2(x, y);
-                        robertinhoo = new Robertinhoo(this, x, y,null);
+                        robertinhoo = new Robertinhoo(this, x, y,null,null);
                         tiles[x][y] = TILE;
                         spawnEncontrado = true;
                     }

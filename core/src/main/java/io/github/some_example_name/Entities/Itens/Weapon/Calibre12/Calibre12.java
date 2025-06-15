@@ -137,9 +137,9 @@ public class Calibre12 extends Weapon {
             return;
         }
 
-        // Disparar múltiplos projéteis (padrão de shotgun)
-        int pelletCount = 8; // Número de pelotas
-        float spreadAngle = 20f; // Ângulo de dispersão
+    
+        int pelletCount = 8;
+        float spreadAngle = 20f;
         
         for (int i = 0; i < pelletCount; i++) {
             // Calcular direção com dispersão
