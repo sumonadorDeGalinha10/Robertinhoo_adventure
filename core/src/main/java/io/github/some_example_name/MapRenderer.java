@@ -154,7 +154,19 @@ public class MapRenderer {
             player.getWeaponSystem().renderMiraArma(shapeRenderer);
             // Opcional: descomente para debug do ponto de disparo
             // player.getWeaponSystem().renderMuzzleDebug(shapeRenderer);
+
         }
+
+        // shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Inicia apenas uma vez
+        // {
+        //     for (Enemy enemy : mapa.getEnemies()) {
+        //         if (enemy instanceof Ratinho) {
+        //             Ratinho rat = (Ratinho) enemy;
+        //             rat.debugDraw(shapeRenderer);
+        //         }
+        //     }
+        // }
+        // shapeRenderer.end();
 
         // --- RENDERIZAÇÃO DA INTERFACE ---
         if (player.getInventoryController().GetIsOpen()) {
@@ -201,7 +213,6 @@ public class MapRenderer {
         cameraController.resize(width, height);
         calculateOffsets();
     }
-
 
     private void debugRender() {
         shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);

@@ -204,7 +204,6 @@ public class Robertinhoo implements Steerable<Vector2> {
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
     }
 
-
     // public void setPlayerRenderer(PlayerRenderer playerRenderer) {
     //     this.playerRenderer = playerRenderer;
     // }

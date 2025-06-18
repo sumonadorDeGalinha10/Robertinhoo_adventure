@@ -226,8 +226,6 @@ public class Mapa {
         return ammo;
     }
 
-
-
     public void update(float deltaTime) {
         java.util.Iterator<Projectile> it = projectiles.iterator();
         while(it.hasNext()) {
