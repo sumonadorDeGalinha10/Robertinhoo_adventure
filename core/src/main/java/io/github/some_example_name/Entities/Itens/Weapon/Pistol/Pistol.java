@@ -73,7 +73,7 @@ public class Pistol extends Weapon {
         this.setMuzzleOffset(WeaponDirection.E, new Vector2(6, 2));
         this.setMuzzleOffset(WeaponDirection.S, new Vector2(6, 01));
         this.setMuzzleOffset(WeaponDirection.SW, new Vector2(6, 2));
-        this.setMuzzleOffset(WeaponDirection.SE, new Vector2(6, 4));
+        this.setMuzzleOffset(WeaponDirection.SE, new Vector2(6, 3.5f));
         this.setMuzzleOffset(WeaponDirection.W, new Vector2(7, -2));
 
     }
@@ -92,8 +92,6 @@ public class Pistol extends Weapon {
     @Override
     public void reload() {
         System.out.println("recarregando");
-
-        // Não permitir recarregar se já estiver recarregando ou sem inventário
         if (currentState == WeaponState.RELOADING || inventory == null) {
             return;
         }
@@ -202,7 +200,7 @@ public class Pistol extends Weapon {
             return;
         }
         if (canShoot && ammo > 0) {
-            new Projectile(mapa, position, direction.nor().scl(5f), damage);
+            new Projectile(mapa, position, direction.nor().scl(10f), damage);
 
             shotTriggered = true;
 

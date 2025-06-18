@@ -33,16 +33,14 @@ public class WeaponHUD {
         table.setFillParent(true);
         table.bottom().left().pad(20); 
         
-        
-        // Inicializa os componentes corretamente
         this.weaponIcon = new Image();
         this.ammoLabel = new Label("", skin);
         this.reloadBar = new ProgressBar(0, 1, 0.01f, false, skin, "default-horizontal");
-        reloadBar.setSize(300, 20); // Tamanho maior
+        reloadBar.setSize(300, 20);
         
         // Configura layout
         table.add(weaponIcon).size(100, 100).padRight(10);
-        table.add(ammoLabel).width(150).left(); // Alinhar texto à esquerda
+        table.add(ammoLabel).width(150).left();
         table.row().padTop(5);
         table.add(reloadBar).colspan(2).width(300).height(20);
 

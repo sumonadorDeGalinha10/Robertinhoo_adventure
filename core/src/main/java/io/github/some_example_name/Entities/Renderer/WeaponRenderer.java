@@ -88,8 +88,7 @@ public class WeaponRenderer {
         }
         return dir;
     }
-
-    public void render(SpriteBatch batch, Vector2 position, float offsetX, float offsetY) {
+   public void render(SpriteBatch batch, Vector2 position, float offsetX, float offsetY)  {
         if (animations == null)
             return;
 
@@ -126,11 +125,15 @@ public class WeaponRenderer {
         float width = frame.getRegionWidth() * scale;
         float height = frame.getRegionHeight() * scale;
 
+        float adjustedX = position.x - width * 0.35f;
+        float adjustedY = position.y - height * 0.2f;
+        
         batch.draw(frame,
-                position.x + offsetX - width / 2,
-                position.y + offsetY - height / 2,
+                adjustedX,
+                adjustedY,
                 width, height);
     }
+    
 
     public void dispose() {
         if (animations != null) {

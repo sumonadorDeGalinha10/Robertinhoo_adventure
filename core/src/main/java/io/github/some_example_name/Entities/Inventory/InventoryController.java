@@ -18,7 +18,7 @@ public class InventoryController {
     private boolean isOpen = false;
     private int selectedSlot = 0;
     private boolean placementMode = false;
-    private Item currentPlacementItem; 
+    private Item currentPlacementItem;
     private int placementGridX = 0;
     private int placementGridY = 0;
     private boolean validPlacement = false;
@@ -32,7 +32,6 @@ public class InventoryController {
     private int cursorGridY = 0;
     private int originalGridX, originalGridY;
     private Item selectedItem = null;
-
 
     public InventoryController(Robertinhoo player, Inventory inventory, Mapa mapa) {
         this.player = player;
@@ -58,23 +57,31 @@ public class InventoryController {
         }
 
     }
-    private void handleInventorySelection() {
-        int gridCols = inventory.gridCols;
-        int gridRows = inventory.gridRows;
-        
-        if (Gdx.input.isKeyJustPressed(Keys.LEFT)) {
-            cursorGridX = Math.max(0, cursorGridX - 1);
-        }
-        if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
-            cursorGridX = Math.min(gridCols - 1, cursorGridX + 1);
-        }
-        if (Gdx.input.isKeyJustPressed(Keys.UP)) {
-            cursorGridY = Math.min(gridRows - 1, cursorGridY + 1);
-        }
-        if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
-            cursorGridY = Math.max(0, cursorGridY - 1);
-        }
+private void handleInventorySelection() {
+    System.out.println("Handling inventory selection");
+    int gridCols = inventory.gridCols;
+    int gridRows = inventory.gridRows;
     
+    int maxX = gridCols - 1;
+    int maxY = gridRows - 1;
+    
+    if (selectedItem != null) {
+        maxX = gridCols - selectedItem.getGridWidth();
+        maxY = gridRows - selectedItem.getGridHeight();
+    }
+
+    if (Gdx.input.isKeyJustPressed(Keys.LEFT)) {
+        cursorGridX = Math.max(0, cursorGridX - 1);
+    }
+    if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
+        cursorGridX = Math.min(maxX, cursorGridX + 1);
+    }
+    if (Gdx.input.isKeyJustPressed(Keys.UP)) {
+        cursorGridY = Math.max(0, cursorGridY - 1);
+    }
+    if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
+        cursorGridY = Math.min(maxY, cursorGridY + 1);
+    }
         if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
             if (selectedItem == null) {
 
@@ -107,15 +114,16 @@ public class InventoryController {
             }
         }
     }
+
     private void rotateItem() {
         if (currentPlacementItem != null) {
             currentPlacementItem.rotate();
             int newWidth = currentPlacementItem.getGridWidth();
             int newHeight = currentPlacementItem.getGridHeight();
-            
+
             placementGridX = Math.min(placementGridX, inventory.gridCols - newWidth);
             placementGridY = Math.min(placementGridY, inventory.gridRows - newHeight);
-            
+
             updatePlacementValidity();
         }
     }
@@ -143,11 +151,15 @@ public class InventoryController {
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
-            placementGridX = Math.min(inventory.gridCols - currentPlacementItem.getGridWidth(), placementGridX + 1);
+            placementGridX = Math.min(
+                    inventory.gridCols - currentPlacementItem.getGridWidth(),
+                    placementGridX + 1);
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
-            placementGridY = Math.min(inventory.gridRows - currentPlacementItem.getGridHeight(), placementGridY + 1);
+            placementGridY = Math.min(
+                    inventory.gridRows - currentPlacementItem.getGridHeight(),
+                    placementGridY + 1);
             updatePlacementValidity();
         }
         if (Gdx.input.isKeyJustPressed(Keys.UP)) {
@@ -156,48 +168,50 @@ public class InventoryController {
         }
 
         if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
-            if (validPlacement) {
+            if (validPlacement &&
+                    placementGridX >= 0 &&
+                    placementGridY >= 0 &&
+                    placementGridX + currentPlacementItem.getGridWidth() <= inventory.gridCols &&
+                    placementGridY + currentPlacementItem.getGridHeight() <= inventory.gridRows) {
                 if (itemSelected) {
                     inventory.removeItem(selectedItem);
                     itemSelected = false;
+
                 }
 
-   
                 if (inventory.placeItem(currentPlacementItem, placementGridX, placementGridY)) {
-                    
+
                     if (currentPlacementItem instanceof Weapon) {
                         ((Weapon) currentPlacementItem).destroyBody();
                         mapa.getWeapons().remove(currentPlacementItem);
-                    }
-                    else if (currentPlacementItem instanceof Ammo) {
+                    } else if (currentPlacementItem instanceof Ammo) {
                         Ammo ammo = (Ammo) currentPlacementItem;
                         ammo.destroyBody();
                         mapa.getAmmo().remove(ammo);
                         System.out.println("Munição " + ammo.getCaliber() + " adicionada ao inventário!");
                     }
-                    
+
                     exitPlacementMode(true);
                 }
             }
         }
-    
+
     }
 
     private void dropItem(Item item) {
         if (inventory.removeItem(item)) {
-    
+
             if (item instanceof Weapon && inventory.getEquippedWeapon() == item) {
                 inventory.unequipWeapon();
             }
             Vector2 dropPosition = player.getPosition().cpy();
-            
+
             if (item instanceof Weapon) {
                 Weapon weapon = (Weapon) item;
                 weapon.setPosition(dropPosition);
                 weapon.createBody(dropPosition);
                 mapa.getWeapons().add(weapon);
-            }
-            else if (item instanceof Ammo) {
+            } else if (item instanceof Ammo) {
                 Ammo ammo = (Ammo) item;
                 ammo.setPosition(dropPosition);
                 ammo.createBody(dropPosition);
@@ -205,6 +219,7 @@ public class InventoryController {
             }
         }
     }
+
     private void updatePlacementValidity() {
         validPlacement = inventory.canPlaceAt(placementGridX, placementGridY, currentPlacementItem);
     }
@@ -220,7 +235,7 @@ public class InventoryController {
                 lastPlacementY = placementGridY;
             }
             if (currentPlacementItem != null && currentPlacementItem instanceof Weapon) {
-                inventory.equipWeapon((Weapon)currentPlacementItem);
+                inventory.equipWeapon((Weapon) currentPlacementItem);
             }
         }
         currentPlacementItem = null;
@@ -230,13 +245,13 @@ public class InventoryController {
         if (item != null) {
             placementMode = true;
             currentPlacementItem = item;
-            
+
             if (item instanceof Weapon) {
                 mapa.getWeapons().remove(item);
             } else if (item instanceof Ammo) {
                 mapa.getAmmo().remove(item);
             }
-            
+
             placementGridX = lastPlacementX;
             placementGridY = lastPlacementY;
             updatePlacementValidity();
@@ -270,7 +285,6 @@ public class InventoryController {
     public boolean isValidPlacement() {
         return validPlacement;
     }
-
 
     public Item getSelectedItem() {
         return selectedItem;

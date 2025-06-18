@@ -38,7 +38,6 @@ public class GameScreen extends CatScreen {
         hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         hudBatch = new SpriteBatch();
         hudBatch.setProjectionMatrix(hudCamera.combined);
-        
         weaponHUD = new WeaponHUD(hudBatch, robertinhoo);
         robertinhoo.setMapRenderer(renderer);
 

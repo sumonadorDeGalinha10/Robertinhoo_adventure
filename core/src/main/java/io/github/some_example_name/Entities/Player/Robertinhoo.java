@@ -66,20 +66,20 @@ public class Robertinhoo implements Steerable<Vector2> {
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
-    private PlayerWeaponSystem weaponSystem;
+    public PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
     public Weapon weaponToPickup;
      public  Ammo ammoToPickup;
 
     private float dashTime = 0;
-    private float dashCooldownTime = 0;
     private Weapon currentWeapon;
     private Inventory inventory;
     private ShapeRenderer shapeRenderer;
 
-    private InventoryController inventoryController;
+    public InventoryController inventoryController;
+    private PlayerController playerController;
 
-    public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer) {
+    public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
         pos.set(x, y);
         bounds.set(pos.x, pos.y, TILE_SIZE, TILE_SIZE);
@@ -88,6 +88,7 @@ public class Robertinhoo implements Steerable<Vector2> {
         this.inventory = new Inventory(this);
         shapeRenderer = new ShapeRenderer();
         this.inventoryController = new InventoryController(this, inventory, map);
+        this.playerController = new PlayerController(this);
 
         createBody(x, y);
 
@@ -138,6 +139,7 @@ public class Robertinhoo implements Steerable<Vector2> {
 
     public void update(float deltaTime) {
         inventoryController.update(deltaTime);
+        playerController.update(deltaTime);
 
         if (inventoryController.isInPlacementMode()) {
             return;
@@ -153,21 +155,6 @@ public class Robertinhoo implements Steerable<Vector2> {
             currentWeapon.update(deltaTime);
                 currentWeapon.getCurrentState();
         }
-
-        if (dashCooldownTime > 0)
-            dashCooldownTime -= deltaTime;
-
-        if (dashTime > 0) {
-            dashTime -= deltaTime;
-
-            if (dashTime <= 0) {
-                state = IDLE;
-                isInvulnerable = false;
-                body.setLinearVelocity(0, 0);
-            }
-        } else {
-            processKeys();
-        }
         linearVelocity.set(body.getLinearVelocity());
         pos.set(body.getPosition().x - 0.5f, body.getPosition().y - 0.5f);
         bounds.setPosition(pos);
@@ -176,112 +163,6 @@ public class Robertinhoo implements Steerable<Vector2> {
         render(shapeRenderer);
     }
 
-    private void processKeys() {
-    Vector2 moveDir = new Vector2();
-    boolean wPressed = Gdx.input.isKeyPressed(Keys.W);
-    boolean sPressed = Gdx.input.isKeyPressed(Keys.S);
-    boolean aPressed = Gdx.input.isKeyPressed(Keys.A);
-    boolean dPressed = Gdx.input.isKeyPressed(Keys.D);
-    boolean isMoving = false;
-
-    // Verifica combinações de teclas para diagonais primeiro
-    if (wPressed && dPressed) { // Noroeste
-        dir = NORTH_EAST;
-        moveDir.set(1, 1);
-        isMoving = true;
-          lastDir = NORTH_EAST;
-    } else if (wPressed && aPressed) { // Nordeste
-        dir = NORTH_WEST;
-        moveDir.set(-1, 1);
-        isMoving = true;
-         lastDir = NORTH_WEST;
-    } else if (sPressed && dPressed) { // Sudoeste
-        dir = SOUTH_EAST;
-        moveDir.set(1, -1);
-        isMoving = true;
-        lastDir=SOUTH_EAST;
-    } else if (sPressed && aPressed) { // Sudeste
-        dir = SOUTH_WEST;
-        moveDir.set(-1, -1);
-        isMoving = true;
-        lastDir=SOUTH_WEST;
-    } else if (wPressed) { // Cima
-        dir = UP;
-        moveDir.set(0, 1);
-        isMoving = true;
-    } else if (sPressed) { // Baixo
-        dir = DOWN;
-        moveDir.set(0, -1);
-        isMoving = true;
-    } else if (dPressed) { // Direita
-        dir = RIGHT;
-        moveDir.set(1, 0);
-        isMoving = true;
-    } else if (aPressed) { // Esquerda
-        dir = LEFT;
-        moveDir.set(-1, 0);
-        isMoving = true;
-    }
-    if (isMoving) {
-        lastDir = dir;
-    } else {
-        dir = IDLE;
-    }
-if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH) {
-    if (!moveDir.isZero()) {
-        moveDir.nor();
-
-
-        Vector2 dashVector = new Vector2(moveDir.x, moveDir.y);
-        
- 
-        state = DASH;
-        dashTime = DASH_DURATION;
-        dashCooldownTime = DASH_COOLDOWN;
-        isInvulnerable = true;
-        body.setLinearVelocity(dashVector.scl(DASH_SPEED));
-    }
-}else if (!moveDir.isZero()) {
-            moveDir.nor();
-            state = RUN;
-            body.setLinearVelocity(moveDir.scl(ACCELERATION));
-        } else {
-            state = IDLE;
-            body.setLinearVelocity(0, 0);
-            if (!isMoving) {
-                dir = IDLE;
-            }
-        }
-        
-
-        if (Gdx.input.isKeyJustPressed(Keys.T)) {
-            if (weaponToPickup != null) {
-                inventoryController.enterPlacementMode(weaponToPickup);
-                clearWeaponToPickup();
-            } else if (ammoToPickup != null) {
-                inventoryController.enterPlacementMode(ammoToPickup);
-                clearAmmoToPickup();
-            }
-        }
-
-        if (Gdx.input.isKeyJustPressed(Keys.R)) {
-        
-            if (currentWeapon != null) {
-                System.out.println("Tipo da arma: " + currentWeapon.getClass().getSimpleName());
-                currentWeapon.reload();
-            } 
-        }
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            Weapon currentWeapon = getCurrentWeapon();
-            if (currentWeapon != null) {
-                Vector2 firePosition = weaponSystem.getTrueMuzzlePosition();
-                Vector2 direction = weaponSystem.getAimDirection().cpy().nor();
-                currentWeapon.shoot(firePosition, direction);
-            }
-        }
-
-        
-    }
 
     public Inventory getInventory() {
         return inventory;
@@ -323,6 +204,10 @@ if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
     }
 
+    // public void setPlayerRenderer(PlayerRenderer playerRenderer) {
+    //     this.playerRenderer = playerRenderer;
+    // }
+
     public void setWeaponToPickup(Weapon weapon) {
 
         this.weaponToPickup = weapon;
@@ -347,7 +232,9 @@ if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH
     public void clearItemToPickup() {
         this.itemToPickup = null;
     }
-    
+    public void setInvulnerable(boolean invulnerable) {
+        this.isInvulnerable = invulnerable;
+    }
     private Vector2 linearVelocity = new Vector2();
     private float angularVelocity = 0f;
     private float maxLinearSpeed = 10f;
@@ -466,6 +353,10 @@ if (Gdx.input.isKeyPressed(Keys.SPACE) && dashCooldownTime <= 0 && state != DASH
 
     public void render(ShapeRenderer shapeRenderer) {
 
+    }
+
+    public Mapa getMap() {
+        return map;
     }
 
     public void dispose() {
