@@ -1,17 +1,21 @@
 package io.github.some_example_name.Interface;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.*;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
 public class WeaponHUD {
     private final Image weaponIcon;
@@ -21,13 +25,15 @@ public class WeaponHUD {
     private final Stage stage;
     private final Skin skin;
 
-    public WeaponHUD(SpriteBatch batch, Robertinhoo player) {
+    // Construtor modificado (removeu SpriteBatch)
+    public WeaponHUD(Robertinhoo player) {
         this.player = player;
         this.skin = createBasicSkin();
         setupProgressBarStyle(skin);
         setupLabelStyle(skin);
 
-        stage = new Stage(new FitViewport(1920, 1080), batch);
+        // Cria seu próprio SpriteBatch interno
+        stage = new Stage(new FitViewport(1920, 1080));
         
         Table table = new Table();
         table.setFillParent(true);
@@ -38,18 +44,13 @@ public class WeaponHUD {
         this.reloadBar = new ProgressBar(0, 1, 0.01f, false, skin, "default-horizontal");
         reloadBar.setSize(300, 20);
         
-        // Configura layout
         table.add(weaponIcon).size(100, 100).padRight(10);
         table.add(ammoLabel).width(150).left();
         table.row().padTop(5);
         table.add(reloadBar).colspan(2).width(300).height(20);
 
-
-        
-        
         stage.addActor(table);
     }
-
     private Skin createBasicSkin() {
         Skin skin = new Skin();
         
@@ -86,29 +87,28 @@ public class WeaponHUD {
         skin.add("default", labelStyle);
     }
 
-    public void update(float delta) {
+      public void update(float delta) {
         Weapon weapon = player.getCurrentWeapon();
         
         if(weapon != null) {
-          
-            
             weaponIcon.setDrawable(new TextureRegionDrawable(weapon.getIcon()));
             ammoLabel.setText(String.format("AMMO: %d/%d", weapon.getAmmo(), weapon.getMaxAmmo()));
-            
-          
             reloadBar.setRange(0, weapon.getMaxAmmo());
             reloadBar.setValue(weapon.getAmmo());
-            
-          
             reloadBar.setVisible(true);
         }
         stage.act(delta);
     }
-
     public void draw() {
-    
-   
-    stage.draw();
+        stage.draw();
+    }
+
+
+    public void setBatch(SpriteBatch batch) {
+        stage.getViewport().getCamera().update();
+        stage.getBatch().setProjectionMatrix(batch.getProjectionMatrix());
+        stage.getBatch().begin();
+        stage.getBatch().end();
     }
 
     public void resize(int width, int height) {
