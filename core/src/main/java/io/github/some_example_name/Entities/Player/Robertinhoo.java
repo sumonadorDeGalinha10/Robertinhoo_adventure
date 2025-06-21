@@ -66,6 +66,11 @@ public class Robertinhoo implements Steerable<Vector2> {
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
+
+    private int life =100;
+    private int maxLife = 100;
+
+
     public PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
     public Weapon weaponToPickup;
@@ -78,6 +83,8 @@ public class Robertinhoo implements Steerable<Vector2> {
 
     public InventoryController inventoryController;
     private PlayerController playerController;
+
+
 
     public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
@@ -361,6 +368,14 @@ public class Robertinhoo implements Steerable<Vector2> {
 
     public void dispose() {
         shapeRenderer.dispose();
+    }
+
+    public int getMaxLife() {
+        return maxLife;
+    }
+
+    public int getLife() {
+        return life;
     }
 
 }
