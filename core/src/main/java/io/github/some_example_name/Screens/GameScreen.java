@@ -21,6 +21,7 @@ public class GameScreen extends CatScreen {
     private OrthographicCamera hudCamera;
     private RobertinhoFaceHUD robertinhoFaceHUD;
 
+
     public GameScreen(Game game) {
         super(game);
     }
@@ -30,19 +31,18 @@ public class GameScreen extends CatScreen {
         mapa = new Mapa();
         robertinhoo = mapa.robertinhoo;
         renderer = new MapRenderer(mapa);
-        
+
         hudBatch = new SpriteBatch();
         hudCamera = new OrthographicCamera();
         hudCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         hudBatch.setProjectionMatrix(hudCamera.combined);
-        
+
         weaponHUD = new WeaponHUD(robertinhoo);
         float width = Gdx.graphics.getWidth();
-        float height = Gdx.graphics.getHeight();
-        
-        // Passa as dimensões para o FaceHUD
-        robertinhoFaceHUD = new RobertinhoFaceHUD(370, width, height);
-        
+        float height = Gdx.graphics.getHeight(); // Corrigido para height
+
+        robertinhoFaceHUD = new RobertinhoFaceHUD(width, height, robertinhoo);
+
         robertinhoo.setMapRenderer(renderer);
         weaponHUD.setBatch(hudBatch);
 
@@ -60,29 +60,35 @@ public class GameScreen extends CatScreen {
         mapa.update(delta);
 
         renderer.render(delta, robertinhoo);
-        
+
         weaponHUD.update(delta);
         robertinhoFaceHUD.update(delta);
-        
+
         hudBatch.begin();
         weaponHUD.draw();
-        robertinhoFaceHUD.draw(hudBatch); 
+        robertinhoFaceHUD.draw(hudBatch);
         hudBatch.end();
     }
 
-    @Override
-    public void resize(int width, int height) {
-        renderer.resize(width, height);
-        
-        if (weaponHUD != null) {
-            weaponHUD.resize(width, height);
-        }
-        
-        hudCamera.setToOrtho(false, width, height);
-        hudCamera.update();
-        hudBatch.setProjectionMatrix(hudCamera.combined);
-        robertinhoFaceHUD.updateScreenSize(width, height);
+@Override
+public void resize(int width, int height) {
+    // Atualize PRIMEIRO a câmera do jogo principal
+    renderer.resize(width, height);
+    
+    // Atualize AGORA a câmera HUD
+    hudCamera.setToOrtho(false, width, height);
+    hudCamera.update();
+    hudBatch.setProjectionMatrix(hudCamera.combined);
+    
+    // Atualize os elementos HUD
+    if (weaponHUD != null) {
+        weaponHUD.resize(width, height);
     }
+    
+    robertinhoFaceHUD.updateScreenSize(width, height);
+    
+    System.out.println("[RESIZE] Tela: " + width + "x" + height);
+}
 
     @Override
     public void hide() {
@@ -91,7 +97,7 @@ public class GameScreen extends CatScreen {
 
     @Override
     public void dispose() {
-     
+
         if (renderer != null) {
             renderer.dispose();
         }
