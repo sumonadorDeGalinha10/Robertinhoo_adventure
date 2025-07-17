@@ -32,11 +32,9 @@ public class PlayerRenderer {
 
         if (isReloading) {
             if (player.dir != Robertinhoo.IDLE) {
-                // Animação de movimento enquanto recarrega
-                return animations.runDownWeaponOneHand; // Usar animação de movimento para baixo
+                return animations.runDownWeaponOneHand;
             } else {
-                // Animação idle enquanto recarrega
-                return animations.idleDownWeaponOneHand; // Usar animação idle para baixo
+                return animations.idleDownWeaponOneHand;
             }
         }
         if (weaponSystem.isAiming() && player.getInventory().getEquippedWeapon() != null) {
@@ -58,14 +56,19 @@ public class PlayerRenderer {
     private Animation<TextureRegion> getDashAnimation(Robertinhoo player) {
         switch (player.dashDirection) {
             case Robertinhoo.UP:
-                return animations.dash_top;
+            case Robertinhoo.NORTH_EAST:
+            case Robertinhoo.NORTH_WEST:
+                return animations.rollUp;
+                
             case Robertinhoo.DOWN:
-                return animations.dash_down;
+            case Robertinhoo.SOUTH_EAST:
+            case Robertinhoo.SOUTH_WEST:
+                return animations.rollDown;
+                
             case Robertinhoo.LEFT:
             case Robertinhoo.RIGHT:
-                return animations.dash_sides;
             default:
-                return animations.idleDown;
+                return animations.rollSide;
         }
     }
 
@@ -156,15 +159,20 @@ public class PlayerRenderer {
 
     }
 
-    private boolean shouldReverseAnimation(Robertinhoo player) {
-        if (player.dir == Robertinhoo.IDLE || !weaponSystem.isAiming()
-                || player.getInventory().getEquippedWeapon() == null) {
-            return false;
-        }
-        int movementDir = player.dir;
-        int aimingDir = getDirectionFromAngle(player.applyAimRotation());
-        return areOpposite(movementDir, aimingDir);
+  private boolean shouldReverseAnimation(Robertinhoo player) {
+  
+    if (player.state == Robertinhoo.DASH) {
+        return false;
     }
+    
+    if (player.dir == Robertinhoo.IDLE || !weaponSystem.isAiming()
+            || player.getInventory().getEquippedWeapon() == null) {
+        return false;
+    }
+    int movementDir = player.dir;
+    int aimingDir = getDirectionFromAngle(player.applyAimRotation());
+    return areOpposite(movementDir, aimingDir);
+}
 
     public void render(SpriteBatch batch, Robertinhoo player, float delta, float offsetX, float offsetY) {
         animationTime += delta;
@@ -201,7 +209,7 @@ public class PlayerRenderer {
 
         boolean shouldFlip = false;
         if (currentAnimation == animations.walkLeft ||
-                (currentAnimation == animations.dash_sides && player.dashDirection == Robertinhoo.LEFT)) {
+                (currentAnimation == animations.rollSide && player.dashDirection == Robertinhoo.LEFT)) {
             shouldFlip = true;
         } else if (currentAnimation == animations.idleDownWeaponOneHand) {
             float aimAngle = player.applyAimRotation();

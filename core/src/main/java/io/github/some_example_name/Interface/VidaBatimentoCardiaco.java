@@ -76,13 +76,11 @@ public class VidaBatimentoCardiaco {
 
         if (vidaPercentual >= 70) {
             estadoAtual = BatimentoCardiaco.FULL;
-            System.out.println("Estado Atual: FULL");
+
         } else if (vidaPercentual >= 30) {
             estadoAtual = BatimentoCardiaco.MEDIO;
-            System.out.println("Estado Atual: MEDIO");
         } else {
             estadoAtual = BatimentoCardiaco.BAIXO;
-            System.out.println("Estado Atual: BAIXO");
         }
     }
 

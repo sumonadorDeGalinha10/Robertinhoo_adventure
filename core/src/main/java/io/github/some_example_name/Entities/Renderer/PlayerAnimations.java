@@ -4,6 +4,9 @@ package io.github.some_example_name.Entities.Renderer;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Disposable;
+
+import java.util.Arrays;
+
 import com.badlogic.gdx.graphics.Texture;
 
 public class PlayerAnimations implements Disposable {
@@ -19,13 +22,17 @@ public class PlayerAnimations implements Disposable {
     public final Animation<TextureRegion> walkSW;
     public final Animation<TextureRegion> walkNortEast;
     public final Animation<TextureRegion> walkNortWast;
-    public final Animation<TextureRegion> dash_down;
-    public final Animation<TextureRegion> dash_top;
-    public final Animation<TextureRegion> dash_sides;
+    // public final Animation<TextureRegion> dash_down;
+    // public final Animation<TextureRegion> dash_top;
+    // public final Animation<TextureRegion> dash_sides;
     public final Animation<TextureRegion> idleNorthWest;
     public final Animation<TextureRegion> idleNorthEast;
     public final Animation<TextureRegion> idleSouthWest;
     public final Animation<TextureRegion> idleSouthEast;
+
+    public final Animation<TextureRegion> rollDown;
+    public final Animation<TextureRegion> rollUp;
+    public final Animation<TextureRegion> rollSide;
 
 
 
@@ -59,9 +66,9 @@ public class PlayerAnimations implements Disposable {
             AnimationLoader.loadTexture("rober/run/2_Template_Run_Left-Sheet.png"),
             AnimationLoader.loadTexture("rober/run/2_Template_Run_Up-Sheet.png"),
             AnimationLoader.loadTexture("rober/run/2_Template_Run_Down-Sheet.png"),
-            AnimationLoader.loadTexture("rober/dash/dash_top.png"),
-            AnimationLoader.loadTexture("rober/dash/dash_down.png"),
-            AnimationLoader.loadTexture("rober/dash/dash_sides.png"),
+            // AnimationLoader.loadTexture("rober/dash/dash_top.png"),
+            // AnimationLoader.loadTexture("rober/dash/dash_down.png"),
+            // AnimationLoader.loadTexture("rober/dash/dash_sides.png"),
             AnimationLoader.loadTexture("rober/idle_with_weapon/Idle_down_With_weapon-Sheet.png"),
             AnimationLoader.loadTexture("rober/idle_with_weapon/idle_left_with_weapon.png"),
             AnimationLoader.loadTexture("rober/idle_with_weapon/Idle_E-Sheet.png"),
@@ -71,8 +78,8 @@ public class PlayerAnimations implements Disposable {
             AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Left_withe_oneHand_WEAPON.png"),
             AnimationLoader.loadTexture("rober/run_with_weapon/runDown_With_One_HandWEAPON-Sheet.png"),
             AnimationLoader.loadTexture("rober/run_with_weapon/2_Template_Run_Up_With_One_HandWEAPON-Sheet.png"),
-            AnimationLoader.loadTexture("rober/walk/walk_SE-Sheet.png")
-             
+            AnimationLoader.loadTexture("rober/walk/walk_SE-Sheet.png"),
+            AnimationLoader.loadTexture("rober/roll/roll-Sheet.png")
         };
 
         idleDown = AnimationLoader.loadAnimation("rober/idle/idle_S-Sheet.png", 0.2f, false, 12);
@@ -87,9 +94,9 @@ public class PlayerAnimations implements Disposable {
         walkDown = AnimationLoader.loadAnimation("rober/walk/walk_S-Sheet.png", 0.1f, false, 8);
         walkSE= AnimationLoader.loadAnimation("rober/walk/walk_SE-Sheet.png", 0.1f, false, 8);  
         walkSW= AnimationLoader.loadAnimation("rober/walk/walk_SE-Sheet.png", 0.1f, true, 8);  
-        dash_down = AnimationLoader.loadAnimation("rober/dash/dash_down.png", 0.04f, false, 9);
-        dash_top = AnimationLoader.loadAnimation("rober/dash/dash_top.png", 0.05f, false, 10);
-        dash_sides = AnimationLoader.loadAnimation("rober/dash/dash_sides.png", 0.06f, false, 8);
+        // dash_down = AnimationLoader.loadAnimation("rober/dash/dash_down.png", 0.04f, false, 9);
+        // dash_top = AnimationLoader.loadAnimation("rober/dash/dash_top.png", 0.05f, false, 10);
+        // dash_sides = AnimationLoader.loadAnimation("rober/dash/dash_sides.png", 0.06f, false, 8);
         idleDownWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/idle_S_with_weapon_Sheet.png", 0.2f, false, 12);
         idleLeftWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/Idle_E-Sheet.png", 0.2f, true, 12);
         idleRightWeaponOneHand = AnimationLoader.loadAnimation("rober/idle_with_weapon/Idle_E-Sheet.png", 0.2f, false, 12);
@@ -110,6 +117,26 @@ public class PlayerAnimations implements Disposable {
         idleNorthEast = AnimationLoader.loadAnimation("rober/idle/idle_NE-Sheet.png", 0.2f, false, 12);
         idleSouthWest = AnimationLoader.loadAnimation("rober/idle/idle_SE-Sheet.png", 0.2f, true, 12);
         idleSouthEast = AnimationLoader.loadAnimation("rober/idle/idle_SE-Sheet.png", 0.2f, false, 12);
+
+        Texture rollTexture = loadedTextures[loadedTextures.length - 1];
+
+        int frameWidth = rollTexture.getWidth() / 21;
+        int frameHeight = rollTexture.getHeight();
+
+        TextureRegion[][] rollFrames = TextureRegion.split(
+            rollTexture,
+            frameWidth,
+            frameHeight
+        );
+
+        TextureRegion[] rollDownFrames = Arrays.copyOfRange(rollFrames[0], 0, 7);
+        TextureRegion[] rollUpFrames = Arrays.copyOfRange(rollFrames[0], 14, 21);
+        TextureRegion[] rollSideFrames = Arrays.copyOfRange(rollFrames[0], 7, 14);
+
+        float rollFrameDuration = 0.1f;
+        rollDown = new Animation<>(rollFrameDuration, rollDownFrames);
+        rollUp = new Animation<>(rollFrameDuration, rollUpFrames);
+        rollSide = new Animation<>(rollFrameDuration, rollSideFrames);
     }
 
     @Override

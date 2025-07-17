@@ -44,10 +44,6 @@ public class Robertinhoo implements Steerable<Vector2> {
     public static final int TOP = 1;
     public static final int DOWN = -1;
     public static final int IDLE = 6;
-    public static final float ACCELERATION = 1.5f;
-    public static final float DASH_DURATION = 0.4f;
-    public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 8f;
     public static final int TILE_SIZE = 1;
 
     public static final int NORTH_WEST = 10;

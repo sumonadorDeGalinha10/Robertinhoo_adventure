@@ -19,7 +19,7 @@ public class PlayerController {
     private InventoryController inventoryController;
 
     // Constantes
-    public static final float DASH_DURATION = 0.4f;
+    public static final float DASH_DURATION = 0.7f;
     public static final float DASH_COOLDOWN = 1f;
     public static final float DASH_SPEED = 4f;
     public static final float ACCELERATION = 1.5f;
@@ -112,10 +112,15 @@ public class PlayerController {
                 dashCooldownTime <= 0 &&
                 player.state != Robertinhoo.DASH) {
 
+            // Dentro do bloco do dash (após verificar a tecla SPACE)
             if (!moveDir.isZero()) {
                 moveDir.nor();
                 Vector2 dashVector = new Vector2(moveDir.x, moveDir.y);
                 player.state = Robertinhoo.DASH;
+
+                // CORREÇÃO: Definir a direção do dash antes de iniciar
+                player.dashDirection = player.dir; // ← Linha adicionada
+
                 dashTime = DASH_DURATION;
                 dashCooldownTime = DASH_COOLDOWN;
                 player.setInvulnerable(true);

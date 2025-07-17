@@ -112,21 +112,37 @@ public class MapRenderer {
             player.getWeaponSystem().renderWeapon(spriteBatch, delta, player, playerX, playerY);
             // player.setPlayerRenderer(playerRenderer);
 
-            // Renderiza inimigos
-            for (Enemy enemy : mapa.getEnemies()) {
-                enemy.update(delta);
-                if (enemy instanceof Ratinho) {
-                    Ratinho rat = (Ratinho) enemy;
-                    boolean flip = rat.getDirectionX() < 0 && rat.getState() == Ratinho.State.RUNNING_HORIZONTAL;
-                    TextureRegion frame = ratRenderer.getFrame(rat, flip);
+      for (Enemy enemy : mapa.getEnemies()) {
+    enemy.update(delta);
+    if (enemy instanceof Ratinho) {
+        Ratinho rat = (Ratinho) enemy;
+        boolean flip = false;
+        if (rat.getDirectionX() < 0 &&
+                (rat.getState() == Ratinho.State.RUNNING_HORIZONTAL ||
+                 rat.getState() == Ratinho.State.PREPARING_DASH ||
+                 rat.getState() == Ratinho.State.DASHING)) {
+            flip = true;
+        }
+        TextureRegion frame = ratRenderer.getFrame(rat, flip);
 
-                    spriteBatch.draw(
-                            frame,
-                            offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
-                            offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
-                            12, 12);
-                }
-            }
+        // Aplica efeito vermelho se estiver sofrendo dano
+        if (rat.isTakingDamage()) {
+            spriteBatch.setColor(1, 0.5f, 0.5f, 1); // Vermelho suave
+        } else {
+            spriteBatch.setColor(Color.WHITE); // Cor normal
+        }
+
+        spriteBatch.draw(
+            frame,
+            offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
+            offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
+            12, 12
+        );
+        
+        // Reseta a cor para não afetar outros elementos
+        spriteBatch.setColor(Color.WHITE);
+    }
+}
 
             // Renderiza armas no chão
             for (Weapon weapon : mapa.getWeapons()) {
@@ -159,12 +175,12 @@ public class MapRenderer {
 
         // shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Inicia apenas uma vez
         // {
-        //     for (Enemy enemy : mapa.getEnemies()) {
-        //         if (enemy instanceof Ratinho) {
-        //             Ratinho rat = (Ratinho) enemy;
-        //             rat.debugDraw(shapeRenderer);
-        //         }
-        //     }
+        // for (Enemy enemy : mapa.getEnemies()) {
+        // if (enemy instanceof Ratinho) {
+        // Ratinho rat = (Ratinho) enemy;
+        // rat.debugDraw(shapeRenderer);
+        // }
+        // }
         // }
         // shapeRenderer.end();
 

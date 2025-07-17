@@ -13,6 +13,12 @@ public class RobertinhoFaceHUD {
     private final Texture faceSheet;
     private final Texture batimentoSheet;
 
+    private final Texture maskMedium;
+    private final Texture maskLow;
+
+    private Animation<TextureRegion> maskMediumAnimation;
+    private Animation<TextureRegion> maskLowAnimation;
+
     private final VidaBatimentoCardiaco batimentoCardiaco;
 
     private static final float FACE_SIZE = 380;
@@ -36,6 +42,11 @@ public class RobertinhoFaceHUD {
         metalFrame = new Texture("rober/interface/molde.png");
         faceSheet = new Texture("rober/interface/robertinhoo_idle-Sheet.png");
         batimentoSheet = new Texture("rober/interface/vida-full-Sheet.png");
+        maskMedium = new Texture("rober/interface/medium-Sheet.png");
+        maskLow = new Texture("rober/interface/low-Sheet.png");
+
+        maskMediumAnimation = createMaskAnimation(maskMedium, 8);
+        maskLowAnimation = createMaskAnimation(maskLow, 8);
 
         batimentoCardiaco = new VidaBatimentoCardiaco(
                 batimentoSheet,
@@ -63,6 +74,21 @@ public class RobertinhoFaceHUD {
 
         faceAnimation = new Animation<>(0.4f, idleFrames);
         stateTime = 0f;
+    }
+
+    private Animation<TextureRegion> createMaskAnimation(Texture sheet, int frameCount) {
+        int FRAME_COLS = frameCount;
+        int FRAME_ROWS = 1;
+
+        TextureRegion[][] tmp = TextureRegion.split(
+                sheet,
+                sheet.getWidth() / FRAME_COLS,
+                sheet.getHeight() / FRAME_ROWS);
+
+        TextureRegion[] frames = new TextureRegion[FRAME_COLS];
+        System.arraycopy(tmp[0], 0, frames, 0, FRAME_COLS);
+
+        return new Animation<>(0.4f, frames); // Mesma velocidade que a animação do rosto
     }
 
     private void recalculatePosition(float screenWidth, float screenHeight) {
@@ -107,15 +133,22 @@ public class RobertinhoFaceHUD {
         float faceY = scaledY + faceMargin;
         batch.draw(currentFrame, faceX, faceY, faceRenderSize, faceRenderSize);
 
+        float vida = robertinhoo.getLife();
+        if (vida < 30) { 
+            TextureRegion maskFrame = maskLowAnimation.getKeyFrame(stateTime, true);
+            batch.draw(maskFrame, faceX, faceY, faceRenderSize, faceRenderSize);
+        } else if (vida < 70) { 
+            TextureRegion maskFrame = maskMediumAnimation.getKeyFrame(stateTime, true);
+            batch.draw(maskFrame, faceX, faceY, faceRenderSize, faceRenderSize);
+        }
+
         if (batimentoCardiaco != null) {
             float batimentoScaleX = BATIMENTO_WIDTH * scale;
             float batimentoScaleY = BATIMENTO_HEIGHT * scale;
 
-           
             float batimentoX = scaledX + (scaledFaceSize - batimentoScaleX) / 2;
 
-           
-            float horizontalOffset = - 7.15f * scale;
+            float horizontalOffset = -7.15f * scale;
             batimentoX += horizontalOffset;
 
             float offsetVertical = scaledFaceSize * 0.175f;
@@ -138,6 +171,8 @@ public class RobertinhoFaceHUD {
         metalFrame.dispose();
         faceSheet.dispose();
         batimentoSheet.dispose();
+        maskMedium.dispose();
+        maskLow.dispose();
 
         if (batimentoCardiaco != null) {
             batimentoCardiaco.dispose();

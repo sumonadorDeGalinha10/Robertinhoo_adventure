@@ -27,7 +27,6 @@ public class InventoryController {
     private int lastPlacementY = 0;
 
     private boolean itemSelected = false;
-    private int originalSlotX, originalSlotY;
     private int cursorGridX = 0;
     private int cursorGridY = 0;
     private int originalGridX, originalGridY;
