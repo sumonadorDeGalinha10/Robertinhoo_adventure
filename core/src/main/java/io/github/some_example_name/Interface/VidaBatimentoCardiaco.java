@@ -46,14 +46,11 @@ public class VidaBatimentoCardiaco {
         int TOTAL_FRAMES = 33;
         int FRAMES_POR_ESTADO = 11;
         
-        // Divide o spritesheet em 33 colunas (1 linha)
         TextureRegion[] allFrames = TextureRegion.split(
             batimentoSheet,
             batimentoSheet.getWidth() / TOTAL_FRAMES,
             batimentoSheet.getHeight()
-        )[0]; // Pega apenas a primeira linha
-        
-        // Cria as animações para cada estado
+        )[0]; 
         animacaoFull = criarAnimacao(allFrames, 0, 10, 0.1f);
         animacaoMedio = criarAnimacao(allFrames, 11, 21, 0.1f);
         animacaoBaixo = criarAnimacao(allFrames, 22, 32, 0.1f);
@@ -76,13 +73,11 @@ public class VidaBatimentoCardiaco {
 
         if (vidaPercentual >= 70) {
             estadoAtual = BatimentoCardiaco.FULL;
-            System.out.println("Estado Atual: FULL");
+
         } else if (vidaPercentual >= 30) {
             estadoAtual = BatimentoCardiaco.MEDIO;
-            System.out.println("Estado Atual: MEDIO");
         } else {
             estadoAtual = BatimentoCardiaco.BAIXO;
-            System.out.println("Estado Atual: BAIXO");
         }
     }
 
@@ -116,10 +111,18 @@ public class VidaBatimentoCardiaco {
         this.height = height;
     }
 
-
-
         public float getWidth() {
         return width;
+    }
+
+
+    
+    public float getY() {
+        return y;
+    }
+    
+    public float getHeight() {
+        return height;
     }
 
     public void dispose() {

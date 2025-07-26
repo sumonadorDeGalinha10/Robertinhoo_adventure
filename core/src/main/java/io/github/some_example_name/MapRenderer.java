@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import box2dLight.RayHandler;
 import box2dLight.PointLight;
@@ -21,9 +23,12 @@ import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
 import io.github.some_example_name.Entities.Renderer.AmmoRenderer.AmmoRenderer;
 import io.github.some_example_name.Entities.Renderer.EnemiRenderer.RatRenderer;
+import io.github.some_example_name.Entities.Renderer.ItensRenderer.DestructibleRenderer;
+// import io.github.some_example_name.Entities.Renderer.MeleeAttackRenderer;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Camera.Camera;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import io.github.some_example_name.Entities.Renderer.ItensMapRenderer;
 
 public class MapRenderer {
     private RayHandler rayHandler;
@@ -37,6 +42,9 @@ public class MapRenderer {
     private Camera cameraController;
     private AmmoRenderer ammoRenderer;
     public RenderInventory renderInventory;
+
+    private DestructibleRenderer destructibleRenderer;
+    // private MeleeAttackRenderer meleeAttackRenderer;
     private PointLight debugLight;
     public static final int TILE_SIZE = 16;
     public float offsetX;
@@ -74,6 +82,8 @@ public class MapRenderer {
                 new Vector2(100, 100));
 
         mapa.robertinhoo.setCamera(cameraController.getCamera());
+        this.destructibleRenderer = new DestructibleRenderer(TILE_SIZE);
+        // this.meleeAttackRenderer = new MeleeAttackRenderer(mapa.robertinhoo);
     }
 
     public void render(float delta, Robertinhoo player) {
@@ -98,6 +108,8 @@ public class MapRenderer {
         {
             // Renderiza camadas de tiles
             tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
+            //Renderiza itens do cenário
+            destructibleRenderer.render(spriteBatch, mapa.getDestructibles(), offsetX, offsetY);
 
             // Renderiza projéteis
             projectileRenderer.render(spriteBatch, delta, offsetX, offsetY);
@@ -110,21 +122,37 @@ public class MapRenderer {
 
             // Renderiza arma do jogador
             player.getWeaponSystem().renderWeapon(spriteBatch, delta, player, playerX, playerY);
+
             // player.setPlayerRenderer(playerRenderer);
 
-            // Renderiza inimigos
             for (Enemy enemy : mapa.getEnemies()) {
                 enemy.update(delta);
                 if (enemy instanceof Ratinho) {
                     Ratinho rat = (Ratinho) enemy;
-                    boolean flip = rat.getDirectionX() < 0 && rat.getState() == Ratinho.State.RUNNING_HORIZONTAL;
+                    boolean flip = false;
+                    if (rat.getDirectionX() < 0 &&
+                            (rat.getState() == Ratinho.State.RUNNING_HORIZONTAL ||
+                                    rat.getState() == Ratinho.State.PREPARING_DASH ||
+                                    rat.getState() == Ratinho.State.DASHING)) {
+                        flip = true;
+                    }
                     TextureRegion frame = ratRenderer.getFrame(rat, flip);
+
+                    // Aplica efeito vermelho se estiver sofrendo dano
+                    if (rat.isTakingDamage()) {
+                        spriteBatch.setColor(1, 0.5f, 0.5f, 1); // Vermelho suave
+                    } else {
+                        spriteBatch.setColor(Color.WHITE); // Cor normal
+                    }
 
                     spriteBatch.draw(
                             frame,
                             offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
                             offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
                             12, 12);
+
+                    // Reseta a cor para não afetar outros elementos
+                    spriteBatch.setColor(Color.WHITE);
                 }
             }
 
@@ -143,8 +171,13 @@ public class MapRenderer {
 
             // Renderiza munições
             ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
+
         }
         spriteBatch.end();
+
+        debugRender(offsetX, offsetY);
+
+        debugMeleeHitbox(offsetX, offsetY);
 
         // --- RENDERIZAÇÃO DE FORMAS (MIRA E DEBUG) ---
         shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
@@ -159,12 +192,12 @@ public class MapRenderer {
 
         // shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Inicia apenas uma vez
         // {
-        //     for (Enemy enemy : mapa.getEnemies()) {
-        //         if (enemy instanceof Ratinho) {
-        //             Ratinho rat = (Ratinho) enemy;
-        //             rat.debugDraw(shapeRenderer);
-        //         }
-        //     }
+        // for (Enemy enemy : mapa.getEnemies()) {
+        // if (enemy instanceof Ratinho) {
+        // Ratinho rat = (Ratinho) enemy;
+        // rat.debugDraw(shapeRenderer);
+        // }
+        // }
         // }
         // shapeRenderer.end();
 
@@ -214,14 +247,53 @@ public class MapRenderer {
         calculateOffsets();
     }
 
-    private void debugRender() {
+    private void debugRender(float offsetX, float offsetY) {
         shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
-        for (Enemy enemy : mapa.getEnemies()) {
-            if (enemy instanceof Ratinho) {
-                Ratinho rat = (Ratinho) enemy;
-                rat.debugDraw(shapeRenderer);
+        for (Enemy e : mapa.getEnemies()) {
+            if (e instanceof Ratinho) {
+                ((Ratinho) e).debugDraw(shapeRenderer, offsetX, offsetY);
+            }
+        }
+
+        shapeRenderer.end();
+    }
+
+    private void debugMeleeHitbox(float offsetX, float offsetY) {
+        Body hitbox = mapa.robertinhoo.getMeleeAttackSystem().getMeleeHitboxBody();
+        if (hitbox == null)
+            return;
+
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.CYAN); // cor que destaque o ataque
+
+        for (Fixture f : hitbox.getFixtureList()) {
+            if (f.getShape() instanceof PolygonShape) {
+                PolygonShape poly = (PolygonShape) f.getShape();
+                Vector2[] verts = new Vector2[poly.getVertexCount()];
+                for (int i = 0; i < poly.getVertexCount(); i++) {
+                    Vector2 local = new Vector2();
+                    poly.getVertex(i, local);
+
+                    // converte de metros → pixels
+                    float worldX = local.x * TILE_SIZE;
+                    float worldY = local.y * TILE_SIZE;
+
+                    // aplica posição do body e offset
+                    Vector2 bodyPos = hitbox.getPosition();
+                    float px = offsetX + bodyPos.x * TILE_SIZE + worldX;
+                    float py = offsetY + bodyPos.y * TILE_SIZE + worldY;
+
+                    verts[i] = new Vector2(px, py);
+                }
+                // desenha arestas
+                for (int i = 0; i < verts.length; i++) {
+                    Vector2 a = verts[i];
+                    Vector2 b = verts[(i + 1) % verts.length];
+                    shapeRenderer.line(a, b);
+                }
             }
         }
 

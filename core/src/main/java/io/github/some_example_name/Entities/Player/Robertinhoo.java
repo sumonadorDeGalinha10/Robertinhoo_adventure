@@ -29,6 +29,9 @@ import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Inventory.InventoryController;
 import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import com.badlogic.gdx.utils.Timer;
+
 
 public class Robertinhoo implements Steerable<Vector2> {
 
@@ -44,16 +47,22 @@ public class Robertinhoo implements Steerable<Vector2> {
     public static final int TOP = 1;
     public static final int DOWN = -1;
     public static final int IDLE = 6;
-    public static final float ACCELERATION = 1.5f;
-    public static final float DASH_DURATION = 0.4f;
-    public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 8f;
     public static final int TILE_SIZE = 1;
 
     public static final int NORTH_WEST = 10;
     public static final int NORTH_EAST = 11;
     public static final int SOUTH_WEST = 12;
     public static final int SOUTH_EAST = 13;
+    public static final int MELEE_ATTACK = 14;
+
+    private float meleeAttackTime = 0;
+    private float meleeAttackDuration = 0.4f; // Duração total do ataque
+    public int meleeDirection = DOWN; // Direção do ataque
+
+    public boolean isTakingDamage = false;
+    private float damageTimer = 0f;
+
+    public final MeleeAttackSystem meleeSystem;
 
     public int state = SPAWN;
     public int dir = IDLE;
@@ -67,24 +76,20 @@ public class Robertinhoo implements Steerable<Vector2> {
     public final Rectangle bounds = new Rectangle();
     public final Vector2 pos = new Vector2();
 
-    private int life =100;
+    private float life = 100;
     private int maxLife = 100;
-
 
     public PlayerWeaponSystem weaponSystem;
     private OrthographicCamera camera;
     public Weapon weaponToPickup;
-     public  Ammo ammoToPickup;
+    public Ammo ammoToPickup;
 
-    private float dashTime = 0;
     private Weapon currentWeapon;
     private Inventory inventory;
     private ShapeRenderer shapeRenderer;
-
     public InventoryController inventoryController;
     private PlayerController playerController;
-
-
+    private final StaminaSystem staminaSystem;
 
     public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
@@ -96,13 +101,19 @@ public class Robertinhoo implements Steerable<Vector2> {
         shapeRenderer = new ShapeRenderer();
         this.inventoryController = new InventoryController(this, inventory, map);
         this.playerController = new PlayerController(this);
+        this.meleeSystem = new MeleeAttackSystem(this);
+        // - 100 stamina máxima
+        // - 15/s regeneração normal
+        // - 5/s regeneração durante exaustão (mais lenta)
+        // - 80% de recuperação necessária para sair da exaustão
+        this.staminaSystem = new StaminaSystem(100f, 10f, 23f, 0.95f);
 
         createBody(x, y);
 
     }
 
     public void equipWeapon(Weapon weapon) {
-        this.currentWeapon =(Weapon) weapon;
+        this.currentWeapon = (Weapon) weapon;
         if (weapon.getTipoMao() == Weapon.TipoMao.UMA_MAO) {
             IsUsingOneHandWeapon = true;
         }
@@ -147,6 +158,20 @@ public class Robertinhoo implements Steerable<Vector2> {
     public void update(float deltaTime) {
         inventoryController.update(deltaTime);
         playerController.update(deltaTime);
+        if (isTakingDamage) {
+            damageTimer -= deltaTime;
+            if (damageTimer <= 0) {
+                isTakingDamage = false;
+            }
+        }
+
+     if (state == MELEE_ATTACK) {
+            meleeAttackTime += deltaTime;
+            if (meleeAttackTime >= meleeAttackDuration) {
+                state = IDLE;
+                meleeAttackTime = 0;
+            }
+        }
 
         if (inventoryController.isInPlacementMode()) {
             return;
@@ -160,7 +185,7 @@ public class Robertinhoo implements Steerable<Vector2> {
         Weapon currentWeapon = getCurrentWeapon();
         if (currentWeapon != null) {
             currentWeapon.update(deltaTime);
-                currentWeapon.getCurrentState();
+            currentWeapon.getCurrentState();
         }
         linearVelocity.set(body.getLinearVelocity());
         pos.set(body.getPosition().x - 0.5f, body.getPosition().y - 0.5f);
@@ -169,6 +194,38 @@ public class Robertinhoo implements Steerable<Vector2> {
         angularVelocity = body.getAngularVelocity();
         render(shapeRenderer);
     }
+
+    public void startMeleeAttack() {
+        if (state != DASH && state != MELEE_ATTACK) {
+            state = MELEE_ATTACK;
+            meleeAttackTime = 0;
+            
+            if (weaponSystem.isAiming() && getInventory().getEquippedWeapon() != null) {
+                float aimAngle = applyAimRotation();
+                WeaponAnimations.WeaponDirection weaponDir = DirectionUtils.getDirectionFromAngle(aimAngle);
+                meleeDirection = DirectionUtils.convertWeaponDirectionToRobertinhooDirection(weaponDir);
+            } else {
+                meleeDirection = lastDir;
+            }
+            
+            meleeSystem.startAttack(meleeDirection);
+        }
+    }
+
+  public void takeDamage(float damage) {
+        if (!isInvulnerable) {
+            life =  life - damage;
+            isTakingDamage = true;
+            damageTimer = 0.5f;
+            setInvulnerable(true);
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    setInvulnerable(false);
+                }
+            }, 1f);
+        }
+    }   
 
 
     public Inventory getInventory() {
@@ -210,9 +267,12 @@ public class Robertinhoo implements Steerable<Vector2> {
     public void setMapRenderer(MapRenderer mapRenderer) {
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
     }
+       public float getMeleeAttackDuration() {
+        return meleeAttackDuration;
+    }
 
     // public void setPlayerRenderer(PlayerRenderer playerRenderer) {
-    //     this.playerRenderer = playerRenderer;
+    // this.playerRenderer = playerRenderer;
     // }
 
     public void setWeaponToPickup(Weapon weapon) {
@@ -227,7 +287,7 @@ public class Robertinhoo implements Steerable<Vector2> {
     public void setAmmoToPickup(Ammo ammo) {
         this.ammoToPickup = ammo;
     }
-    
+
     public void clearAmmoToPickup() {
         this.ammoToPickup = null;
     }
@@ -235,13 +295,15 @@ public class Robertinhoo implements Steerable<Vector2> {
     public void setItemToPickup(Item item) {
         this.itemToPickup = item;
     }
-    
+
     public void clearItemToPickup() {
         this.itemToPickup = null;
     }
+
     public void setInvulnerable(boolean invulnerable) {
         this.isInvulnerable = invulnerable;
     }
+
     private Vector2 linearVelocity = new Vector2();
     private float angularVelocity = 0f;
     private float maxLinearSpeed = 10f;
@@ -374,8 +436,15 @@ public class Robertinhoo implements Steerable<Vector2> {
         return maxLife;
     }
 
-    public int getLife() {
+    public float getLife() {
         return life;
+    }
+    public  MeleeAttackSystem getMeleeAttackSystem() {
+        return this.meleeSystem;
+    }
+
+    public StaminaSystem getStaminaSystem() {
+        return staminaSystem;
     }
 
 }

@@ -66,7 +66,7 @@ public class GameScreen extends CatScreen {
 
         hudBatch.begin();
         weaponHUD.draw();
-        robertinhoFaceHUD.draw(hudBatch);
+        robertinhoFaceHUD.draw(hudBatch,delta);
         hudBatch.end();
     }
 

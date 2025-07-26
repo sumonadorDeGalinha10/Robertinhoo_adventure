@@ -1,18 +1,17 @@
 package io.github.some_example_name.Entities.Enemies;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.steer.SteeringAcceleration;
 import com.badlogic.gdx.ai.steer.behaviors.Pursue;
 import com.badlogic.gdx.ai.utils.Location;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import com.badlogic.gdx.graphics.Color;
 
@@ -31,7 +30,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     private static final float ATTACK_RANGE = 1.5f;
     public final Vector2 pos = new Vector2();
 
-    private static final float DASH_DURATION = 0.2f;
+    private static final float DASH_DURATION = 0.4f;
     private static final float DASH_COOLDOWN = 2f;
     private float dashTimer = 0f;
     private static final float DASH_FORCE = 10f;
@@ -50,6 +49,11 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     private float damageTimer = 0f;
     private boolean isTakingDamage = false;
 
+    private static final float PREPARE_DASH_DURATION = 0.8f; // Tempo de preparação
+    private static final float DASH_SPEED_MULTIPLIER = 1.5f;
+    private float prepareDashTimer = 0f;
+    private Vector2 dashTargetDirection; //
+
     public Ratinho(Mapa mapa, int x, int y, Robertinhoo target) {
         super(x, y, 20, 2);
         this.mapa = mapa;
@@ -59,36 +63,40 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         this.pursueBehavior = setupAI();
         this.pursueBehavior.setOwner(this);
 
-        body.setUserData(this); // Identificação do corpo
+        body.setUserData(this);
     }
 
-    private Body createBody(int x, int y) {
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(x + 0.5f, y + 0.5f);
+  private Body createBody(int x, int y) {
+    BodyDef bodyDef = new BodyDef();
+    bodyDef.type = BodyDef.BodyType.DynamicBody;
+    bodyDef.position.set(x + 0.5f, y + 0.5f);
+    bodyDef.fixedRotation = true;  
 
-        Body body = mapa.world.createBody(bodyDef);
+    Body body = mapa.world.createBody(bodyDef);
 
-        float halfWidth = 0.2f;
-        float halfHeight = 0.2f;
+    // calcula meados baseado no sprite real (12px) e TILE_SIZE (16px)
+    float halfWidth  = (6f / 3f) / 12;  // 6 / 16 = 0.375
+    float halfHeight = (6f / 3f) / 12;  // 6 / 16 = 0.375
 
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(halfWidth, halfHeight);
+    PolygonShape shape = new PolygonShape();
+    shape.setAsBox(halfWidth, halfHeight);
 
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = shape;
-        fixtureDef.density = 2.0f;
-        fixtureDef.friction = 0.0f;
+    FixtureDef fd = new FixtureDef();
+    fd.shape = shape;
+    fd.density  = 2f;
+    fd.friction = 0f;
+    fd.filter.categoryBits = Constants.BIT_ENEMY;
 
-        body.createFixture(fixtureDef);
-        shape.dispose();
+    body.createFixture(fd);
+    shape.dispose();
 
-        body.setLinearDamping(2f);
-        body.setAngularDamping(2f);
-        body.setUserData("ENEMY");
+    body.setLinearDamping(2f);
+    body.setAngularDamping(2f);
+    body.setUserData(this);
 
-        return body;
-    }
+    return body;
+}
+
 
     @Override
     public Body getBody() {
@@ -102,90 +110,106 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
     }
 
     public enum State {
-        IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE
+        IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE,
+        PREPARING_DASH,
+        DASHING
     }
 
     public float getAnimationTime() {
         return animationTime;
     }
 
-    public void update(float deltaTime) {
-        Vector2 playerPos = target.getPosition();
-        Vector2 myPos = body.getPosition();
+public void update(float deltaTime) {
+    Vector2 playerPos = target.getPosition();
+    Vector2 myPos = body.getPosition();
+    float distance = myPos.dst(playerPos);
 
-        float distance = myPos.dst(playerPos);
+    // Sempre atualiza o tempo de animação
+    animationTime += deltaTime;
 
-        if (isTakingDamage) {
-            damageTimer -= deltaTime;
-            if (damageTimer <= 0) {
-                isTakingDamage = false;
-                state = State.IDLE;
-            }
+    if (isTakingDamage) {
+        damageTimer -= deltaTime;
+        if (damageTimer <= 0) {
+            isTakingDamage = false;
+            state = State.IDLE;
         }
-
-        if (!isTakingDamage) {
-            if (isDashing) {
-                dashTimer -= deltaTime;
-                if (dashTimer <= 0) {
-                    isDashing = false;
-
-                    body.setLinearVelocity(body.getLinearVelocity().scl(0.2f));
-                }
-            }
-
-            if (dashCooldown > 0) {
-                dashCooldown -= deltaTime;
-            }
-
-            if (!isDashing && dashCooldown <= 0 && distance <= DETECTION_RANGE) {
-                SteeringAcceleration<Vector2> steering = new SteeringAcceleration<>(new Vector2());
-                pursueBehavior.calculateSteering(steering);
-
-                Vector2 force = steering.linear.scl(body.getMass());
-                body.applyForceToCenter(force, true);
-            }
-
-            if (!isDashing && dashCooldown <= 0 && distance <= ATTACK_RANGE) {
-                executeDashAttack(playerPos);
-            }
-
-        }
-
-        animationTime += deltaTime;
-        updateState();
-
+        return;
     }
+
+    if (state == State.PREPARING_DASH) {
+        prepareDashTimer -= deltaTime;
+        if (prepareDashTimer <= 0) {
+            state = State.DASHING;
+            dashTimer = DASH_DURATION;
+          body.setLinearVelocity(dashTargetDirection.scl(maxLinearSpeed * DASH_SPEED_MULTIPLIER));
+        }
+    } 
+    else if (state == State.DASHING) {
+        dashTimer -= deltaTime;
+        if (dashTimer <= 0) {
+            state = State.IDLE;
+            dashCooldown = DASH_COOLDOWN;
+  body.setLinearVelocity(body.getLinearVelocity().scl(0.1f)); // Reduzido de 0.2 para 0.1
+        }
+    }
+
+    if (dashCooldown > 0) {
+        dashCooldown -= deltaTime;
+    }
+
+    if (state == State.IDLE || state == State.RUNNING_HORIZONTAL || state == State.RUNNING_DOWN) {
+        if (dashCooldown <= 0 && distance <= DETECTION_RANGE) {
+            SteeringAcceleration<Vector2> steering = new SteeringAcceleration<>(new Vector2());
+            pursueBehavior.calculateSteering(steering);
+
+            Vector2 force = steering.linear.scl(body.getMass());
+            body.applyForceToCenter(force, true);
+            
+            updateMovementState();
+        }
+
+        if (dashCooldown <= 0 && distance <= ATTACK_RANGE) {
+            executeDashAttack(playerPos);
+        }
+    }
+    
+}
 
     @Override
     public void takeDamage(float damage) {
         super.takeDamage(damage);
-        // Reinicia o timer e ativa o estado
         damageTimer = damageAnimationDuration;
         isTakingDamage = true;
         state = State.GOT_DAMAGE;
     }
 
-    public void updateState() {
-        if (isTakingDamage)
-            return;
-        Vector2 velocity = body.getLinearVelocity();
+  
+public boolean isTakingDamage() {
+    return isTakingDamage;
+}
 
-        if (velocity.isZero(ZERO_LINEAR_SPEED_THRESHOLD)) {
-            state = State.IDLE;
+private void updateMovementState() {
+    Vector2 velocity = body.getLinearVelocity();
+
+    if (velocity.isZero(ZERO_LINEAR_SPEED_THRESHOLD)) {
+        state = State.IDLE;
+    } else {
+        boolean isVerticalMovement = Math.abs(velocity.y) > Math.abs(velocity.x);
+
+        if (isVerticalMovement) {
+            state = State.RUNNING_DOWN;
+            directionY = velocity.y > 0 ? -1 : 1;
         } else {
-            // Verifica se o movimento é predominante vertical
-            boolean isVerticalMovement = Math.abs(velocity.y) > Math.abs(velocity.x);
-
-            if (isVerticalMovement) {
-                state = State.RUNNING_DOWN;
-                // Define direção Y baseada no sinal da velocidade
-                directionY = velocity.y > 0 ? -1 : 1;
-            } else {
-                state = State.RUNNING_HORIZONTAL;
-                directionX = velocity.x > 0 ? 1 : -1;
-            }
+            state = State.RUNNING_HORIZONTAL;
+            directionX = velocity.x > 0 ? 1 : -1;
         }
     }
+}
+    @Override
+    public float getAttackDamage() {
+        return 10f; // Dano base do ratinho
+    }
+    
 
     public float getDamageAnimationTime() {
         return damageAnimationDuration - damageTimer;
@@ -207,46 +231,61 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         return movingDown;
     }
 
-    private void executeDashAttack(Vector2 targetPos) {
-        Vector2 direction = targetPos.cpy().sub(body.getPosition()).nor();
 
-        // Defina uma velocidade fixa para o dash
-        body.setLinearVelocity(direction.scl(maxLinearSpeed * 2)); // 5x a velocidade normal
 
-        isDashing = true;
-        dashTimer = DASH_DURATION; // Inicia a duração do dash
-        dashCooldown = DASH_COOLDOWN; // Inicia o cooldown
-    }
+private void executeDashAttack(Vector2 targetPos) {
+    // Calcula direção do ataque
+    dashTargetDirection = targetPos.cpy().sub(body.getPosition()).nor();
+    
+    // Entra no estado de preparação
+    state = State.PREPARING_DASH;
+    prepareDashTimer = PREPARE_DASH_DURATION;
+    
+    // Para o movimento durante a preparação
+    body.setLinearVelocity(0, 0);
+}
 
     public TextureRegion getCurrentFrame(float deltaTime) {
         animationTime += deltaTime;
         return ratAnimation.getKeyFrame(animationTime);
     }
 
-    public void debugDraw(ShapeRenderer shapeRenderer) {
+public void debugDraw(ShapeRenderer renderer, float offsetX, float offsetY) {
+    Vector2 position = body.getPosition();    // em metros
+    float angle = body.getAngle();
 
-        Vector2 position = body.getPosition();
-        float angle = body.getAngle();
+    // Pega shape do fixture
+    PolygonShape shape = (PolygonShape) body.getFixtureList().first().getShape();
 
-        shapeRenderer.set(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(Color.RED);
+    int vcount = shape.getVertexCount();
+    Vector2[] verts = new Vector2[vcount];
 
-        PolygonShape shape = (PolygonShape) body.getFixtureList().first().getShape();
+    // Converte cada vértice de “metros” para “pixels” e aplica rotação
+    for (int i = 0; i < vcount; i++) {
+        Vector2 local = new Vector2();
+        shape.getVertex(i, local);
 
-        Vector2[] vertices = new Vector2[shape.getVertexCount()];
-        for (int i = 0; i < shape.getVertexCount(); i++) {
-            Vector2 vertex = new Vector2();
-            shape.getVertex(i, vertex);
-            // Aplica rotação e posição
-            vertices[i] = vertex.cpy().rotateRad(angle).add(position);
-        }
+        // Rotaciona em torno da origem do body e converte pra pixel
+        float worldX = (local.x * 16) * MathUtils.cos(angle)
+                     - (local.y * 16) * MathUtils.sin(angle);
+        float worldY = (local.x * 16) * MathUtils.sin(angle)
+                     + (local.y * 16) * MathUtils.cos(angle);
 
-        for (int i = 0; i < vertices.length; i++) {
-            Vector2 current = vertices[i];
-            Vector2 next = vertices[(i + 1) % vertices.length];
-            shapeRenderer.line(current, next);
-        }
+        verts[i] = new Vector2(
+            offsetX + (position.x * 16) + worldX,
+            offsetY + (position.y * 16) + worldY
+        );
     }
+
+    renderer.setColor(Color.RED);
+    // Desenha linhas entre vértices
+    for (int i = 0; i < vcount; i++) {
+        Vector2 a = verts[i];
+        Vector2 b = verts[(i + 1) % vcount];
+        renderer.line(a, b);
+    }
+}
+
 
     @Override
     public Vector2 getLinearVelocity() {

@@ -83,6 +83,7 @@ public class Projectile {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 0.5f;
+           fixtureDef.isSensor = true; 
 
         fixtureDef.filter.categoryBits = Mapa.CATEGORY_PROJECTILE;
         fixtureDef.filter.maskBits = Mapa.MASK_PROJECTILE;
@@ -91,6 +92,9 @@ public class Projectile {
         shape.dispose();
         body.setLinearVelocity(velocity);
         body.setUserData(this);
+  
+   
+     
     
 }
     

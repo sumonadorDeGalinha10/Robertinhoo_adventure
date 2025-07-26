@@ -1,6 +1,5 @@
 package io.github.some_example_name.Entities.Inventory;
 
-import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 
 public class InventorySlot {
     public int x, y;
