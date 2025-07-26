@@ -8,8 +8,10 @@ import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.steer.SteeringAcceleration;
 import com.badlogic.gdx.ai.steer.behaviors.Pursue;
 import com.badlogic.gdx.ai.utils.Location;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import com.badlogic.gdx.graphics.Color;
 
@@ -64,33 +66,37 @@ public class Ratinho extends Enemy implements Steerable<Vector2> {
         body.setUserData(this);
     }
 
-    private Body createBody(int x, int y) {
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(x + 0.5f, y + 0.5f);
+  private Body createBody(int x, int y) {
+    BodyDef bodyDef = new BodyDef();
+    bodyDef.type = BodyDef.BodyType.DynamicBody;
+    bodyDef.position.set(x + 0.5f, y + 0.5f);
+    bodyDef.fixedRotation = true;  
 
-        Body body = mapa.world.createBody(bodyDef);
+    Body body = mapa.world.createBody(bodyDef);
 
-        float halfWidth = 0.2f;
-        float halfHeight = 0.2f;
+    // calcula meados baseado no sprite real (12px) e TILE_SIZE (16px)
+    float halfWidth  = (6f / 3f) / 12;  // 6 / 16 = 0.375
+    float halfHeight = (6f / 3f) / 12;  // 6 / 16 = 0.375
 
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(halfWidth, halfHeight);
+    PolygonShape shape = new PolygonShape();
+    shape.setAsBox(halfWidth, halfHeight);
 
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = shape;
-        fixtureDef.density = 2.0f;
-        fixtureDef.friction = 0.0f;
+    FixtureDef fd = new FixtureDef();
+    fd.shape = shape;
+    fd.density  = 2f;
+    fd.friction = 0f;
+    fd.filter.categoryBits = Constants.BIT_ENEMY;
 
-        body.createFixture(fixtureDef);
-        shape.dispose();
+    body.createFixture(fd);
+    shape.dispose();
 
-        body.setLinearDamping(2f);
-        body.setAngularDamping(2f);
-        body.setUserData("ENEMY");
+    body.setLinearDamping(2f);
+    body.setAngularDamping(2f);
+    body.setUserData(this);
 
-        return body;
-    }
+    return body;
+}
+
 
     @Override
     public Body getBody() {
@@ -167,7 +173,6 @@ public void update(float deltaTime) {
         }
     }
     
-    System.err.println("estado do rato:" + state);
 }
 
     @Override
@@ -200,6 +205,12 @@ private void updateMovementState() {
         }
     }
 }
+    @Override
+    public float getAttackDamage() {
+        return 10f; // Dano base do ratinho
+    }
+    
+
     public float getDamageAnimationTime() {
         return damageAnimationDuration - damageTimer;
     }
@@ -239,30 +250,42 @@ private void executeDashAttack(Vector2 targetPos) {
         return ratAnimation.getKeyFrame(animationTime);
     }
 
-    public void debugDraw(ShapeRenderer shapeRenderer) {
+public void debugDraw(ShapeRenderer renderer, float offsetX, float offsetY) {
+    Vector2 position = body.getPosition();    // em metros
+    float angle = body.getAngle();
 
-        Vector2 position = body.getPosition();
-        float angle = body.getAngle();
+    // Pega shape do fixture
+    PolygonShape shape = (PolygonShape) body.getFixtureList().first().getShape();
 
-        shapeRenderer.set(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(Color.RED);
+    int vcount = shape.getVertexCount();
+    Vector2[] verts = new Vector2[vcount];
 
-        PolygonShape shape = (PolygonShape) body.getFixtureList().first().getShape();
+    // Converte cada vértice de “metros” para “pixels” e aplica rotação
+    for (int i = 0; i < vcount; i++) {
+        Vector2 local = new Vector2();
+        shape.getVertex(i, local);
 
-        Vector2[] vertices = new Vector2[shape.getVertexCount()];
-        for (int i = 0; i < shape.getVertexCount(); i++) {
-            Vector2 vertex = new Vector2();
-            shape.getVertex(i, vertex);
-            // Aplica rotação e posição
-            vertices[i] = vertex.cpy().rotateRad(angle).add(position);
-        }
+        // Rotaciona em torno da origem do body e converte pra pixel
+        float worldX = (local.x * 16) * MathUtils.cos(angle)
+                     - (local.y * 16) * MathUtils.sin(angle);
+        float worldY = (local.x * 16) * MathUtils.sin(angle)
+                     + (local.y * 16) * MathUtils.cos(angle);
 
-        for (int i = 0; i < vertices.length; i++) {
-            Vector2 current = vertices[i];
-            Vector2 next = vertices[(i + 1) % vertices.length];
-            shapeRenderer.line(current, next);
-        }
+        verts[i] = new Vector2(
+            offsetX + (position.x * 16) + worldX,
+            offsetY + (position.y * 16) + worldY
+        );
     }
+
+    renderer.setColor(Color.RED);
+    // Desenha linhas entre vértices
+    for (int i = 0; i < vcount; i++) {
+        Vector2 a = verts[i];
+        Vector2 b = verts[(i + 1) % vcount];
+        renderer.line(a, b);
+    }
+}
+
 
     @Override
     public Vector2 getLinearVelocity() {

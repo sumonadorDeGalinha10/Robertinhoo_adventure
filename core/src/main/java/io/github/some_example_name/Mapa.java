@@ -1,24 +1,23 @@
 package io.github.some_example_name;
 
-
-
-
 import io.github.some_example_name.Otimizations.WallOtimizations;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
-import io.github.some_example_name.Entities.Itens.Contact.ProjectileContactListenter;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
+import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -34,34 +33,32 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType; 
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.math.Rectangle;
-
-
 
 import java.util.List;
 
 public class Mapa {
 
- private List<Enemy> enemies;
- private List<Weapon> weapons;
- private List<Ammo> ammo;
- private List<Projectile> projectiles = new ArrayList<>();
-
+    private List<Enemy> enemies;
+    private List<Weapon> weapons;
+    private List<Ammo> ammo;
+    private List<Projectile> projectiles = new ArrayList<>();
+    private List<Destructible> destructibles = new ArrayList<>();
 
     public World world;
     public WallOtimizations agruparParedes;
 
-    public static final short CATEGORY_PROJECTILE = 0x0002; 
-    public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE; 
+    public static final short CATEGORY_PROJECTILE = 0x0002;
+    public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE;
 
-
-  static int TILE = 0x000000; // #000000 (tiles normais)
+    static int TILE = 0x000000; // #000000 (tiles normais)
     static int START = 0xFF0000; // #FF0000 (ponto de início)
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)
     public static int ENEMY = 0X913d77; // #913d77 (inimigos)
-    public static  int REVOLVER = 0X22ff00; // #22ff00
-    public static int AMMO09MM = 0Xffffff;  // #FFFFFF
+    public static int REVOLVER = 0X22ff00; // #22ff00
+    public static int AMMO09MM = 0Xffffff; // #FFFFFF
+    public static int BARRIL = 0Xff8f00; // #ff8f00
 
     ArrayList<Vector2> wallPositions = new ArrayList<>();
 
@@ -73,7 +70,7 @@ public class Mapa {
 
     public Robertinhoo robertinhoo;
     public Ratinho ratinho;
-    private RayHandler rayHandler; 
+    private RayHandler rayHandler;
     private boolean lightsInitialized = false;
 
     public void setRayHandler(RayHandler rayHandler) {
@@ -99,8 +96,9 @@ public class Mapa {
         }
 
         world.setContactListener(new GameContactListener(robertinhoo));
-        
+
     }
+
     public void initializeLights() {
         if (rayHandler == null) {
             rayHandler = new RayHandler(world);
@@ -111,7 +109,7 @@ public class Mapa {
             Gdx.app.log("Mapa", "RayHandler inicializado com sucesso!");
         }
     }
-    
+
     public List<Enemy> getEnemies() {
         return enemies;
     }
@@ -119,6 +117,7 @@ public class Mapa {
     public List<Weapon> getWeapons() {
         return weapons;
     }
+
     private void loadImageMap(String imagePath) {
         try {
             BufferedImage image = ImageIO.read(new File(imagePath));
@@ -137,20 +136,20 @@ public class Mapa {
                             Gdx.app.error("Mapa", "Mapa tem múltiplos pontos de início (START)!");
                         }
                         startPosition = new Vector2(x, y);
-                        robertinhoo = new Robertinhoo(this, x, y,null,null);
+                        robertinhoo = new Robertinhoo(this, x, y, null, null);
                         tiles[x][y] = TILE;
                         spawnEncontrado = true;
                     }
                 }
             }
-    
+
             if (!spawnEncontrado) {
                 throw new RuntimeException("Mapa não tem ponto de início (START)!");
             }
             for (int y = 0; y < mapHeight; y++) {
                 for (int x = 0; x < mapWidth; x++) {
                     int color = image.getRGB(x, y) & 0xFFFFFF;
-    
+
                     if (color == PAREDE) {
                         tiles[x][y] = PAREDE;
                         tempVector.set(x, y);
@@ -159,19 +158,26 @@ public class Mapa {
                         Ratinho ratinho = new Ratinho(this, x, y, robertinhoo);
                         enemies.add(ratinho);
                         tiles[x][y] = TILE;
-                    }
-                    else if(color == REVOLVER){
-                        Pistol pistol = new Pistol(this,x,y,robertinhoo.getInventory());
+                    } else if (color == REVOLVER) {
+                        Pistol pistol = new Pistol(this, x, y, robertinhoo.getInventory());
                         weapons.add(pistol);
-                        
+
                         tiles[x][y] = PAREDE;
                     }
 
-                   else if (color == AMMO09MM ){
-                    Ammo9mm ammo9mm = new Ammo9mm(this, x, y);
-                    this.ammo.add(ammo9mm);
-                    tiles[x][y] = TILE;
-        }
+                    else if (color == AMMO09MM) {
+                        Ammo9mm ammo9mm = new Ammo9mm(this, x, y);
+                        this.ammo.add(ammo9mm);
+                        tiles[x][y] = TILE;
+                    }
+
+                    else if (color == BARRIL) {
+                        // Crie texturas temporárias se necessário
+
+                        Barrel barrel = new Barrel(this.world, x + 0.5f, y + 0.5f, null, null);
+                        destructibles.add(barrel);
+                        tiles[x][y] = TILE;
+                    }
                 }
             }
             agruparEPCriarParedes();
@@ -189,30 +195,27 @@ public class Mapa {
 
     private void createWallBody(Rectangle ret) {
         float escala = 1.0f;
-    
+
         BodyDef bodyDef = new BodyDef();
-        
+
         bodyDef.type = BodyType.StaticBody;
-        float posY = (mapHeight - ret.y - ret.height/2) * escala;
+        float posY = (mapHeight - ret.y - ret.height / 2) * escala;
         bodyDef.position.set(
-            (ret.x + ret.width/2) * escala,
-            posY
-        );
-    
+                (ret.x + ret.width / 2) * escala,
+                posY);
+
         Body body = world.createBody(bodyDef);
         body.setUserData("WALL");
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(
-            (ret.width/2) * escala,
-            (ret.height/2) * escala
-        );
-    
+                (ret.width / 2) * escala,
+                (ret.height / 2) * escala);
+
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         body.createFixture(fixtureDef);
         shape.dispose();
     }
-
 
     public void addProjectile(Projectile projectile) {
         projectiles.add(projectile);
@@ -220,7 +223,7 @@ public class Mapa {
 
     public List<Projectile> getProjectiles() {
         return projectiles;
-    }    
+    }
 
     public List<Ammo> getAmmo() {
         return ammo;
@@ -228,10 +231,10 @@ public class Mapa {
 
     public void update(float deltaTime) {
         java.util.Iterator<Projectile> it = projectiles.iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Projectile p = it.next();
             p.update(deltaTime);
-            if(p.isMarkedForDestruction()) {
+            if (p.isMarkedForDestruction()) {
                 p.destroy();
                 it.remove();
             }
@@ -245,8 +248,23 @@ public class Mapa {
                 iterator.remove();
             }
         }
+
+        java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
+        while (destructibleIterator.hasNext()) {
+            Destructible d = destructibleIterator.next();
+            if (d instanceof Barrel) {
+                Barrel barrel = (Barrel) d;
+                if (barrel.isBodyMarkedForDestruction()) {
+                    barrel.destroyBody();
+                    barrel.setBodyMarkedForDestruction(false); // Reset flag
+                }
+            }
+        }
     }
-    
+
+    public List<Destructible> getDestructibles() {
+        return destructibles;
+    }
 
     boolean match(int src, int dst) {
         return src == dst;
@@ -257,5 +275,5 @@ public class Mapa {
             rayHandler.dispose();
         }
     }
-    
+
 }

@@ -1,5 +1,7 @@
 package io.github.some_example_name.Entities.Player;
 
+import java.security.Key;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
@@ -17,12 +19,21 @@ public class PlayerController {
     private float dashCooldownTime = 0;
     public Weapon weaponToPickup;
     private InventoryController inventoryController;
+    private float meleeCooldown = 0;
 
     // Constantes
-    public static final float DASH_DURATION = 0.7f;
+    public static final float DASH_DURATION = 0.57f;
     public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 4f;
+    public static final float DASH_SPEED = 3f;
     public static final float ACCELERATION = 1.5f;
+    private boolean canMeleeAttack = true;
+    public static final float MELEE_COOLDOWN = 0.5f;
+
+    public static final float DASH_STAMINA_COST = 40f;
+    public static final float MELEE_STAMINA_COST = 30f;
+    public static final float ROLL_STAMINA_COST = 40f;
+
+    private boolean dashKeyWasPressed = false;
 
     public PlayerController(Robertinhoo player) {
         this.player = player;
@@ -33,14 +44,23 @@ public class PlayerController {
         if (dashCooldownTime > 0)
             dashCooldownTime -= deltaTime;
 
+        // Atualizar cooldown do ataque corpo a corpo
+        if (meleeCooldown > 0) {
+            meleeCooldown -= deltaTime;
+            canMeleeAttack = false;
+        } else {
+            canMeleeAttack = true;
+        }
+
         if (dashTime > 0) {
             dashTime -= deltaTime;
             if (dashTime <= 0)
                 endDash();
         } else {
             processMovement();
-            processActions();
+            processActions(deltaTime);
         }
+        player.getStaminaSystem().update(deltaTime);
     }
 
     private void endDash() {
@@ -50,8 +70,14 @@ public class PlayerController {
     }
 
     private void processMovement() {
+        boolean spacePressed = Gdx.input.isKeyPressed(Keys.SPACE);
+        boolean spaceJustPressed = Gdx.input.isKeyJustPressed(Keys.SPACE);
         moveDir.set(0, 0);
         isMoving = false;
+        if (player.state == Robertinhoo.MELEE_ATTACK) {
+            player.body.setLinearVelocity(0, 0);
+            return;
+        }
 
         boolean wPressed = Gdx.input.isKeyPressed(Keys.W);
         boolean sPressed = Gdx.input.isKeyPressed(Keys.S);
@@ -107,24 +133,26 @@ public class PlayerController {
             player.dir = Robertinhoo.IDLE;
         }
 
-        // Dash
-        if (Gdx.input.isKeyPressed(Keys.SPACE) &&
+        boolean canDash = (spaceJustPressed || (!dashKeyWasPressed && spacePressed)) &&
                 dashCooldownTime <= 0 &&
-                player.state != Robertinhoo.DASH) {
+                player.state != Robertinhoo.DASH &&
+                !moveDir.isZero();
 
-            // Dentro do bloco do dash (após verificar a tecla SPACE)
-            if (!moveDir.isZero()) {
+        if (canDash) {
+            if (player.getStaminaSystem().consumeStamina(DASH_STAMINA_COST)) {
                 moveDir.nor();
                 Vector2 dashVector = new Vector2(moveDir.x, moveDir.y);
                 player.state = Robertinhoo.DASH;
-
-                // CORREÇÃO: Definir a direção do dash antes de iniciar
-                player.dashDirection = player.dir; // ← Linha adicionada
+                player.dashDirection = player.dir;
 
                 dashTime = DASH_DURATION;
                 dashCooldownTime = DASH_COOLDOWN;
                 player.setInvulnerable(true);
                 player.body.setLinearVelocity(dashVector.scl(DASH_SPEED));
+
+                System.out.println("DASH ACTIVATED");
+            } else {
+                System.out.println("DASH BLOCKED: Not enough stamina");
             }
         }
         // Movimento normal
@@ -136,9 +164,11 @@ public class PlayerController {
             player.state = Robertinhoo.IDLE;
             player.body.setLinearVelocity(0, 0);
         }
+
+        dashKeyWasPressed = spacePressed;
     }
 
-    private void processActions() {
+    private void processActions(float deltaTime) {
         // Pickup/Placement
         if (Gdx.input.isKeyJustPressed(Keys.T)) {
             if (player.weaponToPickup != null) {
@@ -157,7 +187,21 @@ public class PlayerController {
                 currentWeapon.reload();
             }
         }
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT) &&
+                canMeleeAttack &&
+                player.state != Robertinhoo.DASH &&
+                player.state != Robertinhoo.MELEE_ATTACK) {
 
+            // Tenta consumir stamina somente se puder atacar
+            if (player.getStaminaSystem().consumeStamina(MELEE_STAMINA_COST)) {
+                player.startMeleeAttack();
+                meleeCooldown = MELEE_COOLDOWN;
+                canMeleeAttack = false;
+                System.out.println("MELEE ATTACK ACTIVATED");
+            } else {
+                System.out.println("MELEE ATTACK BLOCKED: Insufficient stamina");
+            }
+        }
         // Disparar
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = player.getCurrentWeapon();

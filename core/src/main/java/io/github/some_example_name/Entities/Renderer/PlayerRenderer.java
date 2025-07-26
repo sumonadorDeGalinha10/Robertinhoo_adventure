@@ -22,6 +22,9 @@ public class PlayerRenderer {
     }
 
     private Animation<TextureRegion> selectAnimation(Robertinhoo player) {
+         if (player.state == Robertinhoo.MELEE_ATTACK) {
+        return getMeleeAnimation(player);
+    }
 
         Weapon equippedWeapon = player.getInventory().getEquippedWeapon();
         boolean isReloading = equippedWeapon != null &&
@@ -32,9 +35,9 @@ public class PlayerRenderer {
 
         if (isReloading) {
             if (player.dir != Robertinhoo.IDLE) {
-                return animations.runDownWeaponOneHand;
+                return animations.weapon.runDown;
             } else {
-                return animations.idleDownWeaponOneHand;
+                return animations.weapon.idleDown;
             }
         }
         if (weaponSystem.isAiming() && player.getInventory().getEquippedWeapon() != null) {
@@ -58,17 +61,17 @@ public class PlayerRenderer {
             case Robertinhoo.UP:
             case Robertinhoo.NORTH_EAST:
             case Robertinhoo.NORTH_WEST:
-                return animations.rollUp;
+                return animations.special.rollUp;
                 
             case Robertinhoo.DOWN:
             case Robertinhoo.SOUTH_EAST:
             case Robertinhoo.SOUTH_WEST:
-                return animations.rollDown;
+                return animations.special.rollDown;
                 
             case Robertinhoo.LEFT:
             case Robertinhoo.RIGHT:
             default:
-                return animations.rollSide;
+                return animations.special.rollSide;
         }
     }
 
@@ -78,45 +81,46 @@ public class PlayerRenderer {
         if (isMoving) {
             switch (direction) {
                 case Robertinhoo.RIGHT:
-                    return isOneHand ? animations.runRightWeaponOneHand : animations.walkRight;
+                    return isOneHand ? animations.weapon.runRight : animations.basic.walkRight;
                 case Robertinhoo.LEFT:
-                    return isOneHand ? animations.runLeftWeaponOneHand : animations.walkLeft;
+                    return isOneHand ? animations.weapon.runLeft : animations.basic.walkLeft;
                 case Robertinhoo.UP:
-                    return isOneHand ? animations.runUpWeaponOneHand : animations.walkUp;
+                    return isOneHand ? animations.weapon.runUp : animations.basic.walkUp;
                 case Robertinhoo.DOWN:
-                    return isOneHand ? animations.runDownWeaponOneHand : animations.walkDown;
+                    return isOneHand ? animations.weapon.runDown : animations.basic.walkDown;
                 case Robertinhoo.NORTH_WEST:
-                    return isOneHand ? animations.runNWWeaponOneHand : animations.walkNortWast;
+                    return isOneHand ? animations.weapon.runNW : animations.basic.walkNortWast;
                 case Robertinhoo.NORTH_EAST:
-                    return isOneHand ? animations.runNEWeaponOneHand : animations.walkNortEast;
+                    return isOneHand ? animations.weapon.runNE : animations.basic.walkNortEast;
                 case Robertinhoo.SOUTH_EAST:
-                    return isOneHand ? animations.runSEWeaponOneHand : animations.walkSE;
+                    return isOneHand ? animations.weapon.runSE : animations.basic.walkSE;
                 case Robertinhoo.SOUTH_WEST:
-                    return isOneHand ? animations.runSWWeaponOneHand : animations.walkSW;
+                    return isOneHand ? animations.weapon.runSW : animations.basic.walkSW;
 
                 default:
-                    return animations.idleDown;
+                    return animations.basic.idleDown;
             }
         } else {
-            switch (direction) {
-                case Robertinhoo.UP:
-                    return isOneHand ? animations.idleUpWeaponOneHand : animations.idleUp;
-                case Robertinhoo.DOWN:
-                    return isOneHand ? animations.idleDownWeaponOneHand : animations.idleDown;
-                case Robertinhoo.LEFT:
-                    return isOneHand ? animations.idleLeftWeaponOneHand : animations.idleLeft;
-                case Robertinhoo.RIGHT:
-                    return isOneHand ? animations.idleRightWeaponOneHand : animations.idleRigth;
-                case Robertinhoo.NORTH_WEST:
-                    return isOneHand ? animations.idleNWWeapon : animations.idleNorthWest;
-                case Robertinhoo.NORTH_EAST:
-                    return isOneHand ? animations.idleNEWeapon : animations.idleNorthEast;
-                case Robertinhoo.SOUTH_WEST:
-                    return isOneHand ? animations.idleSWWeapon : animations.idleSouthWest;
-                case Robertinhoo.SOUTH_EAST:
-                    return isOneHand ? animations.idleSEWeapon : animations.idleSouthEast;
-                default:
-                    return animations.idleDown;
+             switch (direction) {
+            case Robertinhoo.UP:
+                return isOneHand ? animations.weapon.idleUp : animations.basic.idleUp;
+            case Robertinhoo.DOWN:
+                return isOneHand ? animations.weapon.idleDown : animations.basic.idleDown;
+            case Robertinhoo.LEFT:
+                return isOneHand ? animations.weapon.idleLeft : animations.basic.idleLeft;
+            case Robertinhoo.RIGHT:
+                return isOneHand ? animations.weapon.idleRight : animations.basic.idleRight;
+            case Robertinhoo.NORTH_WEST:
+                return isOneHand ? animations.weapon.idleNW : animations.basic.idleNorthWest;
+            case Robertinhoo.NORTH_EAST:
+                return isOneHand ? animations.weapon.idleNE : animations.basic.idleNorthEast;
+            case Robertinhoo.SOUTH_WEST:
+                return isOneHand ? animations.weapon.idleSW : animations.basic.idleSouthWest;
+            case Robertinhoo.SOUTH_EAST:
+                return isOneHand ? animations.weapon.idleSE : animations.basic.idleSouthEast;
+            default:
+                return animations.basic.idleDown;
+
             }
         }
     }
@@ -159,9 +163,23 @@ public class PlayerRenderer {
 
     }
 
+    private Animation<TextureRegion> getMeleeAnimation(Robertinhoo player) {
+    switch (player.meleeDirection) {
+        case Robertinhoo.RIGHT:
+            return animations.special.meleeAttackRight;
+        case Robertinhoo.LEFT:
+            return animations.special.meleeAttackLeft;
+        case Robertinhoo.UP:
+            return animations.special.meleeAttackUp;
+        case Robertinhoo.DOWN:
+        default:
+            return animations.special.meleeAttackDown;
+    }
+}
+
   private boolean shouldReverseAnimation(Robertinhoo player) {
   
-    if (player.state == Robertinhoo.DASH) {
+    if (player.state == Robertinhoo.DASH || player.state == Robertinhoo.MELEE_ATTACK) {
         return false;
     }
     
@@ -194,10 +212,10 @@ public class PlayerRenderer {
         float originalHeight = player.bounds.height * MapRenderer.TILE_SIZE;
 
         float scale = 1.4f;
-        if (currentAnimation == animations.walkDown ||
-                currentAnimation == animations.idleDown ||
-                currentAnimation == animations.walkUp ||
-                currentAnimation == animations.idleUp) {
+        if (currentAnimation == animations.basic.walkDown ||
+                currentAnimation == animations.basic.idleDown ||
+                currentAnimation == animations.basic.walkUp ||
+                currentAnimation == animations.basic.idleUp) {
             scale = 1.2f;
         }
 
@@ -208,24 +226,29 @@ public class PlayerRenderer {
         float y = offsetY + (player.bounds.y * MapRenderer.TILE_SIZE) - (scaledHeight - originalHeight) / 2;
 
         boolean shouldFlip = false;
-        if (currentAnimation == animations.walkLeft ||
-                (currentAnimation == animations.rollSide && player.dashDirection == Robertinhoo.LEFT)) {
+        if (currentAnimation == animations.basic.walkLeft ||
+                (currentAnimation == animations.special.rollSide && player.dashDirection == Robertinhoo.LEFT)) {
             shouldFlip = true;
-        } else if (currentAnimation == animations.idleDownWeaponOneHand) {
+        } else if (currentAnimation == animations.weapon.idleDown) {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle > 90 && aimAngle < 270);
-        } else if (currentAnimation == animations.idleUpWeaponOneHand) {
+        } else if (currentAnimation == animations.weapon.idleUp) {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle < 270 && aimAngle > 90);
-        } else if (currentAnimation == animations.runDownWeaponOneHand) {
+        } else if (currentAnimation == animations.weapon.runDown) {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle < 270 && aimAngle > 90);
-        } else if (currentAnimation == animations.runUpWeaponOneHand) {
+        } else if (currentAnimation == animations.weapon.runUp) {
             float aimAngle = player.applyAimRotation();
             shouldFlip = (aimAngle < 270 && aimAngle > 90);
         }
 
         this.currentFlipState = shouldFlip;
+
+        if (player.isTakingDamage) {
+        float alpha = (float) (Math.sin(animationTime * 30) + 1) / 2;
+        batch.setColor(1, 1, 1, alpha);
+        }
 
         batch.draw(frame,
                 shouldFlip ? x + scaledWidth : x,
@@ -243,10 +266,10 @@ public class PlayerRenderer {
   public float getRenderScale() {
         if (currentAnimation == null) return 1.4f;
         
-        if (currentAnimation == animations.walkDown ||
-            currentAnimation == animations.idleDown ||
-            currentAnimation == animations.walkUp ||
-            currentAnimation == animations.idleUp) {
+        if (currentAnimation == animations.basic.walkDown ||
+            currentAnimation == animations.basic.idleDown ||
+            currentAnimation == animations.basic.walkUp ||
+            currentAnimation == animations.basic.idleUp) {
             return 1.2f;
         }
         return 1.4f;

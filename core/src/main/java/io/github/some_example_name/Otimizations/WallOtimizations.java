@@ -21,7 +21,6 @@ public List<Rectangle> optimizeWalls(ArrayList<Vector2> wallPositions) {
     List<Rectangle> retangulos = new ArrayList<>();
     boolean[][] isWall = new boolean[mapa.mapWidth][mapa.mapHeight];
 
-    // Preenche a matriz isWall
     for (Vector2 pos : wallPositions) {
         int x = (int) pos.x;
         int y = (int) pos.y;
@@ -32,7 +31,6 @@ public List<Rectangle> optimizeWalls(ArrayList<Vector2> wallPositions) {
         }
     }
 
-    // Detecta retângulos
     for (int y = 0; y < mapa.mapHeight; y++) {
         for (int x = 0; x < mapa.mapWidth; x++) {
             if (isWall[x][y] && !visited[x][y]) {
@@ -48,7 +46,6 @@ public List<Rectangle> optimizeWalls(ArrayList<Vector2> wallPositions) {
     return retangulos;
 }
 
-// Encontra a largura máxima de uma linha contígua de paredes
 private int findMaxWidth(boolean[][] isWall, int startX, int y) {
     int width = 0;
     while (startX + width < mapa.mapWidth && isWall[startX + width][y]) {
@@ -57,7 +54,6 @@ private int findMaxWidth(boolean[][] isWall, int startX, int y) {
     return width;
 }
 
-// Encontra a altura máxima para a largura definida
 private int findMaxHeight(boolean[][] isWall, int startX, int startY, int width) {
     int height = 0;
     boolean valid = true;
@@ -75,7 +71,6 @@ private int findMaxHeight(boolean[][] isWall, int startX, int startY, int width)
     return height;
 }
 
-// Marca a região como visitada
 private void markVisited(boolean[][] visited, int startX, int startY, int width, int height) {
     for (int y = startY; y < startY + height; y++) {
         for (int x = startX; x < startX + width; x++) {

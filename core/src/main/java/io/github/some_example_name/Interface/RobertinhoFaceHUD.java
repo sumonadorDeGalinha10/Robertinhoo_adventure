@@ -18,6 +18,7 @@ public class RobertinhoFaceHUD {
 
     private Animation<TextureRegion> maskMediumAnimation;
     private Animation<TextureRegion> maskLowAnimation;
+    private StaminaBarRenderer staminaBarRenderer;
 
     private final VidaBatimentoCardiaco batimentoCardiaco;
 
@@ -25,7 +26,10 @@ public class RobertinhoFaceHUD {
     private static final float BATIMENTO_WIDTH = 225;
     private static final float BATIMENTO_HEIGHT = 82;
     private static final float SPACING = 2f;
-
+      private static final float STAMINA_WIDTH = 230;
+    private static final float STAMINA_HEIGHT = 15;
+    private static final float STAMINA_Y_OFFSET = 2;
+      private static final float STAMINA_X_OFFSET = 2;
     private float x;
     private float y;
     private float batimentoX;
@@ -37,6 +41,7 @@ public class RobertinhoFaceHUD {
 
     public RobertinhoFaceHUD(float screenWidth, float screenHeight, Robertinhoo robertinhoo) {
         this.robertinhoo = robertinhoo;
+        this.staminaBarRenderer = new StaminaBarRenderer(robertinhoo);
         recalculatePosition(screenWidth, screenHeight);
 
         metalFrame = new Texture("rober/interface/molde.png");
@@ -73,6 +78,7 @@ public class RobertinhoFaceHUD {
         }
 
         faceAnimation = new Animation<>(0.4f, idleFrames);
+
         stateTime = 0f;
     }
 
@@ -88,7 +94,7 @@ public class RobertinhoFaceHUD {
         TextureRegion[] frames = new TextureRegion[FRAME_COLS];
         System.arraycopy(tmp[0], 0, frames, 0, FRAME_COLS);
 
-        return new Animation<>(0.4f, frames); // Mesma velocidade que a animação do rosto
+        return new Animation<>(0.4f, frames);
     }
 
     private void recalculatePosition(float screenWidth, float screenHeight) {
@@ -98,6 +104,11 @@ public class RobertinhoFaceHUD {
         this.y = margin;
         this.batimentoX = x + (FACE_SIZE - BATIMENTO_WIDTH) / 2;
         this.batimentoY = y + FACE_SIZE + SPACING;
+
+        float staminaX = screenWidth - FACE_SIZE - 10 + STAMINA_X_OFFSET;
+        float staminaY = 10 + STAMINA_Y_OFFSET;
+        
+        staminaBarRenderer.setPosition(staminaX, staminaY);
 
         Gdx.app.log("HUD Position",
                 String.format("Tela: %.0fx%.0f | Face: (%.0f, %.0f) | Batimento: (%.0f, %.0f)",
@@ -112,7 +123,7 @@ public class RobertinhoFaceHUD {
         }
     }
 
-    public void draw(SpriteBatch batch) {
+    public void draw(SpriteBatch batch , float delta) {
         Matrix4 originalMatrix = batch.getProjectionMatrix().cpy();
         Matrix4 hudMatrix = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.setProjectionMatrix(hudMatrix);
@@ -134,10 +145,10 @@ public class RobertinhoFaceHUD {
         batch.draw(currentFrame, faceX, faceY, faceRenderSize, faceRenderSize);
 
         float vida = robertinhoo.getLife();
-        if (vida < 30) { 
+        if (vida < 30) {
             TextureRegion maskFrame = maskLowAnimation.getKeyFrame(stateTime, true);
             batch.draw(maskFrame, faceX, faceY, faceRenderSize, faceRenderSize);
-        } else if (vida < 70) { 
+        } else if (vida < 70) {
             TextureRegion maskFrame = maskMediumAnimation.getKeyFrame(stateTime, true);
             batch.draw(maskFrame, faceX, faceY, faceRenderSize, faceRenderSize);
         }
@@ -159,6 +170,28 @@ public class RobertinhoFaceHUD {
             batimentoCardiaco.draw(batch);
         }
 
+        if (staminaBarRenderer != null) {
+           
+            float staminaScaleX = STAMINA_WIDTH * scale;
+            float staminaScaleY = STAMINA_HEIGHT * scale;
+            
+      
+            float staminaX = scaledX + (scaledFaceSize - staminaScaleX) / 2;
+            
+  
+            float horizontalOffset = 3.00f * scale;
+            staminaX += horizontalOffset;
+
+            float offsetVertical = scaledFaceSize * 0.100f;
+      
+            float staminaY = scaledY + offsetVertical - (staminaScaleY / 2);
+            
+            staminaBarRenderer.setPosition(staminaX, staminaY);
+            staminaBarRenderer.setSize(staminaScaleX, staminaScaleY);
+            staminaBarRenderer.draw(batch,delta);
+        }
+
+
         batch.setProjectionMatrix(originalMatrix);
     }
 
@@ -173,6 +206,7 @@ public class RobertinhoFaceHUD {
         batimentoSheet.dispose();
         maskMedium.dispose();
         maskLow.dispose();
+        staminaBarRenderer.dispose();
 
         if (batimentoCardiaco != null) {
             batimentoCardiaco.dispose();

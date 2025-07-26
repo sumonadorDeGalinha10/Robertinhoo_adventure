@@ -24,4 +24,22 @@ public class DirectionUtils {
         }
         return null;
     }
+        public static int convertWeaponDirectionToRobertinhooDirection(WeaponAnimations.WeaponDirection weaponDir) {
+        switch (weaponDir) {
+            case E: return Robertinhoo.RIGHT;
+            case NE: return Robertinhoo.UP;
+            case N: return Robertinhoo.UP;
+            case NW: return Robertinhoo.UP;
+            case W: return Robertinhoo.LEFT;
+            case SW: return Robertinhoo.SOUTH_WEST;
+            case S: return Robertinhoo.DOWN;
+            case SE: return Robertinhoo.SOUTH_EAST;
+            default: return Robertinhoo.DOWN;
+        }
+    }
+
+    public  int getDirectionFromAngleMele(float angle) {
+    WeaponAnimations.WeaponDirection weaponDir = DirectionUtils.getDirectionFromAngle(angle);
+    return convertWeaponDirectionToRobertinhooDirection(weaponDir);
+}
 }

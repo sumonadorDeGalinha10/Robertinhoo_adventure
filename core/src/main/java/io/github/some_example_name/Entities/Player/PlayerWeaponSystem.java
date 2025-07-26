@@ -145,7 +145,7 @@ public class PlayerWeaponSystem {
 
      public void renderWeapon(SpriteBatch batch, float delta, Robertinhoo player, float playerRenderX, float playerRenderY) {
         Weapon currentWeapon = player.getInventory().getEquippedWeapon();
-        if (currentWeapon == null || player.state == Robertinhoo.DASH)
+        if (currentWeapon == null || player.state == Robertinhoo.DASH || player.state == Robertinhoo.MELEE_ATTACK)
             return;
 
         currentWeapon.update(delta, getAimDirection());
@@ -164,14 +164,11 @@ public class PlayerWeaponSystem {
 private Vector2 calculateWeaponPosition(Weapon weapon, float playerX, float playerY) {
     Vector2 muzzleOffset = weapon.getMuzzleOffset().scl(MapRenderer.TILE_SIZE);
 
-    // Calcula a escala real do player
     float playerScale =1.4f;
     
-    // Calcula o centro do player considerando a escala
     float playerCenterX = playerX + (player.bounds.width * MapRenderer.TILE_SIZE * playerScale) /2;
     float playerCenterY = playerY + (player.bounds.height * MapRenderer.TILE_SIZE * playerScale) /2;
     
-    // Aplica o offset da arma
     return new Vector2(
         playerCenterX + muzzleOffset.x - 3.4f,
         playerCenterY + muzzleOffset.y-6.5f

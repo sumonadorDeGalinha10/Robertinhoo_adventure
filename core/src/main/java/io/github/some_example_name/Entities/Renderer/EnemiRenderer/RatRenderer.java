@@ -15,7 +15,7 @@ public class RatRenderer {
     private final Animation<TextureRegion> runHorizontalAnimation;
     private final Animation<TextureRegion> runDownAnimation;
     private final Animation<TextureRegion> gotDamage;
-    private static final float SPRITE_SCALE = 0.5f;
+
 
     private final Texture prepareDashSheet;
     private final Texture dashSheet;
