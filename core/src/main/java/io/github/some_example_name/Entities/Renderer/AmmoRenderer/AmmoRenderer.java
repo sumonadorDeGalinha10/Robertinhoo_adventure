@@ -11,10 +11,10 @@ import java.util.List;
 public class AmmoRenderer {
     private final TextureRegion ammoTexture;
     private final int tileSize;
-    private final float scaleFactor; 
+    private final float scaleFactor;
 
     public AmmoRenderer(int tileSize) {
-        this(tileSize, 0.4f); // Valor padrão de 50% do tamanho do tile
+        this(tileSize, 0.4f);
     }
 
     public AmmoRenderer(int tileSize, float scaleFactor) {

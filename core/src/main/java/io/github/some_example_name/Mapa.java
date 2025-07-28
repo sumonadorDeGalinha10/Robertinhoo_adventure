@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Enemies.Ratinho;
+import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
@@ -17,6 +18,7 @@ import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
+import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
 import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
 
 import javax.imageio.ImageIO;
@@ -35,6 +37,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.math.Rectangle;
+import io.github.some_example_name.Entities.Itens.CraftinItens.Polvora;
 
 import java.util.List;
 
@@ -43,8 +46,11 @@ public class Mapa {
     private List<Enemy> enemies;
     private List<Weapon> weapons;
     private List<Ammo> ammo;
+    private List<Polvora> polvoras;
     private List<Projectile> projectiles = new ArrayList<>();
     private List<Destructible> destructibles = new ArrayList<>();
+    private List<Item> craftItems = new ArrayList<>();
+    private List<Runnable> pendingActions = new ArrayList<>();
 
     public World world;
     public WallOtimizations agruparParedes;
@@ -86,6 +92,7 @@ public class Mapa {
         enemies = new ArrayList<>();
         weapons = new ArrayList<>();
         ammo = new ArrayList<>();
+        polvoras = new ArrayList<>();
         agruparParedes = new WallOtimizations(this);
 
         initializeLights();
@@ -169,12 +176,13 @@ public class Mapa {
                         Ammo9mm ammo9mm = new Ammo9mm(this, x, y);
                         this.ammo.add(ammo9mm);
                         tiles[x][y] = TILE;
+                        // PolvoraBruta polvoraBruta = new PolvoraBruta(this, x, y);
+                        // polvoras.add(polvoraBruta);
+                        // tiles[x][y] = TILE;
                     }
 
                     else if (color == BARRIL) {
-                        // Crie texturas temporárias se necessário
-
-                        Barrel barrel = new Barrel(this.world, x + 0.5f, y + 0.5f, null, null);
+                        Barrel barrel = new Barrel(this, x + 0.5f, y + 0.5f, null, null);
                         destructibles.add(barrel);
                         tiles[x][y] = TILE;
                     }
@@ -249,17 +257,49 @@ public class Mapa {
             }
         }
 
-        java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
-        while (destructibleIterator.hasNext()) {
-            Destructible d = destructibleIterator.next();
-            if (d instanceof Barrel) {
-                Barrel barrel = (Barrel) d;
-                if (barrel.isBodyMarkedForDestruction()) {
-                    barrel.destroyBody();
-                    barrel.setBodyMarkedForDestruction(false); // Reset flag
-                }
+      for (Destructible d : destructibles) {
+        d.update(deltaTime);
+    }
+    
+    java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
+    while (destructibleIterator.hasNext()) {
+        Destructible d = destructibleIterator.next();
+        
+        if (d instanceof Barrel) {
+            Barrel barrel = (Barrel) d;
+            
+            if (barrel.isBodyMarkedForDestruction()) {
+                barrel.destroyBody();
+                barrel.setBodyMarkedForDestruction(false);
+            }
+            
+            // Remove após a animação terminar
+            if (barrel.isAnimationFinished() && barrel.isDestroyed()) {
+                destructibleIterator.remove();
             }
         }
+    }
+         processPendingActions();
+
+        // java.util.Iterator<Item> craftIt = craftItems.iterator();
+        // while (craftIt.hasNext()) {
+        //     Item item = craftIt.next();
+        //     if (item.isMarkedForRemoval()) {
+        //         if (item instanceof Polvora) {
+        //             ((Polvora) item).destroyBody();
+        //         }
+        //         craftIt.remove();
+        //     }
+        // }
+    }
+    public void addPendingAction(Runnable action) {
+        pendingActions.add(action);
+    }
+    public void processPendingActions() {
+        for (Runnable action : pendingActions) {
+            action.run();
+        }
+        pendingActions.clear();
     }
 
     public List<Destructible> getDestructibles() {
@@ -269,6 +309,15 @@ public class Mapa {
     boolean match(int src, int dst) {
         return src == dst;
     }
+
+    public void addCraftItem(Item item) {
+        craftItems.add(item);
+    }
+
+    public List<Item> getCraftItems() {
+        return craftItems;
+    }
+    
 
     public void dispose() {
         if (rayHandler != null) {

@@ -4,20 +4,22 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
+import io.github.some_example_name.Mapa;
 
 public class DestructibleManager {
     private final Array<Destructible> destructibles;
     private final World world;
+    private Mapa mapa;
     
-    public DestructibleManager(World world) {
-        this.destructibles = new Array<>();
-        this.world = world;
-    }
-    
+public DestructibleManager(World world, Mapa mapa) {
+    this.destructibles = new Array<>();
+    this.world = world;
+    this.mapa = mapa;
+}
     public void createBarrel(float x, float y, 
                             TextureRegion intactTexture, 
                             TextureRegion destroyedTexture) {
-        Barrel barrel = new Barrel(world, x, y, intactTexture, destroyedTexture);
+        Barrel barrel = new Barrel(mapa, x, y, intactTexture, destroyedTexture);
         destructibles.add(barrel);
     }
     

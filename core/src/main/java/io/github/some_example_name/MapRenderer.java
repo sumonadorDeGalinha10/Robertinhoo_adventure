@@ -1,5 +1,8 @@
 package io.github.some_example_name;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -22,8 +25,12 @@ import io.github.some_example_name.Entities.Renderer.ProjectileRenderer;
 import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
 import io.github.some_example_name.Entities.Renderer.AmmoRenderer.AmmoRenderer;
+import io.github.some_example_name.Entities.Renderer.CraftItensRenderer.CraftItensRenderer;
 import io.github.some_example_name.Entities.Renderer.EnemiRenderer.RatRenderer;
+import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.DestructibleRenderer;
+import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import io.github.some_example_name.Entities.Renderer.Shadow.ShadowRenderer;
 // import io.github.some_example_name.Entities.Renderer.MeleeAttackRenderer;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Camera.Camera;
@@ -42,6 +49,8 @@ public class MapRenderer {
     private Camera cameraController;
     private AmmoRenderer ammoRenderer;
     public RenderInventory renderInventory;
+    private ShadowRenderer shadowRenderer;
+    private CraftItensRenderer craftItensRenderer;
 
     private DestructibleRenderer destructibleRenderer;
     // private MeleeAttackRenderer meleeAttackRenderer;
@@ -83,6 +92,8 @@ public class MapRenderer {
 
         mapa.robertinhoo.setCamera(cameraController.getCamera());
         this.destructibleRenderer = new DestructibleRenderer(TILE_SIZE);
+        this.shadowRenderer = new ShadowRenderer(shapeRenderer);
+        this.craftItensRenderer = new CraftItensRenderer(TILE_SIZE);
         // this.meleeAttackRenderer = new MeleeAttackRenderer(mapa.robertinhoo);
     }
 
@@ -94,6 +105,10 @@ public class MapRenderer {
         calculateOffsets();
         cameraController.centerOnPlayer(player, offsetX, offsetY);
 
+        // Configura matrizes de projeção
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
+
         // Atualiza física do mundo
         mapa.world.step(delta, 6, 2);
 
@@ -102,13 +117,34 @@ public class MapRenderer {
                 offsetX + player.pos.x * TILE_SIZE + TILE_SIZE / 2f,
                 offsetY + player.pos.y * TILE_SIZE + TILE_SIZE / 2f);
 
-        // --- RENDERIZAÇÃO DE SPRITES ---
-        spriteBatch.setProjectionMatrix(cameraController.getCamera().combined);
+        // --- COLETA DE ENTIDADES PARA SOMBRA ---
+        List<ShadowEntity> shadowEntities = new ArrayList<>();
+        shadowEntities.add(player); // Jogador
+
+        for (Enemy enemy : mapa.getEnemies()) {
+            if (enemy instanceof ShadowEntity) {
+                shadowEntities.add((ShadowEntity) enemy);
+            }
+        }
+
+        for (Destructible d : mapa.getDestructibles()) {
+            if (d instanceof ShadowEntity) {
+                shadowEntities.add((ShadowEntity) d);
+            }
+        }
+
+        // 1. RENDERIZAÇÃO DO CHÃO (TILES)
+        spriteBatch.begin();
+        tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
+        spriteBatch.end();
+
+        // 2. RENDERIZAÇÃO DAS SOMBRAS
+        shadowRenderer.renderShadows(shadowEntities, offsetX, offsetY, TILE_SIZE);
+
+        // 3. RENDERIZAÇÃO DOS OBJETOS E ENTIDADES
         spriteBatch.begin();
         {
-            // Renderiza camadas de tiles
-            tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
-            //Renderiza itens do cenário
+            // Renderiza itens do cenário (barris, etc.)
             destructibleRenderer.render(spriteBatch, mapa.getDestructibles(), offsetX, offsetY);
 
             // Renderiza projéteis
@@ -123,36 +159,11 @@ public class MapRenderer {
             // Renderiza arma do jogador
             player.getWeaponSystem().renderWeapon(spriteBatch, delta, player, playerX, playerY);
 
-            // player.setPlayerRenderer(playerRenderer);
-
+            // Renderiza inimigos
             for (Enemy enemy : mapa.getEnemies()) {
-                enemy.update(delta);
                 if (enemy instanceof Ratinho) {
                     Ratinho rat = (Ratinho) enemy;
-                    boolean flip = false;
-                    if (rat.getDirectionX() < 0 &&
-                            (rat.getState() == Ratinho.State.RUNNING_HORIZONTAL ||
-                                    rat.getState() == Ratinho.State.PREPARING_DASH ||
-                                    rat.getState() == Ratinho.State.DASHING)) {
-                        flip = true;
-                    }
-                    TextureRegion frame = ratRenderer.getFrame(rat, flip);
-
-                    // Aplica efeito vermelho se estiver sofrendo dano
-                    if (rat.isTakingDamage()) {
-                        spriteBatch.setColor(1, 0.5f, 0.5f, 1); // Vermelho suave
-                    } else {
-                        spriteBatch.setColor(Color.WHITE); // Cor normal
-                    }
-
-                    spriteBatch.draw(
-                            frame,
-                            offsetX + (rat.getPosition().x - 0.5f) * TILE_SIZE,
-                            offsetY + (rat.getPosition().y - 0.5f) * TILE_SIZE,
-                            12, 12);
-
-                    // Reseta a cor para não afetar outros elementos
-                    spriteBatch.setColor(Color.WHITE);
+                    ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
                 }
             }
 
@@ -169,37 +180,23 @@ public class MapRenderer {
                         10, 6);
             }
 
-            // Renderiza munições
             ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
-
+            craftItensRenderer.render(spriteBatch,mapa.getCraftItems(),offsetX,offsetY);
         }
         spriteBatch.end();
 
+        // --- DEBUG RENDER ---
         debugRender(offsetX, offsetY);
-
         debugMeleeHitbox(offsetX, offsetY);
 
         // --- RENDERIZAÇÃO DE FORMAS (MIRA E DEBUG) ---
+        // Reconfigura a matriz (importante após renderização de sombras)
         shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
 
         // Renderiza mira apenas se jogador estiver com arma equipada
         if (player.getInventory().getEquippedWeapon() != null) {
             player.getWeaponSystem().renderMiraArma(shapeRenderer);
-            // Opcional: descomente para debug do ponto de disparo
-            // player.getWeaponSystem().renderMuzzleDebug(shapeRenderer);
-
         }
-
-        // shapeRenderer.begin(ShapeRenderer.ShapeType.Line); // Inicia apenas uma vez
-        // {
-        // for (Enemy enemy : mapa.getEnemies()) {
-        // if (enemy instanceof Ratinho) {
-        // Ratinho rat = (Ratinho) enemy;
-        // rat.debugDraw(shapeRenderer);
-        // }
-        // }
-        // }
-        // shapeRenderer.end();
 
         // --- RENDERIZAÇÃO DA INTERFACE ---
         if (player.getInventoryController().GetIsOpen()) {
