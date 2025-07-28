@@ -2,6 +2,8 @@ package io.github.some_example_name.Entities.Itens.Contact;
 
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
+
+import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 
 
@@ -24,6 +26,11 @@ public class ProjectileHandler implements ContactHandler {
                 (dataB instanceof Projectile && dataA instanceof Enemy)) {
             handleProjectileEnemyCollision(dataA, dataB);
         }
+        // Colisão com objetos (barris)
+        else if ((dataA instanceof Projectile && dataB instanceof Barrel) || 
+                (dataB instanceof Projectile && dataA instanceof Barrel)) {
+            handleProjectileBarrelCollision(dataA, dataB);
+        }
     }
     
     private void handleProjectileWallCollision(Object dataA, Object dataB) {
@@ -44,6 +51,17 @@ public class ProjectileHandler implements ContactHandler {
         if (enemy.getHealth() <= 0) {
             enemy.destroy();
         }
+    }
+
+
+       private void handleProjectileBarrelCollision(Object dataA, Object dataB) {
+        Projectile projectile = (dataA instanceof Projectile) ? 
+            (Projectile) dataA : (Projectile) dataB;
+        Barrel barrel = (dataB instanceof Barrel) ? 
+            (Barrel) dataB : (Barrel) dataA;
+
+        barrel.takeDamage(projectile.getDamage());
+        projectile.startDestruction();
     }
 
     @Override

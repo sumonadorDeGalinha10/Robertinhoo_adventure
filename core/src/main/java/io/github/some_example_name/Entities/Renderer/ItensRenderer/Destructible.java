@@ -9,4 +9,5 @@ public interface Destructible {
     TextureRegion getTexture();
     boolean isDestroyed();
     void update(float delta);
+    
 }

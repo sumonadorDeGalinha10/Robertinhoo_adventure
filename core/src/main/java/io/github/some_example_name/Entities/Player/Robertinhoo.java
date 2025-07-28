@@ -22,6 +22,7 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
@@ -30,10 +31,14 @@ import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Inventory.InventoryController;
 import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
+import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import com.badlogic.gdx.graphics.Color;
+
 import com.badlogic.gdx.utils.Timer;
 
 
-public class Robertinhoo implements Steerable<Vector2> {
+public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
 
     public Body body;
     public static final int RUN = 1;
@@ -90,6 +95,7 @@ public class Robertinhoo implements Steerable<Vector2> {
     public InventoryController inventoryController;
     private PlayerController playerController;
     private final StaminaSystem staminaSystem;
+    private ShadowComponent shadowComponent;
 
     public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
@@ -102,11 +108,14 @@ public class Robertinhoo implements Steerable<Vector2> {
         this.inventoryController = new InventoryController(this, inventory, map);
         this.playerController = new PlayerController(this);
         this.meleeSystem = new MeleeAttackSystem(this);
-        // - 100 stamina máxima
-        // - 15/s regeneração normal
-        // - 5/s regeneração durante exaustão (mais lenta)
-        // - 80% de recuperação necessária para sair da exaustão
         this.staminaSystem = new StaminaSystem(100f, 10f, 23f, 0.95f);
+        this.shadowComponent = new ShadowComponent(
+            8,  // Largura
+            4,   // Altura
+            -0.25f,
+            0.7f,
+            new Color(0.05f, 0.05f, 0.05f, 1) // Cinza
+        );
 
         createBody(x, y);
 
@@ -149,6 +158,8 @@ public class Robertinhoo implements Steerable<Vector2> {
         fixtureDef.restitution = 0.0f;
         body.setUserData("PLAYER");
         System.out.println("[DEBUG] Criando corpo do Robertinho em (" + x + ", " + y + ")");
+        fixtureDef.filter.categoryBits = Constants.BIT_PLAYER;
+        fixtureDef.filter.maskBits     = Constants.BIT_OBJECT | Constants.BIT_PLAYER_ATTACK | Constants.BIT_ENEMY | Constants.BIT_PROJECTILE | Constants.BIT_ITEM;
 
         body.createFixture(fixtureDef);
         body.setAngularDamping(2f);
@@ -446,5 +457,11 @@ public class Robertinhoo implements Steerable<Vector2> {
     public StaminaSystem getStaminaSystem() {
         return staminaSystem;
     }
+
+      @Override
+    public ShadowComponent getShadowComponent() {
+        return shadowComponent;
+    }
+
 
 }

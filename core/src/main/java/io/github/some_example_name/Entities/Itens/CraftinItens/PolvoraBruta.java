@@ -1,4 +1,6 @@
-package io.github.some_example_name.Entities.Itens.Ammo;
+package io.github.some_example_name.Entities.Itens.CraftinItens;
+
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -8,17 +10,15 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
 import io.github.some_example_name.Mapa;
-import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import com.badlogic.gdx.physics.box2d.World;
 
-import com.badlogic.gdx.graphics.Texture;
-
-public class Ammo9mm extends Ammo {
-    private Mapa mapa;
+public class PolvoraBruta extends Polvora{
+    private World mapa;
     private Body body;
-
     protected Vector2 setWorldPosition;
-    public Ammo9mm(Mapa mapa, int x, int y) {
-        super("9mm",15, 25, new TextureRegion(new Texture("ITENS/Ammo/ammo0.9mm.png")),2,1);
+
+    public PolvoraBruta(World mapa, float x, float y) {
+        super("PolvoraBruta", new TextureRegion(new Texture("ITENS/Polvora/PolvoraBruta-Sheet.png")),1,1);
         this.position = new Vector2(x, y);
         this.mapa = mapa;
         createBody(this.position);
@@ -29,7 +29,7 @@ public class Ammo9mm extends Ammo {
         bodyDef.type = BodyType.StaticBody;
         bodyDef.position.set(position.x + 0.5f, position.y + 0.5f);
 
-        body = mapa.world.createBody(bodyDef);
+        body = mapa.createBody(bodyDef);
         body.setUserData(this);
 
         PolygonShape shape = new PolygonShape();
@@ -38,9 +38,7 @@ public class Ammo9mm extends Ammo {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.isSensor = true;
-        fixtureDef.filter.categoryBits = Constants.BIT_ITEM;
-        fixtureDef.filter.maskBits     = Constants.BIT_PLAYER;
-            body.createFixture(fixtureDef);
+        body.createFixture(fixtureDef);
         shape.dispose();
     }
 
@@ -49,9 +47,6 @@ public class Ammo9mm extends Ammo {
     }
     
     public void destroyBody() {
-        mapa.world.destroyBody(body);
+        mapa.destroyBody(body);
     }
-
-
-
 }

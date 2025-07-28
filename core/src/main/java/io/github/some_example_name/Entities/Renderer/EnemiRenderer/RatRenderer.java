@@ -2,7 +2,11 @@ package io.github.some_example_name.Entities.Renderer.EnemiRenderer;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.Color;
+
 import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Enemies.Ratinho.State;
 
@@ -15,6 +19,11 @@ public class RatRenderer {
     private final Animation<TextureRegion> runHorizontalAnimation;
     private final Animation<TextureRegion> runDownAnimation;
     private final Animation<TextureRegion> gotDamage;
+
+    private static final float RAT_WIDTH = 16f;
+    private static final float RAT_HEIGHT = 16f;
+    private static final float RAT_RENDER_WIDTH = 12f;
+    private static final float RAT_RENDER_HEIGHT = 12f;
 
 
     private final Texture prepareDashSheet;
@@ -50,6 +59,48 @@ public class RatRenderer {
         return new Animation<>(speed, regions);
     }
 
+     public void render(SpriteBatch batch, float delta, Ratinho rat, float offsetX, float offsetY) {
+        // Atualiza o tempo da animação
+        rat.update(delta);
+        
+        // Determina se precisa virar o sprite
+        boolean flip = shouldFlip(rat);
+        
+        // Obtém o frame de animação
+        TextureRegion frame = getFrame(rat, flip);
+        
+        // Calcula posição e tamanho
+        Vector2 renderPos = calculateRenderPosition(rat);
+        Vector2 renderSize = calculateRenderSize(rat);
+        
+        // Aplica efeito de dano se necessário
+        if (rat.isTakingDamage()) {
+            batch.setColor(1, 0.5f, 0.5f, 1);
+        }
+        
+        // Renderiza o rato
+        batch.draw(
+            frame,
+            offsetX + renderPos.x * 16,
+            offsetY + renderPos.y * 16,
+            renderSize.x,
+            renderSize.y
+        );
+        
+        // Reseta a cor
+        batch.setColor(Color.WHITE);
+    }
+    
+    private boolean shouldFlip(Ratinho rat) {
+        if (rat.getDirectionX() < 0 &&
+            (rat.getState() == State.RUNNING_HORIZONTAL ||
+             rat.getState() == State.PREPARING_DASH ||
+             rat.getState() == State.DASHING)) {
+            return true;
+        }
+        return false;
+    }
+
 public TextureRegion getFrame(Ratinho rat, boolean flip) {
     TextureRegion originalFrame;
 
@@ -73,6 +124,8 @@ public TextureRegion getFrame(Ratinho rat, boolean flip) {
             originalFrame = idleAnimation.getKeyFrame(rat.getAnimationTime(), true);
     }
 
+  
+
     TextureRegion frame = new TextureRegion(originalFrame);
     
     if (rat.getState() == State.RUNNING_HORIZONTAL || 
@@ -92,6 +145,43 @@ public TextureRegion getFrame(Ratinho rat, boolean flip) {
     
     return frame;
 }
+
+
+   private Vector2 calculateRenderPosition(Ratinho rat) {
+        Vector2 position = new Vector2(rat.getPosition());
+        
+        // Ajustes de posição baseados no estado
+        switch (rat.getState()) {
+            case DASHING:
+                position.x -= 0.1f;
+                position.y -= 0.05f;
+                break;
+            case PREPARING_DASH:
+                position.x += 0.05f;
+                break;
+            case GOT_DAMAGE:
+                position.y -= 0.03f;
+                break;
+        }
+        
+        // Centralização básica
+        position.x -= (RAT_RENDER_WIDTH / RAT_WIDTH) / 2f;
+        position.y -= (RAT_RENDER_HEIGHT / RAT_HEIGHT) / 2f;
+        
+        return position;
+    }
+    
+    private Vector2 calculateRenderSize(Ratinho rat) {
+        Vector2 size = new Vector2(RAT_RENDER_WIDTH, RAT_RENDER_HEIGHT);
+        
+   
+        if (rat.getState() == State.DASHING) {
+            size.x *= 1.1f;
+            size.y *= 0.95f;
+        }
+        
+        return size;
+    }
 
     public void dispose() {
         idleSheet.dispose();

@@ -12,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 
 import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Inventory;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon.TipoMao;
@@ -153,6 +154,8 @@ public class Pistol extends Weapon {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.isSensor = true;
+        fixtureDef.filter.categoryBits = Constants.BIT_ITEM;
+        fixtureDef.filter.maskBits     = Constants.BIT_PLAYER;
         body.createFixture(fixtureDef);
         shape.dispose();
 
