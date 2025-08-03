@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Enemies.IA.AStarPathFinder;
+import io.github.some_example_name.Entities.Enemies.IA.Grid;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Interface.RobertinhoFaceHUD;
 import io.github.some_example_name.Interface.WeaponHUD;
@@ -20,7 +22,6 @@ public class GameScreen extends CatScreen {
     private SpriteBatch hudBatch;
     private OrthographicCamera hudCamera;
     private RobertinhoFaceHUD robertinhoFaceHUD;
-
 
     public GameScreen(Game game) {
         super(game);
@@ -66,29 +67,29 @@ public class GameScreen extends CatScreen {
 
         hudBatch.begin();
         weaponHUD.draw();
-        robertinhoFaceHUD.draw(hudBatch,delta);
+        robertinhoFaceHUD.draw(hudBatch, delta);
         hudBatch.end();
     }
 
-@Override
-public void resize(int width, int height) {
-    // Atualize PRIMEIRO a câmera do jogo principal
-    renderer.resize(width, height);
-    
-    // Atualize AGORA a câmera HUD
-    hudCamera.setToOrtho(false, width, height);
-    hudCamera.update();
-    hudBatch.setProjectionMatrix(hudCamera.combined);
-    
-    // Atualize os elementos HUD
-    if (weaponHUD != null) {
-        weaponHUD.resize(width, height);
+    @Override
+    public void resize(int width, int height) {
+        // Atualize PRIMEIRO a câmera do jogo principal
+        renderer.resize(width, height);
+
+        // Atualize AGORA a câmera HUD
+        hudCamera.setToOrtho(false, width, height);
+        hudCamera.update();
+        hudBatch.setProjectionMatrix(hudCamera.combined);
+
+        // Atualize os elementos HUD
+        if (weaponHUD != null) {
+            weaponHUD.resize(width, height);
+        }
+
+        robertinhoFaceHUD.updateScreenSize(width, height);
+
+        System.out.println("[RESIZE] Tela: " + width + "x" + height);
     }
-    
-    robertinhoFaceHUD.updateScreenSize(width, height);
-    
-    System.out.println("[RESIZE] Tela: " + width + "x" + height);
-}
 
     @Override
     public void hide() {

@@ -57,10 +57,10 @@ public class StaminaSystem {
             // Consome normalmente
             currentStamina -= amount;
             
-            // // Entra em exaustão se ficar com menos de 5% de stamina
-            // if (currentStamina <= maxStamina * 0.05f) {
-            //     isExhausted = true;
-            // }
+            // Entra em exaustão se ficar com menos de 5% de stamina
+            if (currentStamina <= maxStamina * 0.001f) {
+                isExhausted = true;
+            }
         }
         
         return actionAllowed;
@@ -80,5 +80,9 @@ public class StaminaSystem {
     
     public boolean canPerformAction() {
         return !isExhausted;
+    }
+
+        public boolean hasStamina(float amount) {
+        return !isExhausted && currentStamina >= amount;
     }
 }

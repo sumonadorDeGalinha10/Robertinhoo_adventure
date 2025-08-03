@@ -83,7 +83,7 @@ public class Barrel extends BaseDestructible implements ShadowEntity {
         for (int i = 0; i < 5; i++) {
             destructionFrames[i] = new TextureRegion(textureSheet, (i + 1) * frameWidth, 0, frameWidth, frameHeight);
         }
-        this.destructionAnimation = new Animation<>(0.2f, destructionFrames);
+        this.destructionAnimation = new Animation<>(0.08f, destructionFrames);
         this.destroyedTexture = destructionFrames[4];
     }
 

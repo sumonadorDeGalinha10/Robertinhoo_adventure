@@ -19,6 +19,8 @@ public class RobertinhoFaceHUD {
     private Animation<TextureRegion> maskMediumAnimation;
     private Animation<TextureRegion> maskLowAnimation;
     private StaminaBarRenderer staminaBarRenderer;
+    private final Texture exhaustedSheet;  // Nova textura para estado exausto
+    private Animation<TextureRegion> exhaustedAnimation;  // Animação de exausto
 
     private final VidaBatimentoCardiaco batimentoCardiaco;
 
@@ -38,6 +40,8 @@ public class RobertinhoFaceHUD {
     private final Animation<TextureRegion> faceAnimation;
     private final Robertinhoo robertinhoo;
     private float stateTime;
+        private boolean lastExhaustedState = false;
+    private float faceStateTime = 0f;
 
     public RobertinhoFaceHUD(float screenWidth, float screenHeight, Robertinhoo robertinhoo) {
         this.robertinhoo = robertinhoo;
@@ -49,6 +53,7 @@ public class RobertinhoFaceHUD {
         batimentoSheet = new Texture("rober/interface/vida-full-Sheet.png");
         maskMedium = new Texture("rober/interface/medium-Sheet.png");
         maskLow = new Texture("rober/interface/low-Sheet.png");
+        exhaustedSheet = new Texture("rober/interface/cansado-Sheet.png");
 
         maskMediumAnimation = createMaskAnimation(maskMedium, 8);
         maskLowAnimation = createMaskAnimation(maskLow, 8);
@@ -78,6 +83,8 @@ public class RobertinhoFaceHUD {
         }
 
         faceAnimation = new Animation<>(0.4f, idleFrames);
+         exhaustedAnimation = createFaceAnimation(exhaustedSheet, 5);
+           lastExhaustedState = robertinhoo.getStaminaSystem().isExhausted();
 
         stateTime = 0f;
     }
@@ -115,14 +122,21 @@ public class RobertinhoFaceHUD {
                         screenWidth, screenHeight, x, y, batimentoX, batimentoY));
     }
 
-    public void update(float delta) {
+     public void update(float delta) {
         stateTime += delta;
-
+        faceStateTime += delta;
+        
+        // Verifica mudança de estado
+        boolean currentExhausted = robertinhoo.getStaminaSystem().isExhausted();
+        if (currentExhausted != lastExhaustedState) {
+            faceStateTime = 0f; // Reseta o tempo da animação
+            lastExhaustedState = currentExhausted;
+        }
+        
         if (batimentoCardiaco != null) {
             batimentoCardiaco.update(delta);
         }
     }
-
     public void draw(SpriteBatch batch , float delta) {
         Matrix4 originalMatrix = batch.getProjectionMatrix().cpy();
         Matrix4 hudMatrix = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -135,7 +149,12 @@ public class RobertinhoFaceHUD {
 
         batch.draw(metalFrame, scaledX, scaledY, scaledFaceSize, scaledFaceSize);
 
-        TextureRegion currentFrame = faceAnimation.getKeyFrame(stateTime, true);
+          Animation<TextureRegion> currentAnimation = robertinhoo.getStaminaSystem().isExhausted() 
+            ? exhaustedAnimation 
+            : faceAnimation;
+        
+        TextureRegion currentFrame = currentAnimation.getKeyFrame(faceStateTime, true);
+        
 
         float faceMargin = scaledFaceSize * 0.001f;
         float faceRenderSize = scaledFaceSize - 2 * faceMargin;
@@ -200,6 +219,21 @@ public class RobertinhoFaceHUD {
         batimentoCardiaco.setPosition(batimentoX, batimentoY);
     }
 
+        private Animation<TextureRegion> createFaceAnimation(Texture sheet, int frameCount) {
+        int FRAME_COLS = frameCount;
+        int FRAME_ROWS = 1;
+
+        TextureRegion[][] tmp = TextureRegion.split(
+                sheet,
+                sheet.getWidth() / FRAME_COLS,
+                sheet.getHeight() / FRAME_ROWS);
+
+        TextureRegion[] frames = new TextureRegion[FRAME_COLS];
+        System.arraycopy(tmp[0], 0, frames, 0, FRAME_COLS);
+
+        return new Animation<>(0.4f, frames);
+    }
+
     public void dispose() {
         metalFrame.dispose();
         faceSheet.dispose();
@@ -207,9 +241,13 @@ public class RobertinhoFaceHUD {
         maskMedium.dispose();
         maskLow.dispose();
         staminaBarRenderer.dispose();
+        exhaustedSheet.dispose();
+        if (faceAnimation != null) {
+            faceAnimation.getKeyFrames()[0].getTexture().dispose();
 
         if (batimentoCardiaco != null) {
             batimentoCardiaco.dispose();
         }
     }
+}
 }

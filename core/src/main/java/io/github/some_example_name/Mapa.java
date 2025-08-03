@@ -6,10 +6,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Entities.Enemies.Enemy;
-import io.github.some_example_name.Entities.Enemies.Ratinho;
+import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
@@ -20,6 +23,7 @@ import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
 import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
 import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
+import com.badlogic.gdx.graphics.Color;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -36,6 +40,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import io.github.some_example_name.Entities.Itens.CraftinItens.Polvora;
 
@@ -51,6 +56,7 @@ public class Mapa {
     private List<Destructible> destructibles = new ArrayList<>();
     private List<Item> craftItems = new ArrayList<>();
     private List<Runnable> pendingActions = new ArrayList<>();
+   public PathfindingSystem pathfindingSystem;
 
     public World world;
     public WallOtimizations agruparParedes;
@@ -94,6 +100,7 @@ public class Mapa {
         ammo = new ArrayList<>();
         polvoras = new ArrayList<>();
         agruparParedes = new WallOtimizations(this);
+        this.pathfindingSystem = new PathfindingSystem(this);
 
         initializeLights();
         try {
@@ -102,8 +109,8 @@ public class Mapa {
             Gdx.app.error("Mapa", "Erro crítico: " + e.getMessage());
         }
 
-        world.setContactListener(new GameContactListener(robertinhoo));
 
+        world.setContactListener(new GameContactListener(robertinhoo));
     }
 
     public void initializeLights() {
@@ -214,6 +221,7 @@ public class Mapa {
 
         Body body = world.createBody(bodyDef);
         body.setUserData("WALL");
+    
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(
                 (ret.width / 2) * escala,
@@ -221,9 +229,34 @@ public class Mapa {
 
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
+        fixtureDef.filter.categoryBits = Constants.BIT_WALL;
         body.createFixture(fixtureDef);
         shape.dispose();
     }
+
+     public boolean isTileBlocked(int tileX, int tileY) {
+        if (tileX < 0 || tileY < 0 || tileX >= mapWidth || tileY >= mapHeight) {
+            return true;
+        }
+        return tiles[tileX][tileY] == PAREDE || isPhysicalWallAt(tileX, tileY);
+    }
+private boolean isPhysicalWallAt(int tileX, int tileY) {
+    Vector2 worldPos = tileToWorld(tileX, tileY);
+    
+    com.badlogic.gdx.utils.Array<Body> bodies = new com.badlogic.gdx.utils.Array<>();
+    world.getBodies(bodies);
+    
+    for (Body body : bodies) {
+        if ("WALL".equals(body.getUserData())) {
+            Vector2 bodyPos = body.getPosition();
+            if (MathUtils.isEqual(bodyPos.x, worldPos.x, 0.5f) && 
+                MathUtils.isEqual(bodyPos.y, worldPos.y, 0.5f)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
     public void addProjectile(Projectile projectile) {
         projectiles.add(projectile);
@@ -251,13 +284,17 @@ public class Mapa {
         java.util.Iterator<Enemy> iterator = enemies.iterator();
         while (iterator.hasNext()) {
             Enemy enemy = iterator.next();
-            if (enemy.isToBeDestroyed()) {
-                world.destroyBody(enemy.getBody());
-                iterator.remove();
+            if (enemy instanceof Ratinho) {
+                Ratinho rat = (Ratinho) enemy;
+                if (rat.isMarkedForDestruction()) {
+                    world.destroyBody(rat.getBody());
+                    iterator.remove();
+                }
             }
         }
+        
 
-      for (Destructible d : destructibles) {
+    for (Destructible d : destructibles) {
         d.update(deltaTime);
     }
     
@@ -325,4 +362,50 @@ public class Mapa {
         }
     }
 
+        public PathfindingSystem getPathfindingSystem() {
+        return pathfindingSystem;
+    }
+
+    public Vector2 worldToTile(Vector2 worldPos) {
+        return new Vector2(
+            (int) Math.floor(worldPos.x),
+            mapHeight - 1 - (int) Math.floor(worldPos.y) // Inverte Y
+        );
+    }
+
+    public Vector2 tileToWorld(int tileX, int tileY) {
+        return new Vector2(
+            tileX + 0.5f,
+            mapHeight - 1 - tileY + 0.5f // Inverte Y
+        );
+    }
+
+    public void renderDebug(ShapeRenderer renderer) {
+    // Desenha tiles bloqueados
+    renderer.setColor(Color.RED);
+    for (int x = 0; x < mapWidth; x++) {
+        for (int y = 0; y < mapHeight; y++) {
+            if (isTileBlocked(x, y)) {
+                Vector2 worldPos = tileToWorld(x, y);
+                renderer.rect(worldPos.x - 0.4f, worldPos.y - 0.4f, 0.8f, 0.8f);
+            }
+        }
+    }
+    
+    // Desenha caminhos ativos
+    renderer.setColor(Color.GREEN);
+    for (Enemy enemy : enemies) {
+        if (enemy instanceof Ratinho) {
+            Ratinho rat = (Ratinho) enemy;
+            List<Vector2> path = rat.getCurrentPath();
+            if (path != null && !path.isEmpty()) {
+                Vector2 prev = rat.getBody().getPosition();
+                for (Vector2 point : path) {
+                    renderer.line(prev.x, prev.y, point.x, point.y);
+                    prev = point;
+                }
+            }
+        }
+    }
+}
 }

@@ -9,5 +9,6 @@ public class Constants {
     public static final short BIT_PLAYER_ATTACK = 16;
     public static final short BIT_ITEM = 32;
     public static final short BIT_OBJECT = 64; 
+    public static final short BIT_WALL = 128;
     
 }

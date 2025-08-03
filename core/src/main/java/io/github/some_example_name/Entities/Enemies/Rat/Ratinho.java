@@ -1,4 +1,4 @@
-package io.github.some_example_name.Entities.Enemies;
+package io.github.some_example_name.Entities.Enemies.Rat;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -6,15 +6,18 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.steer.SteeringAcceleration;
-import com.badlogic.gdx.ai.steer.behaviors.Pursue;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Enemies.Box2dLocation;
+import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Rat.RatRenderer;
+import java.util.List;
 
 import com.badlogic.gdx.graphics.Color;
 
@@ -22,8 +25,8 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
 
     private final Mapa mapa;
     private final Body body;
-    private final Pursue<Vector2> pursueBehavior;
     public final Robertinhoo target;
+       private boolean markedForDestruction = false;
 
     private float maxLinearSpeed = 4f;
     private float maxLinearAcceleration = 2f;
@@ -36,7 +39,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private static final float DASH_DURATION = 0.4f;
     private static final float DASH_COOLDOWN = 2f;
     private float dashTimer = 0f;
-    private static final float DASH_FORCE = 10f;
+
     private boolean isDashing = false;
     private float dashCooldown = 0f;
 
@@ -57,15 +60,29 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private float prepareDashTimer = 0f;
     private Vector2 dashTargetDirection; //
     private ShadowComponent shadowComponent;
+    private boolean deathAnimationFinished = false;
+    private RatAI ai;
+
+    
+
+    public RatRenderer renderer = new RatRenderer();
+
+    public enum DeathType {
+        NONE, MELEE, PROJECTILE
+    }
+
+    private DeathType deathType = DeathType.NONE;
+    private float deathAnimationTime = 0;
+    public boolean isDead = false;
+    private boolean shouldDeactivate = false;
 
     public Ratinho(Mapa mapa, int x, int y, Robertinhoo target) {
         super(x, y, 20, 2);
         this.mapa = mapa;
         this.target = target;
         this.body = createBody(x, y);
+        this.ai = new RatAI(this, target, mapa.getPathfindingSystem());    
 
-        this.pursueBehavior = setupAI();
-        this.pursueBehavior.setOwner(this);
 
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
@@ -98,6 +115,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         fd.density = 2f;
         fd.friction = 0f;
         fd.filter.categoryBits = Constants.BIT_ENEMY;
+        
 
         body.createFixture(fd);
         shape.dispose();
@@ -114,16 +132,13 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         return this.body;
     }
 
-    private Pursue<Vector2> setupAI() {
-        Pursue<Vector2> pursue = new Pursue<>(this, target);
-        pursue.setMaxPredictionTime(0.1f);
-        return pursue;
-    }
+
 
     public enum State {
         IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE,
         PREPARING_DASH,
-        DASHING
+        DASHING, MELEE_DEATH,
+        PROJECTILE_DEATH
     }
 
     public float getAnimationTime() {
@@ -135,7 +150,11 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         Vector2 myPos = body.getPosition();
         float distance = myPos.dst(playerPos);
 
-        // Sempre atualiza o tempo de animação
+         if (isDead) {
+            deathAnimationTime += deltaTime;
+            return;
+        }
+    
         animationTime += deltaTime;
 
         if (isTakingDamage) {
@@ -170,7 +189,6 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         if (state == State.IDLE || state == State.RUNNING_HORIZONTAL || state == State.RUNNING_DOWN) {
             if (dashCooldown <= 0 && distance <= DETECTION_RANGE) {
                 SteeringAcceleration<Vector2> steering = new SteeringAcceleration<>(new Vector2());
-                pursueBehavior.calculateSteering(steering);
 
                 Vector2 force = steering.linear.scl(body.getMass());
                 body.applyForceToCenter(force, true);
@@ -178,10 +196,16 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
                 updateMovementState();
             }
 
+            
+         ai.update(deltaTime, body);
+
+          updateMovementState();
+
             if (dashCooldown <= 0 && distance <= ATTACK_RANGE) {
                 executeDashAttack(playerPos);
             }
         }
+
 
     }
 
@@ -292,6 +316,41 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         }
     }
 
+   public void die(DeathType type) {
+        if (isDead) return;
+        
+        isDead = true;
+        deathType = type;
+        deathAnimationTime = 0;
+        state = type == DeathType.MELEE ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
+        disableCollisions();
+    }
+    
+
+    private void disableCollisions() {
+        for (Fixture fixture : getBody().getFixtureList()) {
+            fixture.setSensor(true);
+        }
+        
+        getBody().setLinearVelocity(0, 0);
+        getBody().setAngularVelocity(0);
+    }
+        public boolean isDeathAnimationFinished(float animationDuration) {
+        return deathAnimationTime >= animationDuration;
+    }
+
+    public float getDeathAnimationTime() {
+        return deathAnimationTime;
+    }
+
+    public DeathType getDeathType() {
+        return deathType;
+    }
+
+    public boolean isDead() {
+        return isDead;
+    }
+
     @Override
     public Vector2 getLinearVelocity() {
         return body.getLinearVelocity();
@@ -397,5 +456,39 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     @Override
     public ShadowComponent getShadowComponent() {
         return shadowComponent;
+    }
+
+    public void safeDeactivate() {
+        if (shouldDeactivate) {
+            getBody().setActive(false);
+            shouldDeactivate = false;
+        }
+    }
+
+    public void setRenderer(RatRenderer renderer) {
+        this.renderer = renderer;
+    }
+
+        public void markForDestruction() {
+        this.markedForDestruction = true;
+    }
+    
+    public boolean isMarkedForDestruction() {
+        return markedForDestruction;
+    }
+
+        public boolean isDying() {
+        return isDead && !isDeathAnimationFinished();
+    }
+    public boolean isDeathAnimationFinished() {
+        float duration = (deathType == DeathType.MELEE) ? 
+            renderer.getMeleeDeathDuration() : 
+            renderer.getProjectileDeathDuration();
+            
+        return deathAnimationTime >= duration;
+    }
+
+   public List<Vector2> getCurrentPath() {
+        return ai != null ? ai.getCurrentPath() : null;
     }
 }
