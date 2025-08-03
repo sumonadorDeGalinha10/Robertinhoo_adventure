@@ -1,7 +1,5 @@
 package io.github.some_example_name.Entities.Player;
 
-import java.security.Key;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
@@ -15,34 +13,25 @@ public class PlayerController {
     private final Vector2 moveDir = new Vector2();
     private boolean isMoving = false;
 
-    private float dashTime = 0;
-    private float dashCooldownTime = 0;
-    public Weapon weaponToPickup;
+    private final DashSystem dashSystem;
     private InventoryController inventoryController;
     private float meleeCooldown = 0;
 
     // Constantes
-    public static final float DASH_DURATION = 0.57f;
-    public static final float DASH_COOLDOWN = 1f;
-    public static final float DASH_SPEED = 3f;
     public static final float ACCELERATION = 1.5f;
     private boolean canMeleeAttack = true;
     public static final float MELEE_COOLDOWN = 0.5f;
-
-    public static final float DASH_STAMINA_COST = 40f;
     public static final float MELEE_STAMINA_COST = 30f;
     public static final float ROLL_STAMINA_COST = 40f;
-
-    private boolean dashKeyWasPressed = false;
 
     public PlayerController(Robertinhoo player) {
         this.player = player;
         this.inventoryController = player.inventoryController;
+        this.dashSystem = new DashSystem(player);
     }
 
     public void update(float deltaTime) {
-        if (dashCooldownTime > 0)
-            dashCooldownTime -= deltaTime;
+        dashSystem.update(deltaTime);
 
         // Atualizar cooldown do ataque corpo a corpo
         if (meleeCooldown > 0) {
@@ -52,21 +41,16 @@ public class PlayerController {
             canMeleeAttack = true;
         }
 
-        if (dashTime > 0) {
-            dashTime -= deltaTime;
-            if (dashTime <= 0)
-                endDash();
-        } else {
-            processMovement();
-            processActions(deltaTime);
+        if (dashSystem.shouldApplyPostDashImpulse()) {
+            dashSystem.applyPostDashImpulse();
         }
-        player.getStaminaSystem().update(deltaTime);
-    }
 
-    private void endDash() {
-        player.state = Robertinhoo.IDLE;
-        player.setInvulnerable(false);
-        player.body.setLinearVelocity(0, 0);
+        if (!dashSystem.isDashing() && !dashSystem.isApplyingPostDashImpulse()) {
+            processMovement();
+        }
+
+        processActions(deltaTime);
+        player.getStaminaSystem().update(deltaTime);
     }
 
     private void processMovement() {
@@ -133,40 +117,20 @@ public class PlayerController {
             player.dir = Robertinhoo.IDLE;
         }
 
-        boolean canDash = (spaceJustPressed || (!dashKeyWasPressed && spacePressed)) &&
-                dashCooldownTime <= 0 &&
-                player.state != Robertinhoo.DASH &&
-                !moveDir.isZero();
-
-        if (canDash) {
-            if (player.getStaminaSystem().consumeStamina(DASH_STAMINA_COST)) {
+        if (!dashSystem.isDashing()) {
+            if (!moveDir.isZero()) {
                 moveDir.nor();
-                Vector2 dashVector = new Vector2(moveDir.x, moveDir.y);
-                player.state = Robertinhoo.DASH;
-                player.dashDirection = player.dir;
-
-                dashTime = DASH_DURATION;
-                dashCooldownTime = DASH_COOLDOWN;
-                player.setInvulnerable(true);
-                player.body.setLinearVelocity(dashVector.scl(DASH_SPEED));
-
-                System.out.println("DASH ACTIVATED");
+                player.state = Robertinhoo.RUN;
+                player.body.setLinearVelocity(moveDir.scl(ACCELERATION));
             } else {
-                System.out.println("DASH BLOCKED: Not enough stamina");
+                player.state = Robertinhoo.IDLE;
+                player.body.setLinearVelocity(0, 0);
             }
         }
-        // Movimento normal
-        else if (!moveDir.isZero()) {
-            moveDir.nor();
-            player.state = Robertinhoo.RUN;
-            player.body.setLinearVelocity(moveDir.scl(ACCELERATION));
-        } else {
-            player.state = Robertinhoo.IDLE;
-            player.body.setLinearVelocity(0, 0);
-        }
+        dashSystem.handleDashInput(spacePressed, spaceJustPressed, moveDir);
 
-        dashKeyWasPressed = spacePressed;
     }
+    // Movimento normal
 
     private void processActions(float deltaTime) {
         // Pickup/Placement
@@ -211,5 +175,9 @@ public class PlayerController {
                 currentWeapon.shoot(firePosition, direction);
             }
         }
+    }
+
+    public DashSystem getDashSystem() {
+        return dashSystem;
     }
 }

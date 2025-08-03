@@ -8,6 +8,7 @@ import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 
 
 import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 
 
 public class ProjectileHandler implements ContactHandler {
@@ -48,9 +49,14 @@ public class ProjectileHandler implements ContactHandler {
         enemy.takeDamage(projectile.getDamage());
         projectile.startDestruction();
 
-        if (enemy.getHealth() <= 0) {
-            enemy.destroy();
+     if (enemy.getHealth() <= 0) {
+             if (enemy instanceof Ratinho) {
+            ((Ratinho) enemy).die(Ratinho.DeathType.PROJECTILE);
         }
+        // Marca para destruição física posterioraa
+        enemy.isToBeDestroyed();
+    }
+        
     }
 
 

@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import io.github.some_example_name.Entities.Enemies.Enemy;
-import io.github.some_example_name.Entities.Enemies.Ratinho;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 
 public class MeleeAttackHandler implements ContactHandler {
     @Override
@@ -12,7 +12,7 @@ public class MeleeAttackHandler implements ContactHandler {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
         
-        // Detectar colisão entre ataque corpo a corpo e inimigo
+        
         if (("MELEE_ATTACK".equals(dataA) && dataB instanceof Enemy)) {
             handleMeleeAttack((Enemy) dataB, fixtureA.getBody().getPosition());
               
@@ -25,14 +25,23 @@ public class MeleeAttackHandler implements ContactHandler {
         }
     }
     
+    
     private void handleMeleeAttack(Enemy enemy, Vector2 attackPosition) {
+        // Ignora inimigos já mortos
+        if (enemy.isDead()) return;
+        
         enemy.takeDamage(15);
         Vector2 direction = new Vector2(enemy.getBody().getPosition()).sub(attackPosition).nor();
         enemy.getBody().applyLinearImpulse(direction.scl(1f), enemy.getBody().getWorldCenter(), true);
+        
         if (enemy.getHealth() <= 0) {
-            enemy.destroy();
+            if (enemy instanceof Ratinho) {
+                ((Ratinho) enemy).die(Ratinho.DeathType.MELEE);
+            }
+            // Não marca para destruição aqui! Apenas inicia a morte
         }
     }
+
 
     
 

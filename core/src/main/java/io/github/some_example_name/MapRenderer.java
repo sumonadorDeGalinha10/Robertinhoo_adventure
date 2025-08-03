@@ -17,16 +17,18 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 
 import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho.DeathType;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
-import io.github.some_example_name.Entities.Enemies.Ratinho;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.ProjectileRenderer;
 import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
 import io.github.some_example_name.Entities.Renderer.AmmoRenderer.AmmoRenderer;
+import io.github.some_example_name.Entities.Renderer.CorpsesManager.CorpseManager;
 import io.github.some_example_name.Entities.Renderer.CraftItensRenderer.CraftItensRenderer;
-import io.github.some_example_name.Entities.Renderer.EnemiRenderer.RatRenderer;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Rat.RatRenderer;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.DestructibleRenderer;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
@@ -51,6 +53,7 @@ public class MapRenderer {
     public RenderInventory renderInventory;
     private ShadowRenderer shadowRenderer;
     private CraftItensRenderer craftItensRenderer;
+    private CorpseManager corpseManager;
 
     private DestructibleRenderer destructibleRenderer;
     // private MeleeAttackRenderer meleeAttackRenderer;
@@ -85,6 +88,7 @@ public class MapRenderer {
         this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
         this.ammoRenderer = new AmmoRenderer(TILE_SIZE);
         ratRenderer = new RatRenderer();
+
         this.renderInventory = new RenderInventory(
                 mapa.robertinhoo.getInventory(),
                 64,
@@ -94,6 +98,7 @@ public class MapRenderer {
         this.destructibleRenderer = new DestructibleRenderer(TILE_SIZE);
         this.shadowRenderer = new ShadowRenderer(shapeRenderer);
         this.craftItensRenderer = new CraftItensRenderer(TILE_SIZE);
+        this.corpseManager = new CorpseManager();
         // this.meleeAttackRenderer = new MeleeAttackRenderer(mapa.robertinhoo);
     }
 
@@ -132,6 +137,7 @@ public class MapRenderer {
                 shadowEntities.add((ShadowEntity) d);
             }
         }
+        List<Ratinho> ratsToRemove = new ArrayList<>();
 
         // 1. RENDERIZAÇÃO DO CHÃO (TILES)
         spriteBatch.begin();
@@ -163,9 +169,32 @@ public class MapRenderer {
             for (Enemy enemy : mapa.getEnemies()) {
                 if (enemy instanceof Ratinho) {
                     Ratinho rat = (Ratinho) enemy;
-                    ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
+
+                    if (rat.isDead()) {
+                        float duration = (rat.getDeathType() == DeathType.MELEE) ? ratRenderer.getMeleeDeathDuration()
+                                : ratRenderer.getProjectileDeathDuration();
+
+                        if (rat.isDeathAnimationFinished(duration)) {
+                            if (!rat.isMarkedForDestruction()) {
+
+                                TextureRegion corpseTexture = ratRenderer.getCorpseFrame(rat);
+                                // boolean flip = ratRenderer.flipou(rat);
+                                corpseManager.addCorpse(rat, ratRenderer, corpseTexture);
+
+                                rat.markForDestruction();
+                            }
+                        } else {
+                            // Renderiza animação de morte em andamento
+                            ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
+                        }
+                    } else {
+                        // Renderiza rato vivo
+                        ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
+                    }
                 }
             }
+
+            corpseManager.render(spriteBatch, offsetX, offsetY);
 
             // Renderiza armas no chão
             for (Weapon weapon : mapa.getWeapons()) {
@@ -181,13 +210,23 @@ public class MapRenderer {
             }
 
             ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);
-            craftItensRenderer.render(spriteBatch,mapa.getCraftItems(),offsetX,offsetY);
+            craftItensRenderer.render(spriteBatch, mapa.getCraftItems(), offsetX, offsetY);
         }
         spriteBatch.end();
 
         // --- DEBUG RENDER ---
-        debugRender(offsetX, offsetY);
-        debugMeleeHitbox(offsetX, offsetY);
+        // debugRender(offsetX, offsetY);
+        // debugMeleeHitbox(offsetX, offsetY);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled); // INÍCIO DO SHAPERENDERER
+        {
+            // Debug do mapa (paredes e caminhos)
+            mapa.renderDebug(shapeRenderer);
+
+            // Debug adicional (hitboxes, etc)
+            // debugRender(offsetX, offsetY);
+            // debugMeleeHitbox(offsetX, offsetY);
+        }
+        shapeRenderer.end();
 
         // --- RENDERIZAÇÃO DE FORMAS (MIRA E DEBUG) ---
         // Reconfigura a matriz (importante após renderização de sombras)
@@ -228,6 +267,7 @@ public class MapRenderer {
         // --- RENDERIZAÇÃO DE LUZES ---
         mapa.getRayHandler().setCombinedMatrix(cameraController.getCamera());
         mapa.getRayHandler().updateAndRender();
+        ;
     }
 
     public void calculateOffsets() {

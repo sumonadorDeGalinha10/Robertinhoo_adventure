@@ -60,7 +60,6 @@ public class Projectile {
         createBody(mapa, position, velocity);
         mapa.addProjectile(this);
         
-        
     }
 
     public void updateStateTime(float delta) {

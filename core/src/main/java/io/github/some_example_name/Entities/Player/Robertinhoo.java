@@ -37,7 +37,6 @@ import com.badlogic.gdx.graphics.Color;
 
 import com.badlogic.gdx.utils.Timer;
 
-
 public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
 
     public Body body;
@@ -96,6 +95,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     private PlayerController playerController;
     private final StaminaSystem staminaSystem;
     private ShadowComponent shadowComponent;
+    public Vector2 dashVelocity;
 
     public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
@@ -110,11 +110,11 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         this.meleeSystem = new MeleeAttackSystem(this);
         this.staminaSystem = new StaminaSystem(100f, 10f, 23f, 0.95f);
         this.shadowComponent = new ShadowComponent(
-            8,  // Largura
-            4,   // Altura
-            -0.25f,
-            0.7f,
-            new Color(0.05f, 0.05f, 0.05f, 1) // Cinza
+                8, // Largura
+                4, // Altura
+                -0.25f,
+                0.7f,
+                new Color(0.05f, 0.05f, 0.05f, 1) // Cinza
         );
 
         createBody(x, y);
@@ -159,7 +159,8 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         body.setUserData("PLAYER");
         System.out.println("[DEBUG] Criando corpo do Robertinho em (" + x + ", " + y + ")");
         fixtureDef.filter.categoryBits = Constants.BIT_PLAYER;
-        fixtureDef.filter.maskBits     = Constants.BIT_OBJECT | Constants.BIT_PLAYER_ATTACK | Constants.BIT_ENEMY | Constants.BIT_PROJECTILE | Constants.BIT_ITEM;
+        fixtureDef.filter.maskBits = Constants.BIT_OBJECT | Constants.BIT_PLAYER_ATTACK | Constants.BIT_ENEMY
+                | Constants.BIT_PROJECTILE | Constants.BIT_ITEM | Constants.BIT_WALL;
 
         body.createFixture(fixtureDef);
         body.setAngularDamping(2f);
@@ -176,7 +177,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
             }
         }
 
-     if (state == MELEE_ATTACK) {
+        if (state == MELEE_ATTACK) {
             meleeAttackTime += deltaTime;
             if (meleeAttackTime >= meleeAttackDuration) {
                 state = IDLE;
@@ -210,7 +211,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         if (state != DASH && state != MELEE_ATTACK) {
             state = MELEE_ATTACK;
             meleeAttackTime = 0;
-            
+
             if (weaponSystem.isAiming() && getInventory().getEquippedWeapon() != null) {
                 float aimAngle = applyAimRotation();
                 WeaponAnimations.WeaponDirection weaponDir = DirectionUtils.getDirectionFromAngle(aimAngle);
@@ -218,14 +219,14 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
             } else {
                 meleeDirection = lastDir;
             }
-            
+
             meleeSystem.startAttack(meleeDirection);
         }
     }
 
-  public void takeDamage(float damage) {
+    public void takeDamage(float damage) {
         if (!isInvulnerable) {
-            life =  life - damage;
+            life = life - damage;
             isTakingDamage = true;
             damageTimer = 0.5f;
             setInvulnerable(true);
@@ -236,8 +237,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
                 }
             }, 1f);
         }
-    }   
-
+    }
 
     public Inventory getInventory() {
         return inventory;
@@ -278,7 +278,8 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     public void setMapRenderer(MapRenderer mapRenderer) {
         this.weaponSystem = new PlayerWeaponSystem(this, mapRenderer);
     }
-       public float getMeleeAttackDuration() {
+
+    public float getMeleeAttackDuration() {
         return meleeAttackDuration;
     }
 
@@ -450,7 +451,8 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     public float getLife() {
         return life;
     }
-    public  MeleeAttackSystem getMeleeAttackSystem() {
+
+    public MeleeAttackSystem getMeleeAttackSystem() {
         return this.meleeSystem;
     }
 
@@ -458,10 +460,13 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         return staminaSystem;
     }
 
-      @Override
+    @Override
     public ShadowComponent getShadowComponent() {
         return shadowComponent;
     }
 
+    public PlayerController getPlayerController() {
+        return playerController;
+    }
 
 }

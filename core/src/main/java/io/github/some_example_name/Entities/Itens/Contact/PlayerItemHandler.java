@@ -3,6 +3,7 @@ package io.github.some_example_name.Entities.Itens.Contact;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
+import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Inventory.Item;
@@ -55,5 +56,7 @@ public class PlayerItemHandler implements ContactHandler {
                 player.clearItemToPickup();
             }
         }
+
     }
+    
 }

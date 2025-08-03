@@ -6,11 +6,10 @@ import com.badlogic.gdx.physics.box2d.Body;
 
 public abstract class Enemy {
     
-
     protected Vector2 position;
     protected float health;
     protected float speed;
-    protected boolean isAlive;
+    protected boolean isAlive = true;
     protected boolean toBeDestroyed = false;
 
     public Enemy(float x, float y, float health, float speed) {
@@ -44,6 +43,11 @@ public abstract class Enemy {
 
     public float getHealth() {
         return health;
+    }
+
+    public boolean isDead(){
+        return isAlive;
+
     }
   public abstract Body getBody(); 
 

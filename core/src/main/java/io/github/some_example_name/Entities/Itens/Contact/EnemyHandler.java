@@ -18,14 +18,12 @@ public class EnemyHandler implements ContactHandler {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
         
-        // Inimigo atacando jogador
         if (dataA instanceof Enemy && "PLAYER".equals(dataB)) {
             handleEnemyAttack((Enemy) dataA);
         } else if (dataB instanceof Enemy && "PLAYER".equals(dataA)) {
             handleEnemyAttack((Enemy) dataB);
         }
         
-        // Colisão entre inimigos (opcional)
         if (dataA instanceof Enemy && dataB instanceof Enemy) {
             handleEnemyCollision((Enemy) dataA, (Enemy) dataB);
         }
@@ -37,7 +35,6 @@ public class EnemyHandler implements ContactHandler {
     }
     
     private void handleEnemyCollision(Enemy enemy1, Enemy enemy2) {
-        // Empurrão entre inimigos para evitar empilhamento
         Vector2 direction = new Vector2(enemy1.getBody().getPosition())
             .sub(enemy2.getBody().getPosition())
             .nor();
