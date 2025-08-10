@@ -12,4 +12,9 @@ public interface Item {
     void setPosition(Vector2 position);
     void destroyBody();
     TextureRegion getIcon();
+    void createBody(Vector2 position);
+    Vector2 getPosition();
+    Item copy();
+     String getName();
+    
 }

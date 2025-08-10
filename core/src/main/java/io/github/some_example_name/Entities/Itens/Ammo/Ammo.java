@@ -3,11 +3,13 @@ package io.github.some_example_name.Entities.Itens.Ammo;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 
+import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Item;
 
 public abstract class Ammo implements Item {
     private String caliber;
     protected int quantity;
+    protected Mapa mapa;
 
     private int maxStack;
     private TextureRegion icon;
@@ -112,5 +114,9 @@ public abstract class Ammo implements Item {
 
     public void reduceQuantity(int amount) {
         this.quantity = Math.max(0, this.quantity - amount);
+    }
+    
+    public void setMapa(Mapa mapa) {
+        this.mapa = mapa;
     }
 }

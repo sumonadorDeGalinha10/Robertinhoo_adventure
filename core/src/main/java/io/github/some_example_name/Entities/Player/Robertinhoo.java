@@ -23,21 +23,22 @@ import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.Entities.Itens.Contact.PlayerItemHandler;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
-import io.github.some_example_name.Entities.Renderer.RenderInventory;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Inventory.InventoryController;
 import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
+import io.github.some_example_name.Entities.Renderer.RenderInventory.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
 import com.badlogic.gdx.graphics.Color;
 
 import com.badlogic.gdx.utils.Timer;
 
-public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
+public class Robertinhoo implements ShadowEntity {
 
     public Body body;
     public static final int RUN = 1;
@@ -60,8 +61,8 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     public static final int MELEE_ATTACK = 14;
 
     private float meleeAttackTime = 0;
-    private float meleeAttackDuration = 0.4f; // Duração total do ataque
-    public int meleeDirection = DOWN; // Direção do ataque
+    private float meleeAttackDuration = 0.4f;
+    public int meleeDirection = DOWN;
 
     public boolean isTakingDamage = false;
     private float damageTimer = 0f;
@@ -74,7 +75,6 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     public int dashDirection = DOWN;
     private boolean isInvulnerable = false;
     public static boolean IsUsingOneHandWeapon = false;
-    private Item itemToPickup;
 
     public final Mapa map;
     public final Rectangle bounds = new Rectangle();
@@ -87,6 +87,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     private OrthographicCamera camera;
     public Weapon weaponToPickup;
     public Ammo ammoToPickup;
+    public Item itemToPickup;
 
     private Weapon currentWeapon;
     private Inventory inventory;
@@ -96,6 +97,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
     private final StaminaSystem staminaSystem;
     private ShadowComponent shadowComponent;
     public Vector2 dashVelocity;
+    private PlayerItemHandler itemHandler;
 
     public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
@@ -118,6 +120,7 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         );
 
         createBody(x, y);
+         this.itemHandler = new PlayerItemHandler(this);
 
     }
 
@@ -199,11 +202,10 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
             currentWeapon.update(deltaTime);
             currentWeapon.getCurrentState();
         }
-        linearVelocity.set(body.getLinearVelocity());
+
         pos.set(body.getPosition().x - 0.5f, body.getPosition().y - 0.5f);
         bounds.setPosition(pos);
-        linearVelocity.set(body.getLinearVelocity());
-        angularVelocity = body.getAngularVelocity();
+
         render(shapeRenderer);
     }
 
@@ -316,120 +318,9 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
         this.isInvulnerable = invulnerable;
     }
 
-    private Vector2 linearVelocity = new Vector2();
-    private float angularVelocity = 0f;
-    private float maxLinearSpeed = 10f;
-    private float maxAngularSpeed = 10f;
-    private float maxLinearAcceleration = 10f;
-    private float maxAngularAcceleration = 10f;
-    private boolean tagged = false;
-
-    @Override
-    public Vector2 getLinearVelocity() {
-
-        return body.getLinearVelocity();
-    }
-
-    @Override
-    public float getAngularVelocity() {
-        return angularVelocity;
-    }
-
-    @Override
-    public float getMaxLinearSpeed() {
-        return maxLinearSpeed;
-    }
-
-    @Override
-    public void setMaxLinearSpeed(float maxLinearSpeed) {
-        this.maxLinearSpeed = maxLinearSpeed;
-    }
-
-    @Override
-    public float getMaxAngularSpeed() {
-        return maxAngularSpeed;
-    }
-
-    @Override
-    public void setMaxAngularSpeed(float maxAngularSpeed) {
-        this.maxAngularSpeed = maxAngularSpeed;
-    }
-
-    @Override
-    public float getMaxLinearAcceleration() {
-        return maxLinearAcceleration;
-    }
-
-    @Override
-    public void setMaxLinearAcceleration(float maxLinearAcceleration) {
-        this.maxLinearAcceleration = maxLinearAcceleration;
-    }
-
-    @Override
-    public float getMaxAngularAcceleration() {
-        return maxAngularAcceleration;
-    }
-
-    @Override
-    public void setMaxAngularAcceleration(float maxAngularAcceleration) {
-        this.maxAngularAcceleration = maxAngularAcceleration;
-    }
-
-    @Override
-    public float getBoundingRadius() {
-        return 0.5f;
-    }
-
-    @Override
-    public boolean isTagged() {
-        return tagged;
-    }
-
-    @Override
-    public void setTagged(boolean tagged) {
-        this.tagged = tagged;
-    }
-
     @Override
     public Vector2 getPosition() {
         return body.getPosition();
-    }
-
-    @Override
-    public void setOrientation(float orientation) {
-        body.setTransform(body.getPosition(), orientation);
-
-    }
-
-    @Override
-    public Location<Vector2> newLocation() {
-        return new Box2dLocation();
-    }
-
-    @Override
-    public float vectorToAngle(Vector2 vector) {
-        return (float) Math.atan2(vector.y, vector.x);
-    }
-
-    @Override
-    public Vector2 angleToVector(Vector2 outVector, float angle) {
-        outVector.set((float) Math.cos(angle), (float) Math.sin(angle));
-        return outVector;
-    }
-
-    @Override
-    public float getZeroLinearSpeedThreshold() {
-        return 0.1f; // Example value
-    }
-
-    @Override
-    public void setZeroLinearSpeedThreshold(float threshold) {
-        // Implement logic for setting the zero linear speed threshold
-    }
-
-    @Override
-    public float getOrientation() {
-        return body.getAngle(); // Assuming you're using Box2D for physics
     }
 
     public void render(ShapeRenderer shapeRenderer) {
@@ -467,6 +358,10 @@ public class Robertinhoo implements Steerable<Vector2>, ShadowEntity {
 
     public PlayerController getPlayerController() {
         return playerController;
+    }
+
+    public PlayerItemHandler getItemHandler() {
+        return itemHandler;
     }
 
 }

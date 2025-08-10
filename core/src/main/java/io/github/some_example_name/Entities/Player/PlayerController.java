@@ -135,12 +135,22 @@ public class PlayerController {
     private void processActions(float deltaTime) {
         // Pickup/Placement
         if (Gdx.input.isKeyJustPressed(Keys.T)) {
+            System.out.println("[DEBUG] Tecla T pressionada");
             if (player.weaponToPickup != null) {
+                System.out.println("[DEBUG] Pegando arma: " + player.weaponToPickup);
                 player.inventoryController.enterPlacementMode(player.weaponToPickup);
                 player.clearWeaponToPickup();
             } else if (player.ammoToPickup != null) {
+                System.out.println("[DEBUG] Pegando munição: " + player.ammoToPickup);
                 player.inventoryController.enterPlacementMode(player.ammoToPickup);
                 player.clearAmmoToPickup();
+            }
+            else if (player.itemToPickup != null) {
+                System.out.println("[DEBUG] Pegando item: " + player.itemToPickup);
+                player.inventoryController.enterPlacementMode(player.itemToPickup);
+                player.clearItemToPickup();
+            } else {
+                System.out.println("[DEBUG] Nenhum item para pegar!");
             }
         }
 

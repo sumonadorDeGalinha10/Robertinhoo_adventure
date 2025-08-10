@@ -2,14 +2,18 @@ package io.github.some_example_name.Entities.Itens.Contact;
 
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
-import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
-import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
-import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Inventory.Item;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.badlogic.gdx.math.Vector2;
 
 public class PlayerItemHandler implements ContactHandler {
     private final Robertinhoo player;
+    private final List<Item> nearbyItems = new ArrayList<>();
+    private final Map<Item, Fixture> itemFixtures = new HashMap<>();
 
     public PlayerItemHandler(Robertinhoo player) {
         this.player = player;
@@ -20,43 +24,93 @@ public class PlayerItemHandler implements ContactHandler {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
         
-        if (dataA != null && dataB != null) {
-            // Coleta de armas
-            if (dataA.equals("PLAYER") && dataB instanceof Weapon) {
-                player.setWeaponToPickup((Weapon) dataB);
-            } else if (dataB.equals("PLAYER") && dataA instanceof Weapon) {
-                player.setWeaponToPickup((Weapon) dataA);
+        // Identificar qual fixture pertence ao jogador e qual ao item
+        Fixture playerFixture = null;
+        Fixture itemFixture = null;
+        Object itemData = null;
+
+        if ("PLAYER".equals(dataA) && dataB instanceof Item) {
+            playerFixture = fixtureA;
+            itemFixture = fixtureB;
+            itemData = dataB;
+        } else if ("PLAYER".equals(dataB) && dataA instanceof Item) {
+            playerFixture = fixtureB;
+            itemFixture = fixtureA;
+            itemData = dataA;
+        }
+
+        if (itemData != null) {
+            Item item = (Item) itemData;
+            
+            // Registrar o item e sua fixture
+            if (!nearbyItems.contains(item)) {
+                nearbyItems.add(item);
+                itemFixtures.put(item, itemFixture);
+                System.out.println("[DEBUG] Item adicionado à lista: " + item);
             }
             
-            // Coleta de munição
-            if (dataA instanceof Ammo && "PLAYER".equals(dataB)) {
-                player.setAmmoToPickup((Ammo) dataA);
-            } else if (dataB instanceof Ammo && "PLAYER".equals(dataA)) {
-                player.setAmmoToPickup((Ammo) dataB);
-            }
+            // Atualizar o item mais próximo
+            updateNearestItem();
         }
     }
 
     @Override
     public void handleEndContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
-        Object userDataA = fixtureA.getUserData();
-        Object userDataB = fixtureB.getUserData();
-        
-        if (userDataA != null && userDataB != null) {
-            // Limpar referência a itens
-            if (userDataA.equals("PLAYER") && userDataB instanceof Weapon) {
-                player.clearWeaponToPickup();
-            } else if (userDataB.equals("PLAYER") && userDataA instanceof Weapon) {
-                player.clearWeaponToPickup();
-            }
+        Object dataA = fixtureA.getBody().getUserData();
+        Object dataB = fixtureB.getBody().getUserData();
+
+        Item item = null;
+        if (dataA instanceof Item && "PLAYER".equals(dataB)) {
+            item = (Item) dataA;
+        } else if (dataB instanceof Item && "PLAYER".equals(dataA)) {
+            item = (Item) dataB;
+        }
+
+        if (item != null) {
+            // Remover o item da lista
+            nearbyItems.remove(item);
+            itemFixtures.remove(item);
+            System.out.println("[DEBUG] Item removido da lista: " + item);
             
-            if (userDataA.equals("PLAYER") && userDataB instanceof Item) {
-                player.clearItemToPickup();
-            } else if (userDataB.equals("PLAYER") && userDataA instanceof Item) {
-                player.clearItemToPickup();
+            // Atualizar o item mais próximo
+            updateNearestItem();
+        }
+    }
+
+    private void updateNearestItem() {
+        if (nearbyItems.isEmpty()) {
+            player.clearItemToPickup();
+            return;
+        }
+
+        // Encontrar o item mais próximo ao jogador
+        Vector2 playerPos = player.getPosition();
+        Item nearest = null;
+        float minDistance = Float.MAX_VALUE;
+
+        for (Item item : nearbyItems) {
+            float distance = playerPos.dst(item.getPosition());
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = item;
             }
         }
 
+        if (nearest != null) {
+            player.setItemToPickup(nearest);
+            System.out.println("[DEBUG] Item mais próximo definido: " + nearest);
+        }
+    }
+
+    public void forceItemContact(Item item) {
+        if (!nearbyItems.contains(item)) {
+            nearbyItems.add(item);
+            System.out.println("[DEBUG] Contato forçado para item: " + item);
+            updateNearestItem();
+        }
     }
     
+    public boolean isPlayerTouching(Item item) {
+        return nearbyItems.contains(item);
+    }
 }

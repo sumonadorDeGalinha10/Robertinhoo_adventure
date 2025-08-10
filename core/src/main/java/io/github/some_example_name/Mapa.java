@@ -408,4 +408,21 @@ private boolean isPhysicalWallAt(int tileX, int tileY) {
         }
     }
 }
+
+
+public void checkPlayerItemContacts() {
+    for (Item item : craftItems) {
+        if (item instanceof PolvoraBruta) {
+            PolvoraBruta polvora = (PolvoraBruta) item;
+            
+            // Verificar proximidade mesmo sem contato físico
+            float distance = robertinhoo.getPosition().dst(polvora.getPosition());
+            
+            // Se estiver dentro do raio de coleta e ainda não registrado
+            if (distance < 1.5f && !robertinhoo.getItemHandler().isPlayerTouching(polvora)) {
+                robertinhoo.getItemHandler().forceItemContact(polvora);
+            }
+        }
+    }
+}
 }

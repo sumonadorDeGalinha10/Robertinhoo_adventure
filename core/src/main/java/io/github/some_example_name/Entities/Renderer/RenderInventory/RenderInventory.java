@@ -1,8 +1,10 @@
-package io.github.some_example_name.Entities.Renderer;
+package io.github.some_example_name.Entities.Renderer.RenderInventory;
 
 import io.github.some_example_name.Entities.Inventory.Inventory;
-import io.github.some_example_name.Entities.Inventory.InventorySlot;
+import io.github.some_example_name.Entities.Inventory.InventoryController;
+import io.github.some_example_name.Entities.Inventory.InventoryMouseController;
 import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.Entities.Inventory.Crafting.CraftingRecipe;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.Gdx;
@@ -10,22 +12,29 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-
-import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Fonts.FontsManager;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+
+import java.util.List;
 
 import com.badlogic.gdx.math.Vector2;
 
 public class RenderInventory {
-    private final Inventory inventory;
+    public final Inventory inventory;
     private final ShapeRenderer shapeRenderer;
-    private final int cellSize;
-    private final Vector2 position;
+    public final int cellSize;
+    public final Vector2 position;
     private final SpriteBatch spriteBatch;
+    private final InventoryGridRenderer gridRenderer;
+    private final InventoryItemRenderer itemRenderer;
+    private final InventoryCursorRenderer cursorRenderer;
+    private final CraftingRenderer craftingRenderer;
     private BitmapFont inventoryFont;
+    public final InventoryMouseCursorRenderer mouseCursorRenderer;
 
-    private Object selectedItem;
+    private Item selectedItem;
     private int originalGridX;
     private int originalGridY;
     private int cursorGridX;
@@ -40,10 +49,18 @@ public class RenderInventory {
     private Color itemColor = new Color(0.4f, 0.4f, 0.8f, 1);
     private Vector2 offset = new Vector2(50, 50);
 
-    private Color selectionColor = new Color(1f, 0.8f, 0.3f, 1f); // Laranja amarelado
-    private Color hoverColor = new Color(0.6f, 0.8f, 1f, 0.8f); // Azul claro
+    private final InventoryContextMenu contextMenu;
 
-    public RenderInventory(Inventory inventory, int cellSize, Vector2 startPosition) {
+    private Color selectionColor = new Color(1f, 0.8f, 0.3f, 1f);
+    private Color hoverColor = new Color(0.6f, 0.8f, 1f, 0.8f);
+
+    private boolean menuOpen = false;
+    private Item menuItem = null;
+    private float menuScreenX;
+    private float menuScreenY;
+
+    public RenderInventory(Inventory inventory, int cellSize, Vector2 startPosition,
+            InventoryController inventoryController) {
         this.inventory = inventory;
         this.cellSize = cellSize;
         this.position = startPosition;
@@ -55,133 +72,87 @@ public class RenderInventory {
         this.originalGridY = 0;
         this.cursorGridX = 0;
         this.cursorGridY = 0;
+        this.gridRenderer = new InventoryGridRenderer(inventory, position, cellSize);
+        this.itemRenderer = new InventoryItemRenderer(inventory, position, cellSize);
+        this.cursorRenderer = new InventoryCursorRenderer(inventory, position, cellSize);
+        this.craftingRenderer = new CraftingRenderer(spriteBatch, shapeRenderer, position);
+        this.mouseCursorRenderer = new InventoryMouseCursorRenderer(
+                inventoryController,
+                position,
+                cellSize,
+                inventory);
+        inventoryController.setInventoryPosition(startPosition.x, startPosition.y);
+        this.contextMenu = new InventoryContextMenu(cellSize, new InventoryContextMenu.Listener() {
+            @Override
+            public void onDrop(Item item) {
+                System.out.println("Drop -> " + item.getName());
+                // chama seu código de drop aqui
+                inventoryController.dropItem(item);
+            }
+
+            @Override
+            public void onMove(Item item) {
+                System.out.println("Move -> " + item.getName());
+                // iniciar modo mover (por ex. colocar item no cursor)
+                // inventoryController.startMove(item);
+            }
+
+            @Override
+            public void onCraft(Item item) {
+                System.out.println("Craft -> " + item.getName());
+                // abrir crafting relacionado, ou começar crafting
+                // inventoryController.openCraftFor(item);
+            }
+        },mouseCursorRenderer);
     }
 
     public void render(Item placementItem,
             int placementX,
             int placementY,
             boolean isValid,
-            Object selectedItem,
+            Item selectedItem,
             int originalGridX,
             int originalGridY,
             int cursorGridX,
-            int cursorGridY) {
+            int cursorGridY,
+            boolean craftingMode,
+            List<CraftingRecipe> availableRecipes,
+            CraftingRecipe selectedRecipe) {
 
-        // Atualize os valores a cada renderização
         this.selectedItem = selectedItem;
         this.originalGridX = originalGridX;
         this.originalGridY = originalGridY;
         this.cursorGridX = cursorGridX;
         this.cursorGridY = cursorGridY;
         drawBackground();
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        drawGrid();
-        shapeRenderer.end();
+        gridRenderer.render();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        drawItems();
+        itemRenderer.renderItems(selectedItem, isValid, cursorGridX, cursorGridY);
+
         if (placementItem != null) {
             drawPlacement(placementItem, placementX, placementY, isValid);
         }
+        mouseCursorRenderer.setFreeCursorMode(contextMenu.isVisible());
+
         drawSelection();
         shapeRenderer.end();
-    }
 
-    private void drawGrid() {
-        shapeRenderer.setColor(gridLineColor);
+        if (craftingMode && selectedItem != null) {
+            craftingRenderer.render(availableRecipes, selectedRecipe, cursorGridX, cursorGridY, selectedItem);
+        }
+        checkRightClick();
+        Vector2 mouseWorld = getMouseWorldFromScreen();
 
-        for (int y = 0; y <= inventory.getGridRows(); y++) {
-            float yPos = position.y + (y * cellSize);
-            shapeRenderer.line(
-                    position.x,
-                    yPos,
-                    position.x + (inventory.getGridCols() * cellSize),
-                    yPos);
+        contextMenu.render(shapeRenderer, spriteBatch, inventoryFont, mouseWorld.x + cellSize / 2f,
+                mouseWorld.y + cellSize / 2f);
+
+        mouseCursorRenderer.renderMouseCursor();
+
+        if (craftingMode && selectedItem != null) {
+            craftingRenderer.render(availableRecipes, selectedRecipe, cursorGridX, cursorGridY, selectedItem);
         }
 
-        // Linhas verticais
-        for (int x = 0; x <= inventory.getGridCols(); x++) {
-            float xPos = position.x + (x * cellSize);
-            shapeRenderer.line(
-                    xPos,
-                    position.y,
-                    xPos,
-                    position.y + (inventory.getGridRows() * cellSize));
-        }
-    }
-
-    private void drawItems() {
-        spriteBatch.begin();
-
-        BitmapFont font = new BitmapFont();
-        font.getData().setScale(0.7f);
-        font.setColor(Color.WHITE);
-
-        for (InventorySlot slot : inventory.getSlots()) {
-            if (slot.item instanceof Weapon) {
-                Weapon weapon = (Weapon) slot.item;
-                if (weapon == selectedItem)
-                    continue;
-                drawItemIcon(weapon.getIcon(), slot.x, slot.y, weapon.getGridWidth(), weapon.getGridHeight(), 1f,
-                        Color.WHITE);
-            } else if (slot.item instanceof Ammo) {
-                Ammo ammo = (Ammo) slot.item;
-                if (ammo == selectedItem)
-                    continue;
-
-                drawItemIcon(ammo.getIcon(), slot.x, slot.y,
-                        ammo.getGridWidth(), ammo.getGridHeight(),
-                        1f, Color.WHITE);
-
-                drawAmmoQuantity(ammo, slot.x, slot.y,
-                        ammo.getGridWidth(), ammo.getGridHeight());
-            }
-        }
-
-        if (selectedItem != null) {
-            float alpha = 0.5f;
-            Color tint = Color.RED;
-
-            if (selectedItem instanceof Weapon) {
-                Weapon weapon = (Weapon) selectedItem;
-                drawItemIcon(weapon.getIcon(), cursorGridX, cursorGridY, weapon.getGridWidth(), weapon.getGridHeight(),
-                        alpha, tint);
-            } else if (selectedItem instanceof Ammo) {
-                Ammo ammo = (Ammo) selectedItem;
-                drawItemIcon(ammo.getIcon(), cursorGridX, cursorGridY, ammo.getGridWidth(), ammo.getGridHeight(), alpha,
-                        tint);
-            }
-        }
-
-        spriteBatch.end();
-        font.dispose();
-    }
-
-    private void drawAmmoQuantity(Ammo ammo, int gridX, int gridY, int gridWidth, int gridHeight) {
-
-        float baseRenderX = position.x + (gridX * cellSize);
-        float baseRenderY = position.y + ((inventory.getGridRows() - 1 - gridY) * cellSize);
-        baseRenderY -= (gridHeight - 1) * cellSize;
-        int currentQuantity = ammo.getQuantity();
-
-        float padding = 5;
-        float textX = baseRenderX + padding;
-        float textY = baseRenderY + padding + inventoryFont.getCapHeight();
-
-        inventoryFont.setColor(Color.BLACK);
-        inventoryFont.draw(
-                spriteBatch,
-                String.valueOf(currentQuantity),
-                textX + 1,
-                textY - 1);
-
-        inventoryFont.setColor(Color.WHITE);
-        inventoryFont.draw(
-                spriteBatch,
-                String.valueOf(currentQuantity),
-                textX,
-                textY);
     }
 
     private void drawItemIcon(TextureRegion icon, int gridX, int gridY, int gridWidth, int gridHeight, float alpha,
@@ -194,8 +165,8 @@ public class RenderInventory {
         float scale = Math.min(
                 (gridWidth * cellSize) / icon.getRegionWidth(),
                 (gridHeight * cellSize) / icon.getRegionHeight());
-        float scaledWidth = icon.getRegionWidth() * 4;
-        float scaledHeight = icon.getRegionHeight() * 3;
+        float scaledWidth = icon.getRegionWidth() * scale;
+        float scaledHeight = icon.getRegionHeight() * scale;
 
         float offsetX = (gridWidth * cellSize - scaledWidth) / 2;
         float offsetY = (gridHeight * cellSize - scaledHeight) / 2;
@@ -227,19 +198,16 @@ public class RenderInventory {
     }
 
     private void drawSelection() {
-        // Obtém o item sob o cursor
         Object hoveredItem = inventory.getItemAt(cursorGridX, cursorGridY);
-
-        // Desenha o hover effect
         if (hoveredItem != null && hoveredItem != selectedItem) {
             drawItemHoverEffect(hoveredItem, cursorGridX, cursorGridY);
         }
-
         drawCursor(hoveredItem);
-
         if (selectedItem != null) {
             drawSelectedItem();
         }
+        cursorRenderer.render(selectedItem, originalGridX, originalGridY, cursorGridX, cursorGridY);
+
     }
 
     private void drawCursor(Object hoveredItem) {
@@ -255,18 +223,14 @@ public class RenderInventory {
         float baseX = position.x + (cursorGridX * cellSize);
         float baseY = position.y + ((inventory.getGridRows() - 1 - cursorGridY) * cellSize);
         baseY -= (height - 1) * cellSize;
-
-        // Efeito de pulsação
         float pulse = (float) (Math.sin(System.currentTimeMillis() * 0.005) * 0.3 + 0.7);
         shapeRenderer.setColor(selectionColor.r, selectionColor.g, selectionColor.b, pulse);
 
-        // Linha superior
         shapeRenderer.rectLine(
                 baseX - 2, baseY + height * cellSize + 2,
                 baseX + width * cellSize + 2, baseY + height * cellSize + 2,
                 3);
 
-        // Linha inferior
         shapeRenderer.rectLine(
                 baseX - 2, baseY - 2,
                 baseX + width * cellSize + 2, baseY - 2,
@@ -352,6 +316,54 @@ public class RenderInventory {
         spriteBatch.end();
     }
 
+    // public void debugRenderInteractionArea() {
+    // float startX =
+    // mouseCursorRenderer.getInventoryController().getInventoryStartX();
+    // float startY =
+    // mouseCursorRenderer.getInventoryController().getInventoryStartY();
+    // float cellSize = mouseCursorRenderer.getInventoryController().getCellSize();
+    // int rows = inventory.gridRows;
+    // int cols = inventory.gridCols;
+
+    // shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+    // shapeRenderer.setColor(Color.MAGENTA);
+
+    // // Desenhar área total
+    // shapeRenderer.rect(startX, startY, cols * cellSize, rows * cellSize);
+
+    // // Desenhar células
+    // for (int y = 0; y < rows; y++) {
+    // for (int x = 0; x < cols; x++) {
+    // float cellX = startX + x * cellSize;
+    // float cellY = startY + y * cellSize;
+    // shapeRenderer.rect(cellX, cellY, cellSize, cellSize);
+    // }
+    // }
+    // shapeRenderer.end();
+    // }
+
+    // public void debugRenderInventoryBounds() {
+    // shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+    // shapeRenderer.setColor(Color.RED);
+
+    // float width = inventory.getGridCols() * cellSize;
+    // float height = inventory.getGridRows() * cellSize;
+
+    // // Desenhar retângulo ao redor do inventário
+    // shapeRenderer.rect(position.x, position.y, width, height);
+
+    // // Desenhar ponto de origem
+    // shapeRenderer.setColor(Color.GREEN);
+    // shapeRenderer.circle(position.x, position.y, 5);
+
+    // shapeRenderer.end();
+
+    // spriteBatch.begin();
+    // inventoryFont.draw(spriteBatch, "Pos: " + position.x + ", " + position.y,
+    // position.x, position.y - 20);
+    // spriteBatch.end();
+    // }
+
     public void setGridColor(Color color) {
         this.gridColor = color;
     }
@@ -368,10 +380,58 @@ public class RenderInventory {
         this.itemColor = color;
     }
 
+    private void checkRightClick() {
+        InventoryMouseController mouseController = mouseCursorRenderer
+                .getInventoryController()
+                .getMouseController();
+
+        if (mouseController.rightClickTriggered) {
+            mouseController.rightClickTriggered = false;
+
+            handleRightClick(
+                    mouseController.rightClickGridX,
+                    mouseController.rightClickGridY,
+                    mouseController.rightClickScreenX,
+                    mouseController.rightClickScreenY);
+        }
+    }
+
+    public void handleRightClick(int gridX, int gridY, float screenX, float screenY) {
+        Item clickedItem = inventory.getItemAt(gridX, gridY);
+        if (clickedItem != null) {
+            // Calcular posição do centro do item
+            float itemCenterX = position.x + (gridX * cellSize) + (clickedItem.getGridWidth() * cellSize / 2f);
+            float itemCenterY = position.y + ((inventory.getGridRows() - 1 - gridY) * cellSize) -
+                    (clickedItem.getGridHeight() * cellSize / 2f);
+
+            // Mostrar menu no centro do item
+            contextMenu.show(clickedItem, itemCenterX + (clickedItem.getGridWidth() * cellSize / 2f),
+                    itemCenterY, clickedItem.getGridWidth());
+        } else {
+            contextMenu.hide();
+        }
+    }
+
+
+
+    private Vector2 getMouseWorldFromScreen() {
+        int screenX = Gdx.input.getX();
+        int screenY = Gdx.input.getY();
+        return mouseCursorRenderer.screenToWorld(screenX, screenY);
+    }
+
+    public InventoryContextMenu getContextMenu() {
+        return contextMenu;
+    }
+
     public void dispose() {
         inventoryFont.dispose();
         shapeRenderer.dispose();
         spriteBatch.dispose();
+        gridRenderer.dispose();
+        itemRenderer.dispose();
+        cursorRenderer.dispose();
+        mouseCursorRenderer.dispose();
     }
 
 }
