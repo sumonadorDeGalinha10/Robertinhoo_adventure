@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
@@ -112,26 +113,27 @@ public class Barrel extends BaseDestructible implements ShadowEntity {
         isAnimating = true;
         animationTime = 0f;
     }
+private void dropGunpowder() {
+    if (!hasDropped) {
+        hasDropped = true;
+        final Vector2 barrelBodyPos = body.getPosition().cpy();
+        Gdx.app.log("Barrel", "Posição do barril: " + barrelBodyPos.x + ", " + barrelBodyPos.y);
 
-    private void dropGunpowder() {
-        if (!hasDropped) {
-            hasDropped = true;
+        mapa.addPendingAction(() -> {
+            float x = barrelBodyPos.x-0.54f;
+            float y = barrelBodyPos.y-0.54f;
+            Gdx.app.log("Barrel", "Dropando polvora em: " + x + ", " + y);
 
-            int amount = MathUtils.random(1, 2);
-            for (int i = 0; i < amount; i++) {
-                float offsetX = MathUtils.random(-0.1f, 0.1f);
-                float offsetY = MathUtils.random(-0.1f, 0.1f);
+            PolvoraBruta polvoraBruta = new PolvoraBruta(
+                    mapa.world,
+                    x,
+                    y);
 
-                mapa.addPendingAction(() -> {
-                    PolvoraBruta polvoraBruta = new PolvoraBruta(
-                            mapa.world,
-                            position.x + offsetX,
-                            position.y + offsetY);
-                    mapa.addCraftItem(polvoraBruta);
-                });
-            }
-        }
+            polvoraBruta.createBody(new Vector2(x, y));
+            mapa.addCraftItem(polvoraBruta);
+        });
     }
+}
 
     public void destroyBody() {
         if (body != null) {

@@ -6,6 +6,8 @@ import java.util.List;
 
 import com.badlogic.gdx.math.Vector2;
 
+import io.github.some_example_name.Entities.Inventory.Crafting.CraftingManager;
+import io.github.some_example_name.Entities.Inventory.Crafting.CraftingRecipe;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
@@ -19,6 +21,7 @@ public class Inventory {
     public int gridRows = 5;
     private List<InventorySlot> slots = new ArrayList<>();
     private boolean[][] grid;
+    private CraftingManager craftingManager;
 
     public int getGridCols() {
         return gridCols;
@@ -37,13 +40,14 @@ public class Inventory {
     public Inventory(Robertinhoo player) {
         this.robertinhoo = player;
         this.grid = new boolean[gridRows][gridCols];
+        this.craftingManager = new CraftingManager();
     }
 
     public boolean moveItem(Item item, int newX, int newY) {
         boolean wasEquipped = (item instanceof Weapon) && (equippedWeapon == item);
-          if (!canPlaceAt(newX, newY,item)) {
-        return false;
-    }
+        if (!canPlaceAt(newX, newY, item)) {
+            return false;
+        }
 
         removeItem(item);
         boolean success = placeItem(item, newX, newY);
@@ -123,9 +127,7 @@ public class Inventory {
 
         for (InventorySlot slot : slots) {
             if (slot.item == item) {
-                Vector2[] cells = (item instanceof Weapon) ? ((Weapon) item).getOccupiedCells()
-                        : ((Ammo) item).getOccupiedCells();
-
+                Vector2[] cells = slot.item.getOccupiedCells();
                 for (Vector2 cell : cells) {
                     int x = slot.x + (int) cell.x;
                     int y = slot.y + (int) cell.y;
@@ -135,15 +137,16 @@ public class Inventory {
                 }
             }
         }
+        if (item instanceof Item) {
+            Item i = (Item) item;
+            Vector2[] cells = i.getOccupiedCells();
 
-        Vector2[] cells = (item instanceof Weapon) ? ((Weapon) item).getOccupiedCells()
-                : ((Ammo) item).getOccupiedCells();
-
-        for (Vector2 cell : cells) {
-            int x = startX + (int) cell.x;
-            int y = startY + (int) cell.y;
-            if (x < gridCols && y < gridRows) {
-                grid[gridRows - 1 - y][x] = value;
+            for (Vector2 cell : cells) {
+                int x = startX + (int) cell.x;
+                int y = startY + (int) cell.y;
+                if (x >= 0 && x < gridCols && y >= 0 && y < gridRows) {
+                    grid[gridRows - 1 - y][x] = value;
+                }
             }
         }
     }
@@ -175,6 +178,23 @@ public class Inventory {
         return false;
     }
 
+    public boolean addItem(Item item) {
+        if (item instanceof Weapon) {
+            return addWeapon((Weapon) item);
+        } else if (item instanceof Ammo) {
+            return addAmmo((Ammo) item);
+        } else {
+            // Para itens genéricos (como PolvoraBruta)
+            int[] position = findAvailablePosition(item);
+            if (position != null) {
+                markGrid(position[0], position[1], item, true);
+                slots.add(new InventorySlot(position[0], position[1], item));
+                return true;
+            }
+            return false;
+        }
+    }
+
     private int[] findAvailablePosition(Item item) {
         for (int y = 0; y < gridRows; y++) {
             for (int x = 0; x < gridCols; x++) {
@@ -187,19 +207,16 @@ public class Inventory {
     }
 
     public boolean canPlaceAt(int startX, int startY, Item item) {
-        Vector2[] cells = item instanceof Weapon ? ((Weapon) item).getOccupiedCells()
-                : ((Ammo) item).getOccupiedCells();
+        Vector2[] cells = item.getOccupiedCells();
 
         for (Vector2 cell : cells) {
             int x = startX + (int) cell.x;
             int y = startY + (int) cell.y;
 
-            // Verificação rigorosa de limites
             if (x < 0 || x >= gridCols || y < 0 || y >= gridRows) {
                 return false;
             }
 
-            // Verifica se a célula está ocupada
             if (grid[gridRows - 1 - y][x]) {
                 return false;
             }
@@ -341,5 +358,47 @@ public class Inventory {
 
         // Remova slots vazios
         slots.removeAll(toRemove);
+    }
+
+    public int getItemCount(Class<? extends Item> itemClass) {
+        int count = 0;
+        for (InventorySlot slot : slots) {
+            if (slot.item != null && itemClass.isInstance(slot.item)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public boolean removeItems(Class<? extends Item> itemClass, int quantity) {
+        if (getItemCount(itemClass) < quantity)
+            return false;
+
+        int removed = 0;
+        List<InventorySlot> toRemove = new ArrayList<>();
+
+        for (InventorySlot slot : slots) {
+            if (slot.item != null && itemClass.isInstance(slot.item)) {
+                toRemove.add(slot);
+                removed++;
+                if (removed >= quantity)
+                    break;
+            }
+        }
+
+        for (InventorySlot slot : toRemove) {
+            removeItem(slot.item);
+        }
+
+        return true;
+    }
+
+    public List<CraftingRecipe> getAvailableRecipes() {
+        return craftingManager.getAvailableRecipes(this);
+    }
+
+    // Na classe Inventory, atualize o método craftRecipe
+    public boolean craftRecipe(CraftingRecipe recipe) {
+        return craftingManager.craftRecipe(recipe, this, robertinhoo.getInventoryController());
     }
 }

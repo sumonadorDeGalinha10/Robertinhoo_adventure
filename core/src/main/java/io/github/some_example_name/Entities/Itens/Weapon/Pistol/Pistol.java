@@ -15,12 +15,7 @@ import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
-import io.github.some_example_name.Entities.Itens.Weapon.Weapon.TipoMao;
-import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class Pistol extends Weapon {
 
@@ -252,6 +247,17 @@ public class Pistol extends Weapon {
         if (shootTexture != null)
             shootTexture.dispose();
 
+    }
+
+    @Override
+    public Pistol copy() {
+        Pistol copy = new Pistol(mapa, (int) position.x, (int) position.y, inventory);
+       return copy;
+    }
+
+    @Override
+    public String getName() {
+        return "Pistol";
     }
 
 }

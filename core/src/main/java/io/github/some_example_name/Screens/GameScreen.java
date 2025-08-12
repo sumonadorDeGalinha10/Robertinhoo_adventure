@@ -12,6 +12,8 @@ import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Interface.RobertinhoFaceHUD;
 import io.github.some_example_name.Interface.WeaponHUD;
 import io.github.some_example_name.MapRenderer;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Cursor;
 
 public class GameScreen extends CatScreen {
 
@@ -22,6 +24,8 @@ public class GameScreen extends CatScreen {
     private SpriteBatch hudBatch;
     private OrthographicCamera hudCamera;
     private RobertinhoFaceHUD robertinhoFaceHUD;
+    private Cursor systemCursor;
+    private Cursor blankCursor;
 
     public GameScreen(Game game) {
         super(game);
@@ -48,6 +52,13 @@ public class GameScreen extends CatScreen {
         weaponHUD.setBatch(hudBatch);
 
         System.out.println("MapRenderer configurado no Robertinhoo.");
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0, 0, 0, 0); // transparente
+        pixmap.fill();
+        Cursor blankCursor = Gdx.graphics.newCursor(pixmap, 0, 0);
+        pixmap.dispose();
+
+        Gdx.graphics.setCursor(blankCursor);
     }
 
     @Override

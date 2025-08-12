@@ -8,8 +8,11 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
+import io.github.some_example_name.Entities.Inventory.Item;
 
 import io.github.some_example_name.Mapa;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
+
 import com.badlogic.gdx.physics.box2d.World;
 
 public class PolvoraBruta extends Polvora{
@@ -24,7 +27,15 @@ public class PolvoraBruta extends Polvora{
         createBody(this.position);
     }
 
-     public void createBody(Vector2 position) {
+        public PolvoraBruta() {
+        super("PolvoraBruta", new TextureRegion(new Texture("ITENS/Polvora/PolvoraBruta-Sheet.png")), 1, 1);
+        this.position = new Vector2();
+        this.mapa = null;
+        this.body = null;
+    }
+
+
+      public void createBody(Vector2 position) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.StaticBody;
         bodyDef.position.set(position.x + 0.5f, position.y + 0.5f);
@@ -38,15 +49,30 @@ public class PolvoraBruta extends Polvora{
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.isSensor = true;
+        
+        fixtureDef.filter.categoryBits = Constants.BIT_ITEM;
+        fixtureDef.filter.maskBits = Constants.BIT_PLAYER;
+        
         body.createFixture(fixtureDef);
         shape.dispose();
     }
 
+    @Override
     public Vector2 getPosition() {
+        if (body != null) {
+            return body.getPosition();
+        }
         return position;
     }
-    
     public void destroyBody() {
         mapa.destroyBody(body);
+    }
+    @Override
+    public Item copy() {
+        return new PolvoraBruta(); // Usa o novo construtor
+    }
+    @Override
+    public String getName() { 
+        return "Polvora Bruta";
     }
 }

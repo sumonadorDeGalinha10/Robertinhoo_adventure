@@ -2,18 +2,27 @@ package io.github.some_example_name.Entities.Inventory;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import io.github.some_example_name.Entities.Inventory.Crafting.CraftingRecipe;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Entities.Renderer.RenderInventory.InventoryContextMenu;
+import io.github.some_example_name.Entities.Renderer.RenderInventory.InventoryContextMenu;
+
+import java.util.List;
 
 import io.github.some_example_name.Mapa;
 
 public class InventoryController {
     private final Robertinhoo player;
-    private final Inventory inventory;
+    public final Inventory inventory;
     private final Mapa mapa;
+    private InventoryMouseController mouseController;
 
     private boolean isOpen = false;
     private int selectedSlot = 0;
@@ -30,57 +39,121 @@ public class InventoryController {
     private int cursorGridX = 0;
     private int cursorGridY = 0;
     private int originalGridX, originalGridY;
-    private Item selectedItem = null;
+    public Item selectedItem = null;
+
+    public boolean craftingMode = false;
+    public CraftingRecipe selectedRecipe;
+    public List<CraftingRecipe> availableRecipes;
+    private InventoryContextMenu inventoryContextMenu;
+
+    private Vector2 inventoryPosition;
 
     public InventoryController(Robertinhoo player, Inventory inventory, Mapa mapa) {
         this.player = player;
         this.inventory = inventory;
         this.mapa = mapa;
+        this.mouseController = new InventoryMouseController(this, inventory);
+
+        this.inventoryPosition = new Vector2(50, 50);
 
     }
 
     public void update(float deltaTime) {
-
         if (Gdx.input.isKeyJustPressed(Keys.TAB)) {
-            System.out.println("carregando");
             toggleInventory();
         }
-
-        if (isOpen && !placementMode) {
-            handleInventorySelection();
-        }
-
         if (placementMode) {
             updatePlacementMode();
             return;
         }
+        if (isOpen) {
 
-    }
-private void handleInventorySelection() {
-    System.out.println("Handling inventory selection");
-    int gridCols = inventory.gridCols;
-    int gridRows = inventory.gridRows;
-    
-    int maxX = gridCols - 1;
-    int maxY = gridRows - 1;
-    
-    if (selectedItem != null) {
-        maxX = gridCols - selectedItem.getGridWidth();
-        maxY = gridRows - selectedItem.getGridHeight();
+            if (Gdx.input.isKeyJustPressed(Keys.C)) {
+                toggleCraftingMode();
+            }
+            if (craftingMode) {
+                handleCraftingMode();
+            } else {
+                handleInventorySelection();
+            }
+        }
     }
 
-    if (Gdx.input.isKeyJustPressed(Keys.LEFT)) {
-        cursorGridX = Math.max(0, cursorGridX - 1);
+    private void toggleCraftingMode() {
+
+        craftingMode = true;
+
+        if (craftingMode) {
+            availableRecipes = inventory.getAvailableRecipes();
+
+            selectedRecipe = availableRecipes.isEmpty() ? null : availableRecipes.get(0);
+        }
     }
-    if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
-        cursorGridX = Math.min(maxX, cursorGridX + 1);
+
+    private void handleCraftingMode() {
+        if (Gdx.input.isKeyJustPressed(Keys.UP)) {
+            selectPreviousRecipe();
+        } else if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
+            selectNextRecipe();
+        } else if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
+            executeCraft();
+        } else if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
+            craftingMode = false;
+        } else {
+        }
     }
-    if (Gdx.input.isKeyJustPressed(Keys.UP)) {
-        cursorGridY = Math.max(0, cursorGridY - 1);
+
+    private void selectNextRecipe() {
+        if (availableRecipes.isEmpty())
+            return;
+        int index = availableRecipes.indexOf(selectedRecipe);
+        index = (index + 1) % availableRecipes.size();
+        selectedRecipe = availableRecipes.get(index);
     }
-    if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
-        cursorGridY = Math.min(maxY, cursorGridY + 1);
+
+    private void selectPreviousRecipe() {
+        if (availableRecipes.isEmpty())
+            return;
+        int index = availableRecipes.indexOf(selectedRecipe);
+        index = (index - 1 + availableRecipes.size()) % availableRecipes.size();
+        selectedRecipe = availableRecipes.get(index);
     }
+
+    private void executeCraft() {
+        if (selectedRecipe != null && inventory.craftRecipe(selectedRecipe)) {
+            System.out.println("Item craftado com sucesso!");
+            craftingMode = false;
+        }
+    }
+
+    private void handleInventorySelection() {
+        boolean isVisible = getContextMenu().isVisible();
+        System.out.println("isVisible: " + isVisible);
+        if (isVisible)
+         return;
+        int gridCols = inventory.gridCols;
+        int gridRows = inventory.gridRows;
+
+        int maxX = gridCols - 1;
+        int maxY = gridRows - 1;
+
+        if (selectedItem != null) {
+            maxX = gridCols - selectedItem.getGridWidth();
+            maxY = gridRows - selectedItem.getGridHeight();
+        }
+
+        if (Gdx.input.isKeyJustPressed(Keys.LEFT)) {
+            cursorGridX = Math.max(0, cursorGridX - 1);
+        }
+        if (Gdx.input.isKeyJustPressed(Keys.RIGHT)) {
+            cursorGridX = Math.min(maxX, cursorGridX + 1);
+        }
+        if (Gdx.input.isKeyJustPressed(Keys.UP)) {
+            cursorGridY = Math.max(0, cursorGridY - 1);
+        }
+        if (Gdx.input.isKeyJustPressed(Keys.DOWN)) {
+            cursorGridY = Math.min(maxY, cursorGridY + 1);
+        }
         if (Gdx.input.isKeyJustPressed(Keys.ENTER)) {
             if (selectedItem == null) {
 
@@ -108,7 +181,6 @@ private void handleInventorySelection() {
         if (Gdx.input.isKeyJustPressed(Keys.Q)) {
             if (selectedItem != null) {
                 dropItem(selectedItem);
-                player.IsUsingOneHandWeapon = false;
                 selectedItem = null;
             }
         }
@@ -127,19 +199,49 @@ private void handleInventorySelection() {
         }
     }
 
-    public void toggleInventory() {
+    private InputProcessor previousInputProcessor;
+
+    private void toggleInventory() {
         if (placementMode)
             return;
+
         isOpen = !isOpen;
-        System.out.println("Inventário " + (isOpen ? "aberto" : "fechado"));
+
         if (isOpen) {
             player.state = Robertinhoo.IDLE;
             player.body.setLinearVelocity(Vector2.Zero);
-            Gdx.input.setInputProcessor(null);
+
+            // Salva o processador atual
+            previousInputProcessor = Gdx.input.getInputProcessor();
+
+            // Cria novo multiplexer
+            InputMultiplexer multiplexer = new InputMultiplexer();
+            multiplexer.addProcessor(mouseController);
+
+            // Mantém o processador anterior se existir
+            if (previousInputProcessor != null) {
+                multiplexer.addProcessor(previousInputProcessor);
+            }
+
+            Gdx.input.setInputProcessor(multiplexer);
+
+            // Reseta estados
+            selectedItem = null;
+            cursorGridX = 0;
+            cursorGridY = 0;
+            craftingMode = false;
+        } else {
+            // Restaura o processador anterior
+            Gdx.input.setInputProcessor(previousInputProcessor);
+
+            // Reseta estados
+            craftingMode = false;
+            selectedItem = null;
         }
     }
 
     private void updatePlacementMode() {
+
 
         if (Gdx.input.isKeyJustPressed(Keys.R)) {
             rotateItem();
@@ -197,24 +299,30 @@ private void handleInventorySelection() {
 
     }
 
-    private void dropItem(Item item) {
+    public void dropItem(Item item) {
+        
         if (inventory.removeItem(item)) {
-
+            player.IsUsingOneHandWeapon = false;
             if (item instanceof Weapon && inventory.getEquippedWeapon() == item) {
                 inventory.unequipWeapon();
             }
             Vector2 dropPosition = player.getPosition().cpy();
 
+            if (item instanceof Ammo) {
+                ((Ammo) item).setMapa(mapa);
+            }
+            item.setPosition(dropPosition);
             if (item instanceof Weapon) {
                 Weapon weapon = (Weapon) item;
-                weapon.setPosition(dropPosition);
                 weapon.createBody(dropPosition);
                 mapa.getWeapons().add(weapon);
             } else if (item instanceof Ammo) {
                 Ammo ammo = (Ammo) item;
-                ammo.setPosition(dropPosition);
                 ammo.createBody(dropPosition);
                 mapa.getAmmo().add(ammo);
+            } else {
+                item.createBody(dropPosition);
+                mapa.getCraftItems().add(item);
             }
         }
     }
@@ -249,6 +357,8 @@ private void handleInventorySelection() {
                 mapa.getWeapons().remove(item);
             } else if (item instanceof Ammo) {
                 mapa.getAmmo().remove(item);
+            } else {
+                mapa.getCraftItems().remove(item);
             }
 
             placementGridX = lastPlacementX;
@@ -305,4 +415,101 @@ private void handleInventorySelection() {
         return cursorGridY;
     }
 
+    public List<CraftingRecipe> getAvailableRecipes() {
+        return availableRecipes;
+    }
+
+    public CraftingRecipe getSelectedRecipe() {
+        return selectedRecipe;
+    }
+
+    public void setCursorGridPosition(int x, int y) {
+        this.cursorGridX = x;
+        this.cursorGridY = y;
+    }
+
+    public void setSelectedItem(Item item, int gridX, int gridY) {
+        this.selectedItem = item;
+        this.originalGridX = gridX;
+        this.originalGridY = gridY;
+    }
+
+    public void moveSelectedItem(int gridX, int gridY) {
+        if (inventory.moveItem(selectedItem, gridX, gridY)) {
+            selectedItem = null;
+        }
+    }
+
+    // InventoryController.java
+    public float getInventoryStartX() {
+        return inventoryPosition.x;
+    }
+
+    public float getInventoryStartY() {
+        return inventoryPosition.y;
+    }
+
+    public float getCellSize() {
+        return 40; // Tamanho da célula (deve ser igual ao usado no render)
+    }
+
+    public boolean isInventoryOpen() {
+        return isOpen;
+    }
+
+    public void setCursorPosition(int x, int y) {
+        // Garante que o cursor fique dentro dos limites
+        this.cursorGridX = MathUtils.clamp(x, 0, inventory.gridCols - 1);
+        this.cursorGridY = MathUtils.clamp(y, 0, inventory.gridRows - 1);
+    }
+
+    public void selectItemAtCursor() {
+        if (selectedItem == null) {
+            selectedItem = inventory.getItemAt(cursorGridX, cursorGridY);
+            if (selectedItem != null) {
+                originalGridX = cursorGridX;
+                originalGridY = cursorGridY;
+            }
+        } else {
+            if (inventory.moveItem(selectedItem, cursorGridX, cursorGridY)) {
+                selectedItem = null;
+            }
+        }
+    }
+
+    public void startDragging(Item item, int gridX, int gridY) {
+        this.selectedItem = item;
+        this.originalGridX = gridX;
+        this.originalGridY = gridY;
+    }
+
+    public void completeDrag(int gridX, int gridY) {
+        if (selectedItem != null) {
+            if (inventory.moveItem(selectedItem, gridX, gridY)) {
+                selectedItem = null;
+            }
+        }
+    }
+
+    public Vector2 getInventoryPosition() {
+        return inventoryPosition;
+    }
+
+    public void setInventoryPosition(float x, float y) {
+        this.inventoryPosition.set(x, y);
+    }
+
+    public InventoryMouseController getMouseController() {
+        return mouseController;
+    }
+
+    public InventoryContextMenu getContextMenu() {
+        return inventoryContextMenu;
+    }
+
+    public void setContextMenu(InventoryContextMenu contextMenu) {
+        this.inventoryContextMenu = contextMenu;
+    }
+
+    
 }
