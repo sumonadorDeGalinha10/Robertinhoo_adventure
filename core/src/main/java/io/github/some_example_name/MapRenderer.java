@@ -164,6 +164,7 @@ public class MapRenderer {
             // Renderiza jogador
             float playerX = offsetX + (player.bounds.x * TILE_SIZE) - (playerRenderer.getRenderScale() - 1) * 8;
             float playerY = offsetY + (player.bounds.y * TILE_SIZE) - (playerRenderer.getRenderScale() - 1) * 8;
+            corpseManager.render(spriteBatch, offsetX, offsetY);
 
             playerRenderer.render(spriteBatch, player, delta, offsetX, offsetY);
 
@@ -199,7 +200,7 @@ public class MapRenderer {
                 }
             }
 
-            corpseManager.render(spriteBatch, offsetX, offsetY);
+     
 
             // Renderiza armas no chão
             for (Weapon weapon : mapa.getWeapons()) {
@@ -261,7 +262,6 @@ public class MapRenderer {
                     player.getInventoryController().getOriginalGridY(),
                     player.getInventoryController().getCursorGridX(),
                     player.getInventoryController().getCursorGridY(),
-                    player.getInventoryController().craftingMode,
                     player.getInventoryController().getAvailableRecipes(),
                     player.getInventoryController().getSelectedRecipe()
 
@@ -281,7 +281,6 @@ public class MapRenderer {
                     -1, -1,
                     player.getInventoryController().getPlacementGridX(),
                     player.getInventoryController().getPlacementGridY(),
-                    player.getInventoryController().craftingMode,
                     player.getInventoryController().getAvailableRecipes(),
                     player.getInventoryController().getSelectedRecipe());
             // renderInventory.debugRenderInventoryBounds();

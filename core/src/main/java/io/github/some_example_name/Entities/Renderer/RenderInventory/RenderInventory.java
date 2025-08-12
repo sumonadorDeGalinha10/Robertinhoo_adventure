@@ -54,10 +54,6 @@ public class RenderInventory {
     private Color selectionColor = new Color(1f, 0.8f, 0.3f, 1f);
     private Color hoverColor = new Color(0.6f, 0.8f, 1f, 0.8f);
 
-    private boolean menuOpen = false;
-    private Item menuItem = null;
-    private float menuScreenX;
-    private float menuScreenY;
 
     public RenderInventory(Inventory inventory, int cellSize, Vector2 startPosition,
             InventoryController inventoryController) {
@@ -100,10 +96,17 @@ public class RenderInventory {
             @Override
             public void onCraft(Item item) {
                 System.out.println("Craft -> " + item.getName());
-                // abrir crafting relacionado, ou começar crafting
-                // inventoryController.openCraftFor(item);
+                inventoryController.craftingMode = true;
+                inventoryController.selectedItem = item;
+
+                // Inicializa as receitas disponíveis
+                inventoryController.availableRecipes = inventoryController.inventory.getAvailableRecipes();
+
+                // Seleciona a primeira receita se disponível
+                inventoryController.selectedRecipe = inventoryController.availableRecipes.isEmpty() ? null
+                        : inventoryController.availableRecipes.get(0);
             }
-        },mouseCursorRenderer);
+        }, mouseCursorRenderer);
     }
 
     public void render(Item placementItem,
@@ -115,7 +118,6 @@ public class RenderInventory {
             int originalGridY,
             int cursorGridX,
             int cursorGridY,
-            boolean craftingMode,
             List<CraftingRecipe> availableRecipes,
             CraftingRecipe selectedRecipe) {
 
@@ -138,9 +140,6 @@ public class RenderInventory {
         drawSelection();
         shapeRenderer.end();
 
-        if (craftingMode && selectedItem != null) {
-            craftingRenderer.render(availableRecipes, selectedRecipe, cursorGridX, cursorGridY, selectedItem);
-        }
         checkRightClick();
         Vector2 mouseWorld = getMouseWorldFromScreen();
 
@@ -149,7 +148,9 @@ public class RenderInventory {
 
         mouseCursorRenderer.renderMouseCursor();
 
-        if (craftingMode && selectedItem != null) {
+        if (mouseCursorRenderer.getInventoryController().craftingMode && selectedItem != null) {
+            System.out.println("Rendering crafting menu for item: " + selectedItem.getName());
+            System.out.println("Rendering crafting menu for item: " + selectedRecipe);
             craftingRenderer.render(availableRecipes, selectedRecipe, cursorGridX, cursorGridY, selectedItem);
         }
 
@@ -165,8 +166,8 @@ public class RenderInventory {
         float scale = Math.min(
                 (gridWidth * cellSize) / icon.getRegionWidth(),
                 (gridHeight * cellSize) / icon.getRegionHeight());
-        float scaledWidth = icon.getRegionWidth() * scale;
-        float scaledHeight = icon.getRegionHeight() * scale;
+        float scaledWidth = icon.getRegionWidth() * scale +30;
+        float scaledHeight = icon.getRegionHeight() * scale +30;
 
         float offsetX = (gridWidth * cellSize - scaledWidth) / 2;
         float offsetY = (gridHeight * cellSize - scaledHeight) / 2;
@@ -412,8 +413,6 @@ public class RenderInventory {
         }
     }
 
-
-
     private Vector2 getMouseWorldFromScreen() {
         int screenX = Gdx.input.getX();
         int screenY = Gdx.input.getY();
@@ -422,6 +421,10 @@ public class RenderInventory {
 
     public InventoryContextMenu getContextMenu() {
         return contextMenu;
+    }
+
+    public Vector2 convertScreenToWorld(float screenX, float screenY) {
+        return mouseCursorRenderer.screenToWorld((int) screenX, (int) screenY);
     }
 
     public void dispose() {

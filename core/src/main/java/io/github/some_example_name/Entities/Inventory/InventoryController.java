@@ -20,7 +20,7 @@ import io.github.some_example_name.Mapa;
 
 public class InventoryController {
     private final Robertinhoo player;
-    private final Inventory inventory;
+    public final Inventory inventory;
     private final Mapa mapa;
     private InventoryMouseController mouseController;
 
@@ -42,8 +42,8 @@ public class InventoryController {
     public Item selectedItem = null;
 
     public boolean craftingMode = false;
-    private CraftingRecipe selectedRecipe;
-    private List<CraftingRecipe> availableRecipes;
+    public CraftingRecipe selectedRecipe;
+    public List<CraftingRecipe> availableRecipes;
     private InventoryContextMenu inventoryContextMenu;
 
     private Vector2 inventoryPosition;
@@ -81,7 +81,7 @@ public class InventoryController {
 
     private void toggleCraftingMode() {
 
-        craftingMode = !craftingMode;
+        craftingMode = true;
 
         if (craftingMode) {
             availableRecipes = inventory.getAvailableRecipes();
@@ -181,7 +181,6 @@ public class InventoryController {
         if (Gdx.input.isKeyJustPressed(Keys.Q)) {
             if (selectedItem != null) {
                 dropItem(selectedItem);
-                player.IsUsingOneHandWeapon = false;
                 selectedItem = null;
             }
         }
@@ -301,7 +300,9 @@ public class InventoryController {
     }
 
     public void dropItem(Item item) {
+        
         if (inventory.removeItem(item)) {
+            player.IsUsingOneHandWeapon = false;
             if (item instanceof Weapon && inventory.getEquippedWeapon() == item) {
                 inventory.unequipWeapon();
             }

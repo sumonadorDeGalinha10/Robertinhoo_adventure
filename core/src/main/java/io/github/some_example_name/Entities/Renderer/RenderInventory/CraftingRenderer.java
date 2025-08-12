@@ -10,6 +10,7 @@ import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
 import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
 import io.github.some_example_name.Fonts.FontsManager;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,11 @@ public class CraftingRenderer {
     private final ShapeRenderer shapeRenderer;
     private final BitmapFont font;
     private final Vector2 inventoryPosition;
+
+    private final float recipeSpacing = 35f;
+    private final float iconSize = 24f;
+    private final float padding = 8f;
+    private final float arrowWidth = 20f;
 
     public CraftingRenderer(SpriteBatch spriteBatch, ShapeRenderer shapeRenderer, Vector2 inventoryPosition) {
         this.spriteBatch = spriteBatch;
@@ -32,64 +38,119 @@ public class CraftingRenderer {
 
         float menuX = inventoryPosition.x;
         float menuY = inventoryPosition.y + 150; 
-        float menuWidth = 200;
-        float menuHeight = 150;
+        float menuWidth = 320f;
+        float menuHeight = 200f;
 
+        // Fase 1: Renderizar fundo e destaques
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 0.7f);
+        shapeRenderer.setColor(0.1f, 0.1f, 0.1f, 0.85f);
         shapeRenderer.rect(menuX, menuY, menuWidth, menuHeight);
         shapeRenderer.end();
 
+        // Fase 2: Renderizar bordas
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.5f, 0.5f, 0.5f, 0.5f);
+        shapeRenderer.rect(menuX, menuY, menuWidth, menuHeight);
+        shapeRenderer.end();
+
+        // Fase 3: Renderizar destaques das receitas selecionadas
+        renderSelectionHighlights(recipes, selected, menuX + padding, menuY + padding, menuWidth - 2*padding);
+
+        // Fase 4: Renderizar texto e ícones juntos no mesmo SpriteBatch
         spriteBatch.begin();
-        renderTextContent(recipes, selected, menuX, menuY);
+        renderRecipeList(recipes, selected, menuX + padding, menuY + padding, menuWidth - 2*padding);
+        renderInstructions(menuX + padding, menuY );
         spriteBatch.end();
     }
 
-    private void renderTextContent(List<CraftingRecipe> recipes, CraftingRecipe selected, float menuX, float menuY) {
-        font.setColor(Color.WHITE);
-        font.draw(spriteBatch, "Receitas de Craft:", menuX + 10, menuY + 130);
-
+    private void renderSelectionHighlights(List<CraftingRecipe> recipes, CraftingRecipe selected, 
+                                          float startX, float startY, float width) {
+        float yPos = startY + 140;
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        
         for (int i = 0; i < recipes.size(); i++) {
             CraftingRecipe recipe = recipes.get(i);
-            String recipeText = getRecipeDescription(recipe);
-
             if (recipe == selected) {
-                font.setColor(Color.YELLOW);
-                font.draw(spriteBatch, "> " + recipeText, menuX + 20, menuY + 100 - i * 30);
-            } else {
-                font.setColor(Color.WHITE);
-                font.draw(spriteBatch, recipeText, menuX + 30, menuY + 100 - i * 30);
+                shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 0.7f);
+                shapeRenderer.rect(startX - 5, yPos - 25, width, recipeSpacing);
             }
+            yPos -= recipeSpacing;
         }
-
-        font.setColor(Color.LIGHT_GRAY);
-        font.draw(spriteBatch, "Setas: Navegar  |  Enter: Craftar  |  ESC: Sair",
-                menuX + 10, menuY + 10);
+        
+        shapeRenderer.end();
     }
 
-    private String getRecipeDescription(CraftingRecipe recipe) {
-        StringBuilder sb = new StringBuilder();
+    private void renderRecipeList(List<CraftingRecipe> recipes, CraftingRecipe selected, 
+                                 float startX, float startY, float width) {
+        font.setColor(Color.WHITE);
+        font.draw(spriteBatch, "RECEITAS DISPONÍVEIS:", startX, startY + 170);
 
-        sb.append(recipe.getResultQuantity())
-                .append("x ")
-                .append(recipe.getResult().getName())
-                .append(" (");
+        float yPos = startY + 140;
+        
+        for (int i = 0; i < recipes.size(); i++) {
+            CraftingRecipe recipe = recipes.get(i);
+            boolean isSelected = (recipe == selected);
+            renderRecipe(recipe, startX, yPos, isSelected);
+            yPos -= recipeSpacing;
+        }
+    }
 
-        boolean first = true;
+    private void renderRecipe(CraftingRecipe recipe, float x, float y, boolean isSelected) {
+        float currentX = x;
+        Color textColor = isSelected ? Color.YELLOW : Color.LIGHT_GRAY;
+        font.setColor(textColor);
+
+        // Ingredientes
+        boolean firstIngredient = true;
         for (Map.Entry<Class<? extends Item>, Integer> entry : recipe.getIngredients().entrySet()) {
-            if (!first) {
-                sb.append(", ");
+            if (!firstIngredient) {
+                font.draw(spriteBatch, "+", currentX, y);
+                currentX += 15;
             }
-            first = false;
+            firstIngredient = false;
 
-            String itemName = getItemName(entry.getKey());
-            sb.append(entry.getValue())
-                    .append("x ")
-                    .append(itemName);
+            // Quantidade
+            font.draw(spriteBatch, entry.getValue() + "x", currentX, y);
+            currentX += 25;
+
+            // Ícone do item
+            TextureRegion icon = recipe.getIngredientIcon(entry.getKey());
+            if (icon != null) {
+                spriteBatch.draw(icon, currentX, y - iconSize/2 -5, iconSize, iconSize);
+            }
+            currentX += iconSize + 5;
+
+            // Nome do item
+            font.draw(spriteBatch, getItemName(entry.getKey()), currentX, y);
+            currentX += getItemName(entry.getKey()).length() * 7 + 10;
         }
 
-        sb.append(")");
-        return sb.toString();
+        // Seta (→)
+        font.draw(spriteBatch, "-->", currentX, y);
+        currentX += arrowWidth;
+
+        // Resultado
+        font.draw(spriteBatch, recipe.getResultQuantity() + "x", currentX, y);
+        currentX += 25;
+        
+        // Ícone do item resultante
+        TextureRegion resultIcon = recipe.getResultIcon();
+        if (resultIcon != null) {
+            spriteBatch.draw(resultIcon, currentX, y - iconSize/2 -5 , iconSize, iconSize);
+        }
+        currentX += iconSize + 5;
+        
+        // Nome do item resultante
+        font.setColor(isSelected ? Color.GREEN : Color.WHITE);
+        font.draw(spriteBatch, recipe.getResult().getName(), currentX, y);
+    }
+
+    private void renderInstructions(float x, float y) {
+        font.setColor(Color.LIGHT_GRAY);
+        font.draw(spriteBatch, "↑↓: Navegar", x, y);
+        font.draw(spriteBatch, "ENTER: Craftar", x + 120, y);
+        font.draw(spriteBatch, "ESC: Sair", x + 240, y);
     }
 
     private String getItemName(Class<? extends Item> itemClass) {

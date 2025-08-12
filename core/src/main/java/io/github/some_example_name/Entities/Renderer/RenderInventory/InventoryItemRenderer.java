@@ -65,8 +65,8 @@ public class InventoryItemRenderer {
             (height * cellSize) / icon.getRegionHeight()
         );
         
-        float scaledWidth = icon.getRegionWidth() * scale;
-        float scaledHeight = icon.getRegionHeight() * scale;
+        float scaledWidth = icon.getRegionWidth() * scale + 30;
+        float scaledHeight = icon.getRegionHeight() * scale + 20;
         float offsetX = (width * cellSize - scaledWidth) / 2;
         float offsetY = (height * cellSize - scaledHeight) / 2;
 

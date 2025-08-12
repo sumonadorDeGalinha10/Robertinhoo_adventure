@@ -6,20 +6,28 @@ import io.github.some_example_name.Entities.Inventory.Item;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
 public class CraftingRecipe {
     private final Map<Class<? extends Item>, Integer> ingredients;
     private final Item result;
     private final int resultQuantity;
+      private TextureRegion resultIcon;
+      private final Map<Class<? extends Item>, TextureRegion> ingredientIcons = new HashMap<>();
+    
     
 
     public CraftingRecipe(Item result, int resultQuantity) {
         this.ingredients = new HashMap<>();
         this.result = result;
         this.resultQuantity = resultQuantity;
+          this.resultIcon = result.getIcon();
+        
     }
 
-    public CraftingRecipe addIngredient(Class<? extends Item> itemClass, int quantity) {
+      public CraftingRecipe addIngredient(Class<? extends Item> itemClass, int quantity, TextureRegion icon) {
         ingredients.put(itemClass, quantity);
+        ingredientIcons.put(itemClass, icon); 
         return this;
     }
 
@@ -58,5 +66,12 @@ public class CraftingRecipe {
     
     public int getResultQuantity() {
         return resultQuantity;
+    }
+       public TextureRegion getResultIcon() {
+        return resultIcon;
+    }
+    
+    public TextureRegion getIngredientIcon(Class<? extends Item> itemClass) {
+        return ingredientIcons.get(itemClass);
     }
 }

@@ -44,18 +44,44 @@ public class InventoryMouseController implements InputProcessor {
 
         return false;
     }
-
-    @Override
+   @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        // Menu visível: tratar cliques de forma especial
         if (controller.getContextMenu().isVisible()) {
-            
-            if (button == Buttons.RIGHT) {
-                return controller.getContextMenu().handleLeftClick(screenX, screenY);
+            if (button == Buttons.LEFT) {
+                // Clique esquerdo: interage com o menu
+                Vector2 worldPos = controller.getContextMenu().mouseCursorRenderer.screenToWorld(screenX, screenY);
+                return controller.getContextMenu().handleClick(worldPos.x, worldPos.y);
+            } 
+            else if (button == Buttons.RIGHT) {
+                // Clique direito: apenas fecha o menu
+                controller.getContextMenu().hide();
+                return true;
             }
-            return true;
+            return true; // Bloqueia outros botões
         }
 
-        if (button == com.badlogic.gdx.Input.Buttons.LEFT) {
+        // Menu não visível: comportamento normal
+        if (button == Buttons.LEFT) {
+            // Comportamento normal para clique esquerdo
+            Vector2 gridPos = screenToGrid(screenX, screenY);
+            if (gridPos != null) {
+                controller.setCursorPosition((int) gridPos.x, (int) gridPos.y);
+                
+                if (controller.getSelectedItem() == null) {
+                    Item item = inventory.getItemAt((int) gridPos.x, (int) gridPos.y);
+                    if (item != null) {
+                        controller.startDragging(item, (int) gridPos.x, (int) gridPos.y);
+                        dragging = true;
+                    }
+                } else {
+                    controller.selectItemAtCursor();
+                }
+                return true;
+            }
+        } 
+        else if (button == Buttons.RIGHT) {
+            // Comportamento para clique direito (abrir menu)
             Vector2 gridPos = screenToGrid(screenX, screenY);
             if (gridPos != null) {
                 rightClickTriggered = true;
@@ -67,37 +93,8 @@ public class InventoryMouseController implements InputProcessor {
             }
         }
 
-        if (!controller.isInventoryOpen() || button != 1)
-            return false;
-
-        Vector2 gridPos = screenToGrid(screenX, screenY);
-        if (gridPos == null)
-            return false;
-
-        int gridX = (int) gridPos.x;
-        int gridY = (int) gridPos.y;
-
-        // Verifica se a posição é válida
-        if (gridX < 0 || gridY < 0 ||
-                gridX >= inventory.gridCols ||
-                gridY >= inventory.gridRows) {
-            return false;
-        }
-
-        if (controller.getSelectedItem() == null) {
-            Item item = inventory.getItemAt(gridX, gridY);
-            if (item != null) {
-                controller.startDragging(item, gridX, gridY);
-                dragging = true;
-                return true;
-            }
-        } else {
-            controller.selectItemAtCursor();
-            return true;
-        }
         return false;
     }
-
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         if (!controller.isInventoryOpen() || !dragging)
@@ -126,6 +123,7 @@ public class InventoryMouseController implements InputProcessor {
         }
         return false;
     }
+
 
     public Vector2 screenToGrid(int screenX, int screenY) {
 

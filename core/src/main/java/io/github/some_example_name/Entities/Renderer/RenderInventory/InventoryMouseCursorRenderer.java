@@ -63,6 +63,7 @@ public class InventoryMouseCursorRenderer {
         }
     }
 
+
     public Vector2 screenToWorld(int screenX, int screenY) {
         float startX = inventoryController.getInventoryStartX();
         float startY = inventoryController.getInventoryStartY();

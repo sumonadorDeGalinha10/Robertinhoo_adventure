@@ -17,7 +17,7 @@ public class CraftingManager {
     
     private void initializeRecipes() {
         CraftingRecipe gunpowderRecipe = new CraftingRecipe(new Ammo9mm(), 1)
-            .addIngredient(PolvoraBruta.class, 2);
+            .addIngredient(PolvoraBruta.class, 2, new PolvoraBruta().getIcon());
         
         recipes.add(gunpowderRecipe);
     }
