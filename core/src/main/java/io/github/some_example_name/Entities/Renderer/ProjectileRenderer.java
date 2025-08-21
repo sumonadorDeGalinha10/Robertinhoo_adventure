@@ -6,9 +6,8 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
+import io.github.some_example_name.MapConfig.Mapa;
 
 
 

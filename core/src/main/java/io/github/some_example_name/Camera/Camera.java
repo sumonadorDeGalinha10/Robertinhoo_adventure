@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 
-import io.github.some_example_name.MapRenderer;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.MapConfig.MapRenderer;
 
 public class Camera {
     public OrthographicCamera camera;

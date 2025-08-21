@@ -8,9 +8,9 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.MapConfig.Mapa;
 
 import com.badlogic.gdx.graphics.Texture;
 
@@ -19,7 +19,7 @@ public class Ammo9mm extends Ammo {
 
     protected Vector2 setWorldPosition;
 
-    public Ammo9mm(Mapa mapa, int x, int y) {
+    public Ammo9mm(Mapa mapa, float x, float y) {
         super("9mm", 15, 25, new TextureRegion(new Texture("ITENS/Ammo/ammo0.9mm.png")), 2, 1);
         this.position = new Vector2(x, y);
         this.mapa = mapa;

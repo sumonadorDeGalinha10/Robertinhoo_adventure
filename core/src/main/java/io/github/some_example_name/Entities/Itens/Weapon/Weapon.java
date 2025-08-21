@@ -9,10 +9,10 @@ import com.badlogic.gdx.math.Vector2;
 
 import com.badlogic.gdx.physics.box2d.Body;
 
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Item;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
+import io.github.some_example_name.MapConfig.Mapa;
 import io.github.some_example_name.Entities.Renderer.WeaponRenderer;
 
 public abstract class Weapon implements Item {

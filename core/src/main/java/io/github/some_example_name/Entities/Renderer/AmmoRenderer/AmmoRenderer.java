@@ -3,7 +3,8 @@ package io.github.some_example_name.Entities.Renderer.AmmoRenderer;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
-import io.github.some_example_name.MapRenderer;
+import io.github.some_example_name.MapConfig.MapRenderer;
+
 import com.badlogic.gdx.graphics.Texture;
 
 import java.util.List;

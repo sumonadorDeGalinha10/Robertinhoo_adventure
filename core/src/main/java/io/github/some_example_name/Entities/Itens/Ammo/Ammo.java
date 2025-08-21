@@ -3,8 +3,8 @@ package io.github.some_example_name.Entities.Itens.Ammo;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.MapConfig.Mapa;
 
 public abstract class Ammo implements Item {
     private String caliber;

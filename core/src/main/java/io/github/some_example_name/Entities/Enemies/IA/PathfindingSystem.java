@@ -1,8 +1,10 @@
 package io.github.some_example_name.Entities.Enemies.IA;
 
 import com.badlogic.gdx.math.Vector2;
+
+import io.github.some_example_name.MapConfig.Mapa;
+
 import java.util.List;
-import io.github.some_example_name.Mapa;
 
 public class PathfindingSystem {
     private Grid grid;               // tira o final, começa null

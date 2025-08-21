@@ -2,10 +2,11 @@ package io.github.some_example_name.Otimizations;
 import java.util.List; // Correto
 import java.util.ArrayList; // Já está correto
 import com.badlogic.gdx.math.Vector2;
+
+import io.github.some_example_name.MapConfig.Mapa;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Rectangle;
-
-import io.github.some_example_name.Mapa;
 
 
 

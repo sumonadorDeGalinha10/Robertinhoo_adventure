@@ -11,8 +11,9 @@ import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.BaseDestructible;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import io.github.some_example_name.MapConfig.Mapa;
+
 import com.badlogic.gdx.graphics.Color;
-import io.github.some_example_name.Mapa;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.Gdx;
 

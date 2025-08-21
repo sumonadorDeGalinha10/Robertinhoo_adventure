@@ -1,13 +1,15 @@
 package io.github.some_example_name.Entities.Enemies.IA;
 
 import com.badlogic.gdx.math.Vector2;
+
+import io.github.some_example_name.MapConfig.Mapa;
+
 import java.util.List;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.Collections;
 import java.util.Comparator;
-import io.github.some_example_name.Mapa;
 import java.util.function.Supplier;
 
 public class AStarPathFinder {
