@@ -10,12 +10,12 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Inventory.Inventory;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
+import io.github.some_example_name.MapConfig.Mapa;
 
 public class Pistol extends Weapon {
 
@@ -41,7 +41,7 @@ public class Pistol extends Weapon {
 
     protected Vector2 position;
 
-    public Pistol(Mapa mapa, int x, int y, Inventory inventory) {
+    public Pistol(Mapa mapa, float x, float y, Inventory inventory) {
         super();
         this.maxAmmo = 99999;
         this.ammo = this.maxAmmo;

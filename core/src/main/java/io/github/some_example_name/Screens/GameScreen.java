@@ -5,13 +5,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import io.github.some_example_name.Mapa;
+
 import io.github.some_example_name.Entities.Enemies.IA.AStarPathFinder;
 import io.github.some_example_name.Entities.Enemies.IA.Grid;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Interface.RobertinhoFaceHUD;
 import io.github.some_example_name.Interface.WeaponHUD;
-import io.github.some_example_name.MapRenderer;
+import io.github.some_example_name.MapConfig.MapRenderer;
+import io.github.some_example_name.MapConfig.Mapa;
+
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Cursor;
 

@@ -1,10 +1,10 @@
 package io.github.some_example_name.Entities.Player;
 
-import io.github.some_example_name.MapRenderer;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Renderer.PlayerRenderer;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
 import io.github.some_example_name.Entities.Renderer.WeaponAnimations.WeaponDirection;
+import io.github.some_example_name.MapConfig.MapRenderer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;

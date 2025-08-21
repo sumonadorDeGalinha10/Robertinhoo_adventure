@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
-import io.github.some_example_name.Mapa;
+import io.github.some_example_name.MapConfig.Mapa;
 
 public class DestructibleManager {
     private final Array<Destructible> destructibles;

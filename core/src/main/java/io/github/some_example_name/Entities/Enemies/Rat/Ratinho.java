@@ -9,13 +9,14 @@ import com.badlogic.gdx.ai.steer.SteeringAcceleration;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import io.github.some_example_name.Mapa;
+
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import io.github.some_example_name.MapConfig.Mapa;
 import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Rat.RatRenderer;
 import java.util.List;
 
@@ -76,7 +77,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     public boolean isDead = false;
     private boolean shouldDeactivate = false;
 
-    public Ratinho(Mapa mapa, int x, int y, Robertinhoo target) {
+    public Ratinho(Mapa mapa, float x, float y, Robertinhoo target) {
         super(x, y, 20, 2);
         this.mapa = mapa;
         this.target = target;
@@ -95,7 +96,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         );
     }
 
-    private Body createBody(int x, int y) {
+    private Body createBody(float x, float y) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(x + 0.5f, y + 0.5f);

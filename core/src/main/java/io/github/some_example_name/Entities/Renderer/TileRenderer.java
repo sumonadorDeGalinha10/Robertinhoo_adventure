@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
-import io.github.some_example_name.Mapa;
+
+import io.github.some_example_name.MapConfig.Mapa;
+
 import java.util.Random;
 
 public class TileRenderer {

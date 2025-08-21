@@ -2,7 +2,7 @@ package io.github.some_example_name.Entities.Enemies.IA;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.some_example_name.Mapa;
+import io.github.some_example_name.MapConfig.Mapa;
 
 
 public class Grid {

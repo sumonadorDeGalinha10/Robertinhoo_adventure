@@ -3,8 +3,9 @@ package io.github.some_example_name.Entities.Player;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Timer;
-import io.github.some_example_name.Mapa;
+
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.MapConfig.Mapa;
 
 public class MeleeAttackSystem {
     private final Robertinhoo player;

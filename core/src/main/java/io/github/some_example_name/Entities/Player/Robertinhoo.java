@@ -11,15 +11,12 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import io.github.some_example_name.MapRenderer;
-
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
@@ -34,6 +31,9 @@ import io.github.some_example_name.Entities.Renderer.WeaponAnimations;
 import io.github.some_example_name.Entities.Renderer.RenderInventory.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
+import io.github.some_example_name.MapConfig.MapRenderer;
+import io.github.some_example_name.MapConfig.Mapa;
+
 import com.badlogic.gdx.graphics.Color;
 
 import com.badlogic.gdx.utils.Timer;
@@ -99,7 +99,7 @@ public class Robertinhoo implements ShadowEntity {
     public Vector2 dashVelocity;
     private PlayerItemHandler itemHandler;
 
-    public Robertinhoo(Mapa map, int x, int y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
+    public Robertinhoo(Mapa map, float x, float y, MapRenderer mapRenderer, PlayerRenderer playerRenderer) {
         this.map = map;
         pos.set(x, y);
         bounds.set(pos.x, pos.y, TILE_SIZE, TILE_SIZE);
@@ -143,7 +143,7 @@ public class Robertinhoo implements ShadowEntity {
         return inventory.getEquippedWeapon();
     }
 
-    private void createBody(int x, int y) {
+    private void createBody(float x, float y) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyType.DynamicBody;
         bodyDef.position.set(x, y);

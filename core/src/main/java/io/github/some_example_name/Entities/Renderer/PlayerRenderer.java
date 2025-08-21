@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.PlayerWeaponSystem;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
-import io.github.some_example_name.MapRenderer;
+import io.github.some_example_name.MapConfig.MapRenderer;
 
 public class PlayerRenderer {
     private float animationTime = 0f;

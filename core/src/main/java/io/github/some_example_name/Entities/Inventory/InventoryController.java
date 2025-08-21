@@ -12,11 +12,10 @@ import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.RenderInventory.InventoryContextMenu;
+import io.github.some_example_name.MapConfig.Mapa;
 import io.github.some_example_name.Entities.Renderer.RenderInventory.InventoryContextMenu;
 
 import java.util.List;
-
-import io.github.some_example_name.Mapa;
 
 public class InventoryController {
     private final Robertinhoo player;

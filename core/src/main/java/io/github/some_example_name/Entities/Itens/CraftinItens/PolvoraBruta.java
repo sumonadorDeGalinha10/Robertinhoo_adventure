@@ -9,9 +9,8 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import io.github.some_example_name.Entities.Inventory.Item;
-
-import io.github.some_example_name.Mapa;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.MapConfig.Mapa;
 
 import com.badlogic.gdx.physics.box2d.World;
 

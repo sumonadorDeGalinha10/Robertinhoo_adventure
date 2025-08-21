@@ -4,11 +4,12 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import io.github.some_example_name.Mapa;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import box2dLight.PointLight;
+import io.github.some_example_name.MapConfig.Mapa;
+
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
