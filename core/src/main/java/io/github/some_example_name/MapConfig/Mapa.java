@@ -58,6 +58,10 @@ public class Mapa {
     private List<Destructible> destructibles = new ArrayList<>();
     private List<Item> craftItems = new ArrayList<>();
     private List<Runnable> pendingActions = new ArrayList<>();
+    private List<Rectangle> rooms = new ArrayList<>();
+    
+ 
+
     public PathfindingSystem pathfindingSystem;
 
     public World world;
@@ -144,6 +148,7 @@ public Mapa() {
         this.tiles = mapGenerator.getTiles();
         this.startPosition = mapGenerator.getStartPosition();
         this.wallPositions = mapGenerator.getWallPositions();
+        this.rooms = mapGenerator.getRooms();
         addRandomEntities();
         agruparEPCriarParedes();
     }
@@ -163,11 +168,9 @@ public Mapa() {
     Random rand = new Random();
     List<Vector2> validTilePositions = new ArrayList<>();
 
-    // 1. Coletar todas as posições válidas (TILE) evitando a posição do jogador
     for (int x = 0; x < mapWidth; x++) {
         for (int y = 0; y < mapHeight; y++) {
             if (tiles[x][y] == TILE) {
-                // Evitar posição do jogador
                 if (x != (int) startPosition.x || y != (int) startPosition.y) {
                     validTilePositions.add(new Vector2(x, y));
                 }
@@ -175,7 +178,6 @@ public Mapa() {
         }
     }
 
-    // 2. Embaralhar as posições válidas
     java.util.Collections.shuffle(validTilePositions, rand);
 
     // 3. Adicionar itens (usando coordenadas de mundo)
@@ -190,14 +192,20 @@ public Mapa() {
         }
     }
 
-    // 4. Adicionar inimigos
     for (int i = 3; i < 8 && i < validTilePositions.size(); i++) {
         Vector2 tilePos = validTilePositions.get(i);
         Vector2 worldPos = tileToWorld((int)tilePos.x, (int)tilePos.y);
-        enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo));
+            Rectangle ratRoom = null;
+        for (Rectangle room : rooms) {
+            if (room.contains(tilePos)) {
+                ratRoom = room;
+                break;
+            }
+        }
+        enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
+
     }
 
-    // 5. Adicionar barris
     for (int i = 8; i < 11 && i < validTilePositions.size(); i++) {
         Vector2 tilePos = validTilePositions.get(i);
         Vector2 worldPos = tileToWorld((int)tilePos.x, (int)tilePos.y);
@@ -436,5 +444,21 @@ public Mapa() {
                 }
             }
         }
+    }
+
+    public List<Rectangle> getRooms() {
+        return rooms;
+    }
+
+    public Rectangle findRoomContaining(Vector2 position) {
+        Vector2 tilePos = worldToTile(position);
+        
+        for (Rectangle room : rooms) {
+            if (room.contains(tilePos)) {
+                return room;
+            }
+        }
+        
+        return null;
     }
 }
