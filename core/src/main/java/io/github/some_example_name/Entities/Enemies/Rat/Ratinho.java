@@ -8,6 +8,7 @@ import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.steer.SteeringAcceleration;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
@@ -27,13 +28,13 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private final Mapa mapa;
     private final Body body;
     public final Robertinhoo target;
-       private boolean markedForDestruction = false;
+    private boolean markedForDestruction = false;
 
     private float maxLinearSpeed = 4f;
     private float maxLinearAcceleration = 2f;
     private static final float ZERO_LINEAR_SPEED_THRESHOLD = 0.01f;
 
-    public static final float DETECTION_RANGE = 10f;
+    public static final float DETECTION_RANGE = 400f;
     private static final float ATTACK_RANGE = 1.5f;
     public final Vector2 pos = new Vector2();
 
@@ -63,13 +64,18 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private ShadowComponent shadowComponent;
     private boolean deathAnimationFinished = false;
     private RatAI ai;
-
-    
-
     public RatRenderer renderer = new RatRenderer();
+    private Rectangle homeRoom; 
 
     public enum DeathType {
         NONE, MELEE, PROJECTILE
+    }
+
+    public enum State {
+        IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE,
+        PREPARING_DASH,
+        DASHING, MELEE_DEATH,
+        PROJECTILE_DEATH
     }
 
     private DeathType deathType = DeathType.NONE;
@@ -77,12 +83,13 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     public boolean isDead = false;
     private boolean shouldDeactivate = false;
 
-    public Ratinho(Mapa mapa, float x, float y, Robertinhoo target) {
+   public Ratinho(Mapa mapa, float x, float y, Robertinhoo target, Rectangle homeRoom) {
         super(x, y, 20, 2);
         this.mapa = mapa;
         this.target = target;
+        this.homeRoom = homeRoom;
         this.body = createBody(x, y);
-        this.ai = new RatAI(this, target, mapa.getPathfindingSystem());    
+        this.ai = new RatAI(this, target, mapa.getPathfindingSystem(), mapa, homeRoom);
 
 
         body.setUserData(this);
@@ -117,7 +124,6 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         fd.friction = 0f;
         fd.filter.categoryBits = Constants.BIT_ENEMY;
         
-
         body.createFixture(fd);
         shape.dispose();
 
@@ -132,15 +138,8 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     public Body getBody() {
         return this.body;
     }
+    
 
-
-
-    public enum State {
-        IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE,
-        PREPARING_DASH,
-        DASHING, MELEE_DEATH,
-        PROJECTILE_DEATH
-    }
 
     public float getAnimationTime() {
         return animationTime;
@@ -198,16 +197,16 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
             }
 
             
-         ai.update(deltaTime, body);
-
-          updateMovementState();
-
+       
+            ai.update(deltaTime, body, myPos);
+            updateMovementState();
+            
+            // Só executa dash se estiver perto o suficiente
             if (dashCooldown <= 0 && distance <= ATTACK_RANGE) {
                 executeDashAttack(playerPos);
             }
-        }
-
-
+        
+    }
     }
 
     @Override
@@ -266,14 +265,9 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     }
 
     private void executeDashAttack(Vector2 targetPos) {
-        // Calcula direção do ataque
         dashTargetDirection = targetPos.cpy().sub(body.getPosition()).nor();
-
-        // Entra no estado de preparação
         state = State.PREPARING_DASH;
         prepareDashTimer = PREPARE_DASH_DURATION;
-
-        // Para o movimento durante a preparação
         body.setLinearVelocity(0, 0);
     }
 

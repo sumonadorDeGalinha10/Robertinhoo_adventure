@@ -23,6 +23,8 @@ public class MapGenerator {
     private int[][] tiles;
     private Vector2 startPosition;
     private ArrayList<Vector2> wallPositions = new ArrayList<>();
+    private List<Rectangle> rooms = new ArrayList<>();
+
 
 public MapGenerator(int width, int height) {
     Gdx.app.log("MapGenerator", "Iniciando MapGenerator...");
@@ -50,6 +52,7 @@ public MapGenerator(int width, int height) {
     Rectangle sala1 = generateRandomRoom(rand);
     drawRoom(sala1);
     Gdx.app.log("MapGenerator", "Primeira sala desenhada: " + sala1);
+    rooms.add(sala1);
 
     // Gerar segunda sala (garantir distância mínima)
     Gdx.app.log("MapGenerator", "Gerando segunda sala...");
@@ -67,6 +70,7 @@ public MapGenerator(int width, int height) {
 
     Gdx.app.log("MapGenerator", "Segunda sala gerada após " + attempts + " tentativas: " + sala2);
     drawRoom(sala2);
+    rooms.add(sala2);
     Gdx.app.log("MapGenerator", "Segunda sala desenhada.");
 
     // Conectar salas com túneis
@@ -201,5 +205,9 @@ public MapGenerator(int width, int height) {
 
     public int getStartY() {
         return (int) startPosition.y;
+    }
+
+    public List<Rectangle> getRooms() {
+        return rooms;
     }
 }

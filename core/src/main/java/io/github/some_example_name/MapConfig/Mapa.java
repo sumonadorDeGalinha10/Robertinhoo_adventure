@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Enemies.Castor.Castor;
 import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Inventory.Item;
@@ -58,6 +59,8 @@ public class Mapa {
     private List<Destructible> destructibles = new ArrayList<>();
     private List<Item> craftItems = new ArrayList<>();
     private List<Runnable> pendingActions = new ArrayList<>();
+    private List<Rectangle> rooms = new ArrayList<>();
+
     public PathfindingSystem pathfindingSystem;
 
     public World world;
@@ -94,49 +97,50 @@ public class Mapa {
     public RayHandler getRayHandler() {
         return rayHandler;
     }
-public Mapa() {
-    world = new World(new Vector2(0, 0), true);
-    enemies = new ArrayList<>();
-    weapons = new ArrayList<>();
-    ammo = new ArrayList<>();
-    polvoras = new ArrayList<>();
-    agruparParedes = new WallOtimizations(this);
-    this.pathfindingSystem = new PathfindingSystem(this);
-    
-    // 1. Criar gerador de mapa
-    MapGenerator mapGenerator = new MapGenerator(50, 50);
-    
-    initializeLights();
 
-    // 2. Copiar dados do mapa
-    this.mapWidth = mapGenerator.getMapWidth();
-    this.mapHeight = mapGenerator.getMapHeight();
-    this.tiles = mapGenerator.getTiles();
-    this.wallPositions = mapGenerator.getWallPositions();
-    
-    // 3. Criar Robertinhoo usando a posição do gerador
-    Vector2 worldStartPos = mapGenerator.getWorldStartPosition(mapHeight);
-    robertinhoo = new Robertinhoo(
-        this, 
-        worldStartPos.x, 
-        worldStartPos.y, 
-        null, 
-        null
-    );
-    
-    // 4. Armazenar a posição inicial em coordenadas de tile
-    this.startPosition = mapGenerator.getStartPosition();
+    public Mapa() {
+        world = new World(new Vector2(0, 0), true);
+        enemies = new ArrayList<>();
+        weapons = new ArrayList<>();
+        ammo = new ArrayList<>();
+        polvoras = new ArrayList<>();
+        agruparParedes = new WallOtimizations(this);
+        this.pathfindingSystem = new PathfindingSystem(this);
 
-    // 5. Criar paredes físicas
-    agruparEPCriarParedes();
+        // 1. Criar gerador de mapa
+        MapGenerator mapGenerator = new MapGenerator(50, 50);
 
-    // 6. Adicionar entidades (que dependem de robertinhoo)
-    addRandomEntities();
+        initializeLights();
 
-    // 7. Configurar listener de colisões
-    world.setContactListener(new GameContactListener(robertinhoo));
-    generateProceduralMap(mapWidth, mapHeight, mapGenerator);
-}
+        // 2. Copiar dados do mapa
+        this.mapWidth = mapGenerator.getMapWidth();
+        this.mapHeight = mapGenerator.getMapHeight();
+        this.tiles = mapGenerator.getTiles();
+        this.wallPositions = mapGenerator.getWallPositions();
+
+        // 3. Criar Robertinhoo usando a posição do gerador
+        Vector2 worldStartPos = mapGenerator.getWorldStartPosition(mapHeight);
+        robertinhoo = new Robertinhoo(
+                this,
+                worldStartPos.x,
+                worldStartPos.y,
+                null,
+                null);
+
+        // 4. Armazenar a posição inicial em coordenadas de tile
+        this.startPosition = mapGenerator.getStartPosition();
+
+        // 5. Criar paredes físicas
+        agruparEPCriarParedes();
+
+        // 6. Adicionar entidades (que dependem de robertinhoo)
+        addRandomEntities();
+
+        // 7. Configurar listener de colisões
+        world.setContactListener(new GameContactListener(robertinhoo));
+        generateProceduralMap(mapWidth, mapHeight, mapGenerator);
+    }
+
     private void generateProceduralMap(int width, int height, MapGenerator mapGenerator) {
 
         this.mapWidth = mapGenerator.getMapWidth();
@@ -144,6 +148,7 @@ public Mapa() {
         this.tiles = mapGenerator.getTiles();
         this.startPosition = mapGenerator.getStartPosition();
         this.wallPositions = mapGenerator.getWallPositions();
+        this.rooms = mapGenerator.getRooms();
         addRandomEntities();
         agruparEPCriarParedes();
     }
@@ -159,51 +164,94 @@ public Mapa() {
         }
     }
 
-  private void addRandomEntities() {
-    Random rand = new Random();
-    List<Vector2> validTilePositions = new ArrayList<>();
+    private void addRandomEntities() {
+        Random rand = new Random();
+        List<Vector2> validTilePositions = new ArrayList<>();
 
-    // 1. Coletar todas as posições válidas (TILE) evitando a posição do jogador
-    for (int x = 0; x < mapWidth; x++) {
-        for (int y = 0; y < mapHeight; y++) {
-            if (tiles[x][y] == TILE) {
-                // Evitar posição do jogador
-                if (x != (int) startPosition.x || y != (int) startPosition.y) {
-                    validTilePositions.add(new Vector2(x, y));
+        for (int x = 0; x < mapWidth; x++) {
+            for (int y = 0; y < mapHeight; y++) {
+                if (tiles[x][y] == TILE) {
+                    if (x != (int) startPosition.x || y != (int) startPosition.y) {
+                        validTilePositions.add(new Vector2(x, y));
+                    }
                 }
             }
         }
-    }
 
-    // 2. Embaralhar as posições válidas
-    java.util.Collections.shuffle(validTilePositions, rand);
+        java.util.Collections.shuffle(validTilePositions, rand);
 
-    // 3. Adicionar itens (usando coordenadas de mundo)
-    for (int i = 0; i < 3 && i < validTilePositions.size(); i++) {
-        Vector2 tilePos = validTilePositions.get(i);
-        Vector2 worldPos = tileToWorld((int)tilePos.x, (int)tilePos.y);
-        
-        if (rand.nextBoolean()) {
-            weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
-        } else {
-            ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
+        // 3. Adicionar itens (usando coordenadas de mundo)
+        for (int i = 0; i < 3 && i < validTilePositions.size(); i++) {
+            Vector2 tilePos = validTilePositions.get(i);
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+
+            if (rand.nextBoolean()) {
+                weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
+            } else {
+                ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
+            }
+        }
+
+        int ratsAdded = 0;
+        for (int i = 0; i < validTilePositions.size() && ratsAdded < 2; i++) {
+            Vector2 tilePos = validTilePositions.get(i);
+
+            boolean inRoom = false;
+            Rectangle ratRoom = null;
+
+            for (Rectangle room : rooms) {
+
+                if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
+                        tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
+                    inRoom = true;
+                    ratRoom = room;
+                    break;
+                }
+            }
+
+            if (!inRoom) {
+                continue;
+            }
+
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+            enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
+            ratsAdded++;
+
+            Gdx.app.log("Mapa", "Rato adicionado na sala: " + ratRoom + " em posição: " + tilePos);
+        }
+        int castoresAdded = 0;
+        for (int i = 8; i < validTilePositions.size() && castoresAdded < 2; i++) {
+            Vector2 tilePos = validTilePositions.get(i);
+
+            boolean inRoom = false;
+            Rectangle castorRoom = null;
+
+            for (Rectangle room : rooms) {
+                if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
+                        tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
+                    inRoom = true;
+                    castorRoom = room;
+                    break;
+                }
+            }
+
+            if (!inRoom) {
+                continue;
+            }
+
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+            enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
+            castoresAdded++;
+
+            Gdx.app.log("Mapa", "Castor adicionado na sala: " + castorRoom + " em posição: " + tilePos);
+        }
+
+        for (int i = 8; i < 11 && i < validTilePositions.size(); i++) {
+            Vector2 tilePos = validTilePositions.get(i);
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+            destructibles.add(new Barrel(this, worldPos.x, worldPos.y, null, null));
         }
     }
-
-    // 4. Adicionar inimigos
-    for (int i = 3; i < 8 && i < validTilePositions.size(); i++) {
-        Vector2 tilePos = validTilePositions.get(i);
-        Vector2 worldPos = tileToWorld((int)tilePos.x, (int)tilePos.y);
-        enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo));
-    }
-
-    // 5. Adicionar barris
-    for (int i = 8; i < 11 && i < validTilePositions.size(); i++) {
-        Vector2 tilePos = validTilePositions.get(i);
-        Vector2 worldPos = tileToWorld((int)tilePos.x, (int)tilePos.y);
-        destructibles.add(new Barrel(this, worldPos.x, worldPos.y, null, null));
-    }
-}
 
     public List<Enemy> getEnemies() {
         return enemies;
@@ -436,5 +484,21 @@ public Mapa() {
                 }
             }
         }
+    }
+
+    public List<Rectangle> getRooms() {
+        return rooms;
+    }
+
+    public Rectangle findRoomContaining(Vector2 position) {
+        Vector2 tilePos = worldToTile(position);
+
+        for (Rectangle room : rooms) {
+            if (room.contains(tilePos)) {
+                return room;
+            }
+        }
+
+        return null;
     }
 }

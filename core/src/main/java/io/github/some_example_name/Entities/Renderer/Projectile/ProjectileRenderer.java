@@ -1,4 +1,4 @@
-package io.github.some_example_name.Entities.Renderer;
+package io.github.some_example_name.Entities.Renderer.Projectile;
 
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
+import io.github.some_example_name.Entities.Itens.Weapon.Missile;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.MapConfig.Mapa;
 
@@ -17,6 +18,7 @@ public class ProjectileRenderer {
     private final Texture projectileTexture;
     private final int tileSize;
     private final Animation<TextureRegion> destructionAnimation;
+    private MissileRenderer missileRenderer;
 
     private final Texture destructionTexture;
 
@@ -30,6 +32,7 @@ public class ProjectileRenderer {
         System.out.println(projectileTexture);
         this.shootAnimation = createAnimation(projectileTexture, 5, 0.2f);
         this.destructionAnimation = createAnimation(destructionTexture, 8, 0.1f);
+        missileRenderer = new MissileRenderer();
 
     }
 
@@ -49,6 +52,11 @@ public class ProjectileRenderer {
 
     public void render(SpriteBatch batch, float delta, float offsetX, float offsetY) {
         for (Projectile projectile : mapa.getProjectiles()) {
+
+            if (projectile instanceof Missile) {
+                missileRenderer.render(batch, (Missile) projectile, offsetX, offsetY);
+            }
+            else{
             Animation<TextureRegion> currentAnimation;
             float animationTime;
             float drawAngle;
@@ -84,6 +92,7 @@ public class ProjectileRenderer {
                 projectile.updateStateTime(delta);
             }
         }
+    }
     }
 
     public void dispose() {
