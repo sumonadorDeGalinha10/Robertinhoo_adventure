@@ -15,7 +15,7 @@ public class Camera {
 
     public Camera() {
         camera = new OrthographicCamera();
-        zoom = 0.4f; // Valor base para a viewport
+        zoom = 1f;
         camera.setToOrtho(
                 false,
                 Gdx.graphics.getWidth() * zoom / TILE_SIZE,

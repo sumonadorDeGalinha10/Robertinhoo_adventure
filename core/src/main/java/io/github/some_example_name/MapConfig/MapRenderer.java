@@ -16,20 +16,21 @@ import box2dLight.PointLight;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 
-
 import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Enemies.Castor.Castor;
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho.DeathType;
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
-import io.github.some_example_name.Entities.Renderer.ProjectileRenderer;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
 import io.github.some_example_name.Entities.Renderer.AmmoRenderer.AmmoRenderer;
 import io.github.some_example_name.Entities.Renderer.CorpsesManager.CorpseManager;
 import io.github.some_example_name.Entities.Renderer.CraftItensRenderer.CraftItensRenderer;
 import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Rat.RatRenderer;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Castor.CastorRenderer;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
 import io.github.some_example_name.Entities.Renderer.ItensRenderer.DestructibleRenderer;
+import io.github.some_example_name.Entities.Renderer.Projectile.ProjectileRenderer;
 import io.github.some_example_name.Entities.Renderer.RenderInventory.RenderInventory;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowRenderer;
@@ -49,6 +50,7 @@ public class MapRenderer {
     private ProjectileRenderer projectileRenderer;
     private PlayerRenderer playerRenderer;
     private RatRenderer ratRenderer;
+    private CastorRenderer castorRenderer;
     private Camera cameraController;
     private AmmoRenderer ammoRenderer;
     public RenderInventory renderInventory;
@@ -92,12 +94,14 @@ public class MapRenderer {
         this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
         this.ammoRenderer = new AmmoRenderer(TILE_SIZE);
         ratRenderer = new RatRenderer();
+        castorRenderer = new CastorRenderer();
 
         this.renderInventory = new RenderInventory(
                 mapa.robertinhoo.getInventory(),
                 64,
                 new Vector2(175, 100), mapa.robertinhoo.getInventoryController());
-        mapa.robertinhoo.getInventoryController().setContextMenu(renderInventory.getContextMenu());;
+        mapa.robertinhoo.getInventoryController().setContextMenu(renderInventory.getContextMenu());
+        ;
 
         mapa.robertinhoo.setCamera(cameraController.getCamera());
         this.destructibleRenderer = new DestructibleRenderer(TILE_SIZE);
@@ -143,7 +147,6 @@ public class MapRenderer {
             }
         }
 
-
         // 1. RENDERIZAÇÃO DO CHÃO (TILES)
         spriteBatch.begin();
         tileRenderer.render(spriteBatch, offsetX, offsetY, delta);
@@ -151,6 +154,7 @@ public class MapRenderer {
 
         // 2. RENDERIZAÇÃO DAS SOMBRAS
         shadowRenderer.renderShadows(shadowEntities, offsetX, offsetY, TILE_SIZE);
+
 
         // 3. RENDERIZAÇÃO DOS OBJETOS E ENTIDADES
         spriteBatch.begin();
@@ -198,10 +202,13 @@ public class MapRenderer {
                         ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
                     }
                 }
+            if (enemy instanceof Castor) {
+                Castor castor = (Castor) enemy;
+                castor.update(delta);
+                castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
+        }
+
             }
-
-     
-
             // Renderiza armas no chão
             for (Weapon weapon : mapa.getWeapons()) {
                 weapon.update(delta);
@@ -245,7 +252,7 @@ public class MapRenderer {
         if (player.getInventory().getEquippedWeapon() != null) {
             player.getWeaponSystem().renderMiraArma(shapeRenderer);
         }
-                // --- RENDERIZAÇÃO DE LUZES ---
+        // --- RENDERIZAÇÃO DE LUZES ---
         mapa.getRayHandler().setCombinedMatrix(cameraController.getCamera());
         mapa.getRayHandler().updateAndRender();
 
@@ -284,7 +291,8 @@ public class MapRenderer {
                     player.getInventoryController().getAvailableRecipes(),
                     player.getInventoryController().getSelectedRecipe());
             // renderInventory.debugRenderInventoryBounds();
-        } 
+        }
+
     }
 
     public void calculateOffsets() {
@@ -361,6 +369,7 @@ public class MapRenderer {
         playerRenderer.dispose();
         uiStage.dispose();
         uiSkin.dispose();
+        castorRenderer.dispose();
 
     }
 }

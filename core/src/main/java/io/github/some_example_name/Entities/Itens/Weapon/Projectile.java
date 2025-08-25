@@ -16,9 +16,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 
 public class Projectile {
-    private Body body;
+    public Body body;
     private float damage;
-    private float lifespan = 3f;
+    public float lifespan = 3f;
     private float timeAlive = 0f;
     private float stateTime = 0f;
     private float angle;

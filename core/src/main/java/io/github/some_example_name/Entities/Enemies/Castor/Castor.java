@@ -1,5 +1,6 @@
 package io.github.some_example_name.Entities.Enemies.Castor;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ai.steer.Steerable;
 import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.graphics.Color;
@@ -14,10 +15,12 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import io.github.some_example_name.Entities.Enemies.Box2dLocation;
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
 import io.github.some_example_name.MapConfig.Mapa;
+import io.github.some_example_name.Entities.Itens.Weapon.Missile;
 
 
 
@@ -40,6 +43,13 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
     private float maxAngularSpeed = 5f;
     private float maxAngularAcceleration = 10f;
     private float zeroLinearSpeedThreshold = 0.01f;
+    private CastorIA ai;
+
+    private float shootCooldown = 0f;
+    private static final float SHOOT_COOLDOWN_TIME = 4f;
+    private static final float PROJECTILE_SPEED = 12f;
+    private static final float PROJECTILE_DAMAGE = 25f;
+
 
 
     public Castor(Mapa mapa, float x, float y, Robertinhoo target) {
@@ -47,6 +57,8 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
         this.mapa = mapa;
         this.target = target;
         this.body = createBody(x, y);
+        this.damage = 15f;
+        this.ai = new CastorIA(this, target, mapa.getPathfindingSystem());
     
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
@@ -91,6 +103,32 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
         return body;
     }
 
+public void shootAtPlayer() {
+    if (shootCooldown <= 0 && target != null) {
+        Vector2 direction = target.getPosition().cpy().sub(body.getPosition()).nor();
+        
+     
+        float offsetDistance = 1.2f;
+        Vector2 launchPosition = body.getPosition().cpy().add(direction.scl(offsetDistance));
+        
+        Missile missile = new Missile(
+            mapa, 
+            launchPosition,
+            direction
+        );
+        
+        mapa.addProjectile(missile);
+        shootCooldown = SHOOT_COOLDOWN_TIME;
+        
+        Gdx.app.log("Castor", "Lançando míssil da posição: " + launchPosition);
+    }
+}
+
+    public boolean canShoot() {
+        return shootCooldown <= 0;
+    }
+    
+
     @Override
     public Body getBody() {
         return this.body;
@@ -100,9 +138,21 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
     public float getAttackDamage() {
         return damage;
     }
+    @Override
     public void update(float deltaTime) {
 
+        if (shootCooldown > 0) {
+            shootCooldown -= deltaTime;
+            Gdx.app.log("Castor-Cooldown", "Cooldown: " + shootCooldown);
+        }
+        
+        // Atualiza a IA
+        ai.update(deltaTime, body);
+        
+        Gdx.app.log("Castor-Update", "Posição: " + body.getPosition() + 
+                   ", Cooldown: " + shootCooldown);
     }
+    
     public TextureRegion getCurrentFrame(float deltaTime) {
         animationTime += deltaTime;
         return ratAnimation.getKeyFrame(animationTime);
