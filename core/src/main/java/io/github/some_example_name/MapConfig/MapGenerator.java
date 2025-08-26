@@ -6,9 +6,12 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
+import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Collections;
 
 public class MapGenerator {
     public static final int MAX_SALA_WIDTH = 15;
@@ -34,9 +37,9 @@ public MapGenerator(int width, int height) {
     generateRandomMap();
     Gdx.app.log("MapGenerator", "Mapa gerado com sucesso.");
 }
-
-  private void generateRandomMap() {
+private void generateRandomMap() {
     Gdx.app.log("MapGenerator", "Iniciando geração aleatória do mapa...");
+
     // Inicializa tudo como parede
     for (int x = 0; x < mapWidth; x++) {
         for (int y = 0; y < mapHeight; y++) {
@@ -47,56 +50,64 @@ public MapGenerator(int width, int height) {
 
     Random rand = new Random();
 
-    // Gerar primeira sala
-    Gdx.app.log("MapGenerator", "Gerando primeira sala...");
-    Rectangle sala1 = generateRandomRoom(rand);
-    drawRoom(sala1);
-    Gdx.app.log("MapGenerator", "Primeira sala desenhada: " + sala1);
-    rooms.add(sala1);
+    int numSalas = 8; // <-- define quantas salas você quer
+    rooms.clear();
 
-    // Gerar segunda sala (garantir distância mínima)
-    Gdx.app.log("MapGenerator", "Gerando segunda sala...");
-    Rectangle sala2;
-    int attempts = 0;
-    do {
-        sala2 = generateRandomRoom(rand);
-        attempts++;
-        if (attempts > 30) {
-            Gdx.app.error("MapGenerator", "Falha ao gerar segunda sala após 100 tentativas.");
-            break;
-        }
-    } while (Math.abs(sala1.x - sala2.x) < sala1.width + sala2.width ||
-            Math.abs(sala1.y - sala2.y) < sala1.height + sala2.height);
+    for (int i = 0; i < numSalas; i++) {
+        Rectangle novaSala;
+        int attempts = 0;
+        boolean valido;
 
-    Gdx.app.log("MapGenerator", "Segunda sala gerada após " + attempts + " tentativas: " + sala2);
-    drawRoom(sala2);
-    rooms.add(sala2);
-    Gdx.app.log("MapGenerator", "Segunda sala desenhada.");
-
-    // Conectar salas com túneis
-    Gdx.app.log("MapGenerator", "Conectando salas...");
-    connectRooms(sala1, sala2, rand);
-    Gdx.app.log("MapGenerator", "Salas conectadas.");
-
-    // Definir ponto de início na primeira sala
-      int startX, startY;
-        int startAttempts = 0;
         do {
-            startX = (int) sala1.x + 1 + rand.nextInt((int) sala1.width - 2);
-            startY = (int) sala1.y + 1 + rand.nextInt((int) sala1.height - 2);
-            startAttempts++;
-            // ... [fallback se necessário]
-        } while (tiles[startX][startY] != Mapa.TILE);
-        
-        startPosition = new Vector2(startX, startY);
+            novaSala = generateRandomRoom(rand);
+            attempts++;
+            valido = true;
 
-    Gdx.app.log("MapGenerator", "Posição inicial gerada após " + startAttempts + " tentativas: (" + startX + ", " + startY + ")");
+            // verificar sobreposição com outras salas
+            for (Rectangle r : rooms) {
+                if (novaSala.overlaps(r)) {
+                    valido = false;
+                    break;
+                }
+            }
+
+            if (attempts > 50) {
+                Gdx.app.error("MapGenerator", "Não conseguiu posicionar sala " + i);
+                valido = false;
+                break;
+            }
+        } while (!valido);
+
+        if (valido) {
+            drawRoom(novaSala);
+            rooms.add(novaSala);
+            Gdx.app.log("MapGenerator", "Sala " + i + " criada: " + novaSala);
+        }
+    }
+
+    // conectar salas em sequência
+    for (int i = 0; i < rooms.size() - 1; i++) {
+        connectRooms(rooms.get(i), rooms.get(i + 1), rand);
+    }
+
+    // Definir ponto de início (primeira sala)
+    Rectangle salaInicial = rooms.get(0);
+    int startX, startY;
+    int startAttempts = 0;
+    do {
+        startX = (int) salaInicial.x + 1 + rand.nextInt((int) salaInicial.width - 2);
+        startY = (int) salaInicial.y + 1 + rand.nextInt((int) salaInicial.height - 2);
+        startAttempts++;
+    } while (tiles[startX][startY] != Mapa.TILE);
+
     startPosition = new Vector2(startX, startY);
-    
-    // Coletar posições das paredes para física
+    Gdx.app.log("MapGenerator", "Posição inicial: (" + startX + ", " + startY + ")");
+
+    // Coletar paredes
     collectWallPositions();
-    Gdx.app.log("MapGenerator", "Posições das paredes coletadas. Total: " + wallPositions.size());
+    Gdx.app.log("MapGenerator", "Paredes coletadas. Total: " + wallPositions.size());
 }
+
 
     private Rectangle generateRandomRoom(Random rand) {
         int width = rand.nextInt(MAX_SALA_WIDTH - MIN_SALA_WIDTH) + MIN_SALA_WIDTH;
@@ -185,6 +196,86 @@ public MapGenerator(int width, int height) {
             startPosition.x + 0.5f,
             mapHeight - 1 - startPosition.y + 0.5f
         );
+    }
+
+public List<Vector2> generateFixedPatrolRoute(PathfindingSystem pathfindingSystem) {
+    List<Vector2> route = new ArrayList<>();
+    
+    if (rooms.isEmpty()) {
+        return route;
+    }
+    
+    // Ordenar salas para criar uma rota lógica (usando centro das salas)
+    List<Vector2> roomCenters = new ArrayList<>();
+    for (Rectangle room : rooms) {
+        Vector2 center = new Vector2(room.x + room.width / 2, room.y + room.height / 2);
+        roomCenters.add(center);
+    }
+    
+    // Ordenar salas pela proximidade (algoritmo do vizinho mais próximo)
+    List<Vector2> sortedCenters = new ArrayList<>();
+    Vector2 current = roomCenters.remove(0);
+    sortedCenters.add(current);
+    
+    while (!roomCenters.isEmpty()) {
+        Vector2 nearest = null;
+        float nearestDist = Float.MAX_VALUE;
+        
+        for (Vector2 center : roomCenters) {
+            float dist = current.dst2(center);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = center;
+            }
+        }
+        
+        if (nearest != null) {
+            roomCenters.remove(nearest);
+            sortedCenters.add(nearest);
+            current = nearest;
+        }
+    }
+    
+    // Converter para coordenadas mundiais e conectar com pathfinding
+    List<Vector2> worldCenters = new ArrayList<>();
+    for (Vector2 center : sortedCenters) {
+        worldCenters.add(tileToWorld((int)center.x, (int)center.y));
+    }
+    
+    // Conectar todos os pontos em um loop contínuo
+    for (int i = 0; i < worldCenters.size(); i++) {
+        Vector2 start = worldCenters.get(i);
+        Vector2 end = worldCenters.get((i + 1) % worldCenters.size());
+        
+        List<Vector2> pathSegment = pathfindingSystem.findPath(start, end);
+        if (pathSegment != null && !pathSegment.isEmpty()) {
+            // Suavizar transições entre segmentos
+            if (!route.isEmpty()) {
+                Vector2 lastPoint = route.get(route.size() - 1);
+                if (lastPoint.dst2(pathSegment.get(0)) > 0.1f) {
+                    route.addAll(pathfindingSystem.findPath(lastPoint, pathSegment.get(0)));
+                }
+            }
+            route.addAll(pathSegment);
+        }
+    }
+    
+    // Fechar o loop conectando último ponto ao primeiro
+    if (!route.isEmpty()) {
+        Vector2 lastPoint = route.get(route.size() - 1);
+        Vector2 firstPoint = route.get(0);
+        if (lastPoint.dst2(firstPoint) > 0.1f) {
+            route.addAll(pathfindingSystem.findPath(lastPoint, firstPoint));
+        }
+    }
+    
+    return route;
+}
+public Vector2 tileToWorld(int tileX, int tileY) {
+    return new Vector2(tileX + 0.5f, tileY + 0.5f);
+}
+    public List<Vector2> getFixedPatrolRoute(PathfindingSystem pathfindingSystem) {
+        return generateFixedPatrolRoute(pathfindingSystem );
     }
 
     public ArrayList<Vector2> getWallPositions() {

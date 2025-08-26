@@ -6,6 +6,7 @@ import com.badlogic.gdx.ai.utils.Location;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -42,8 +43,8 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
     private float maxLinearAcceleration = 5f;
     private float maxAngularSpeed = 5f;
     private float maxAngularAcceleration = 10f;
-    private float zeroLinearSpeedThreshold = 0.01f;
-    private CastorIA ai;
+    private float zeroLinearSpeedThreshold = 1f;
+    public CastorIA ai;
 
     private float shootCooldown = 0f;
     private static final float SHOOT_COOLDOWN_TIME = 4f;
@@ -58,7 +59,7 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
         this.target = target;
         this.body = createBody(x, y);
         this.damage = 15f;
-        this.ai = new CastorIA(this, target, mapa.getPathfindingSystem());
+        this.ai = new CastorIA(this, target, mapa.getPathfindingSystem(),mapa);
     
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
@@ -71,37 +72,37 @@ public class Castor extends Enemy  implements ShadowEntity,Steerable<Vector2> {
     }
 
 
-        private Body createBody(float x, float y) {
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(x + 0.5f, y + 0.5f);
-        bodyDef.fixedRotation = true;
+// No método createBody do Castor.java
+private Body createBody(float x, float y) {
+    BodyDef bodyDef = new BodyDef();
+    bodyDef.type = BodyDef.BodyType.DynamicBody;
+    bodyDef.position.set(x + 0.5f, y + 0.5f);
+    bodyDef.fixedRotation = true;
 
-        Body body = mapa.world.createBody(bodyDef);
+    Body body = mapa.world.createBody(bodyDef);
 
-        // calcula meados baseado no sprite real (12px) e TILE_SIZE (16px)
-        float halfWidth = (6f / 3f) / 12; // 6 / 16 = 0.375
-        float halfHeight = (6f / 3f) / 12; // 6 / 16 = 0.375
+    float halfWidth = (6f / 3f) / 12;
+    float halfHeight = (6f / 3f) / 12;
 
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox(halfWidth, halfHeight);
+    PolygonShape shape = new PolygonShape();
+    shape.setAsBox(halfWidth, halfHeight);
 
-        FixtureDef fd = new FixtureDef();
-        fd.shape = shape;
-        fd.density = 2f;
-        fd.friction = 0f;
-        fd.filter.categoryBits = Constants.BIT_ENEMY;
-        
+    FixtureDef fd = new FixtureDef();
+    fd.shape = shape;
+       fd.density = 1.2f;
+    fd.friction = 0.3f;
+    fd.filter.categoryBits = Constants.BIT_ENEMY;
+    fd.filter.maskBits = Constants.BIT_GROUND | Constants.BIT_WALL | Constants.BIT_PLAYER;
 
-        body.createFixture(fd);
-        shape.dispose();
+    body.createFixture(fd);
+    shape.dispose();
 
-        body.setLinearDamping(2f);
-        body.setAngularDamping(2f);
-        body.setUserData(this);
+    body.setLinearDamping(1f);
+    body.setAngularDamping(1f);
+    body.setUserData(this);
 
-        return body;
-    }
+    return body;
+}
 
 public void shootAtPlayer() {
     if (shootCooldown <= 0 && target != null) {
@@ -143,14 +144,11 @@ public void shootAtPlayer() {
 
         if (shootCooldown > 0) {
             shootCooldown -= deltaTime;
-            Gdx.app.log("Castor-Cooldown", "Cooldown: " + shootCooldown);
+      
         }
         
         // Atualiza a IA
         ai.update(deltaTime, body);
-        
-        Gdx.app.log("Castor-Update", "Posição: " + body.getPosition() + 
-                   ", Cooldown: " + shootCooldown);
     }
     
     public TextureRegion getCurrentFrame(float deltaTime) {
@@ -162,6 +160,13 @@ public void shootAtPlayer() {
     public ShadowComponent getShadowComponent() {
         return shadowComponent;
     }
+
+
+    public void debugRender(ShapeRenderer shapeRenderer) {
+    if (ai != null) {
+        ai.debugRender(shapeRenderer);
+    }
+}
 
 
     /* ============================

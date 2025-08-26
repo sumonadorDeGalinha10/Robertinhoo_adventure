@@ -21,7 +21,6 @@ public class RatAI {
     private final float detectionRange;
     private final float attackRange;
     private final Rectangle homeRoom;
-  
 
     public RatAI(Ratinho owner, Robertinhoo target, PathfindingSystem pathfindingSystem, Mapa mapa, Rectangle homeRoom) {
         this.target = target;

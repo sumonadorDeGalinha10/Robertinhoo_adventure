@@ -69,7 +69,7 @@ public class MissileRenderer {
                 frame,
                 x, y,
                 8f, 8f,    // origem (centro para rotação)
-                16f, 16f,  // largura e altura desejadas
+                9f, 9f,  // largura e altura desejadas
                 1f, 1f,    // escala X e Y
                 missile.getAngle() // rotação em graus
             );
