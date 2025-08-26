@@ -155,7 +155,6 @@ public class MapRenderer {
         // 2. RENDERIZAÇÃO DAS SOMBRAS
         shadowRenderer.renderShadows(shadowEntities, offsetX, offsetY, TILE_SIZE);
 
-
         // 3. RENDERIZAÇÃO DOS OBJETOS E ENTIDADES
         spriteBatch.begin();
         {
@@ -202,11 +201,11 @@ public class MapRenderer {
                         ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
                     }
                 }
-            if (enemy instanceof Castor) {
-                Castor castor = (Castor) enemy;
-                castor.update(delta);
-                castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
-        }
+                if (enemy instanceof Castor) {
+                    Castor castor = (Castor) enemy;
+                    castor.update(delta);
+                    castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
+                }
 
             }
             // Renderiza armas no chão
@@ -226,6 +225,16 @@ public class MapRenderer {
             craftItensRenderer.render(spriteBatch, mapa.getCraftItems(), offsetX, offsetY);
         }
         spriteBatch.end();
+ shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+         for (Enemy enemy : mapa.getEnemies()) 
+          if (enemy instanceof Castor) {
+                    Castor castor = (Castor) enemy;
+                  castor.debugRender(shapeRenderer);
+                  castor.ai.debugRenderVision(shapeRenderer);
+                  
+                }
+        shapeRenderer.end();
 
         // --- DEBUG RENDER ---
         // debugRender(offsetX, offsetY);

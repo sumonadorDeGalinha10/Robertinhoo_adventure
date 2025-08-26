@@ -18,7 +18,7 @@ public class PlayerController {
     private float meleeCooldown = 0;
 
     // Constantes
-    public static final float ACCELERATION = 1.5f;
+    public static final float ACCELERATION = 5f;
     private boolean canMeleeAttack = true;
     public static final float MELEE_COOLDOWN = 0.5f;
     public static final float MELEE_STAMINA_COST = 30f;

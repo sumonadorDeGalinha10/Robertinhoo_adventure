@@ -65,6 +65,7 @@ public class Mapa {
 
     public World world;
     public WallOtimizations agruparParedes;
+    public MapGenerator mapGenerator;
 
     public static final short CATEGORY_PROJECTILE = 0x0002;
     public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE;
@@ -108,7 +109,7 @@ public class Mapa {
         this.pathfindingSystem = new PathfindingSystem(this);
 
         // 1. Criar gerador de mapa
-        MapGenerator mapGenerator = new MapGenerator(50, 50);
+        this.mapGenerator = new MapGenerator(50, 50);
 
         initializeLights();
 
@@ -501,4 +502,8 @@ public class Mapa {
 
         return null;
     }
+
+    public MapGenerator getMapGenerator() {
+        return mapGenerator;
+    }   
 }
