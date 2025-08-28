@@ -15,7 +15,7 @@ public class Camera {
 
     public Camera() {
         camera = new OrthographicCamera();
-        zoom = 5f;
+        zoom = 1f;
         camera.setToOrtho(
                 false,
                 Gdx.graphics.getWidth() * zoom / TILE_SIZE,
@@ -25,11 +25,9 @@ public class Camera {
     public void centerOnPlayer(Robertinhoo player, float offsetX, float offsetY) {
         Vector2 playerPos = player.body.getPosition();
 
-        // Converter posição do corpo para coordenadas de mundo
         float playerWorldX = playerPos.x * MapRenderer.TILE_SIZE + offsetX;
         float playerWorldY = playerPos.y * MapRenderer.TILE_SIZE + offsetY;
 
-        // Centralizar a câmera
         camera.position.set(
                 playerWorldX,
                 playerWorldY,
@@ -43,11 +41,9 @@ public class Camera {
         if (width <= 0 || height <= 0)
             return;
 
-        // Aplicar zoom mantendo a proporção
         camera.viewportWidth = (width * zoom) / TILE_SIZE;
         camera.viewportHeight = (height * zoom) / TILE_SIZE;
 
-        // Centralizar a câmera
         camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
         camera.update();
     }

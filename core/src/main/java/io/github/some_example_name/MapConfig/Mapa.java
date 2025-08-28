@@ -221,7 +221,7 @@ public class Mapa {
             Gdx.app.log("Mapa", "Rato adicionado na sala: " + ratRoom + " em posição: " + tilePos);
         }
         int castoresAdded = 0;
-        for (int i = 8; i < validTilePositions.size() && castoresAdded < 2; i++) {
+        for (int i = 8; i < validTilePositions.size() && castoresAdded < 1; i++) {
             Vector2 tilePos = validTilePositions.get(i);
 
             boolean inRoom = false;

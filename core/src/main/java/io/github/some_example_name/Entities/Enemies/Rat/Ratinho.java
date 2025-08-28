@@ -94,12 +94,12 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
 
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
-                5, // Largura proporcional ao tamanho do rato
-                2, // Altura (ligeiramente mais alta que o barril)
+                5,
+                2,
                 -0.1f,
 
-                0.7f, // Opacidade mais suave
-                new Color(0.05f, 0.05f, 0.05f, 1f) // Cinza médio
+                0.7f,
+                new Color(0.05f, 0.05f, 0.05f, 1f)
         );
     }
 
@@ -111,9 +111,8 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
 
         Body body = mapa.world.createBody(bodyDef);
 
-        // calcula meados baseado no sprite real (12px) e TILE_SIZE (16px)
-        float halfWidth = (6f / 3f) / 12; // 6 / 16 = 0.375
-        float halfHeight = (6f / 3f) / 12; // 6 / 16 = 0.375
+        float halfWidth = (6f / 3f) / 12;
+        float halfHeight = (6f / 3f) / 12;
 
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(halfWidth, halfHeight);
@@ -138,8 +137,6 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     public Body getBody() {
         return this.body;
     }
-    
-
 
     public float getAnimationTime() {
         return animationTime;
@@ -178,7 +175,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
             if (dashTimer <= 0) {
                 state = State.IDLE;
                 dashCooldown = DASH_COOLDOWN;
-                body.setLinearVelocity(body.getLinearVelocity().scl(0.1f)); // Reduzido de 0.2 para 0.1
+                body.setLinearVelocity(body.getLinearVelocity().scl(0.1f));
             }
         }
 
@@ -196,12 +193,8 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
                 updateMovementState();
             }
 
-            
-       
             ai.update(deltaTime, body, myPos);
             updateMovementState();
-            
-            // Só executa dash se estiver perto o suficiente
             if (dashCooldown <= 0 && distance <= ATTACK_RANGE) {
                 executeDashAttack(playerPos);
             }
@@ -241,7 +234,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
 
     @Override
     public float getAttackDamage() {
-        return 10f; // Dano base do ratinho
+        return 10f;
     }
 
     public float getDamageAnimationTime() {

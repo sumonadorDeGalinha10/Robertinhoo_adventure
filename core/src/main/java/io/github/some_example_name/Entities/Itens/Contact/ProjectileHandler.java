@@ -53,7 +53,6 @@ public class ProjectileHandler implements ContactHandler {
              if (enemy instanceof Ratinho) {
             ((Ratinho) enemy).die(Ratinho.DeathType.PROJECTILE);
         }
-        // Marca para destruição física posterioraa
         enemy.isToBeDestroyed();
     }
         
