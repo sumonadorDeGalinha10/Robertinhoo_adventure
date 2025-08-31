@@ -33,7 +33,6 @@ public class PlayerController {
     public void update(float deltaTime) {
         dashSystem.update(deltaTime);
 
-        // Atualizar cooldown do ataque corpo a corpo
         if (meleeCooldown > 0) {
             meleeCooldown -= deltaTime;
             canMeleeAttack = false;

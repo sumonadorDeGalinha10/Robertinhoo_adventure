@@ -1,5 +1,6 @@
 package io.github.some_example_name.MapConfig;
 
+import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +41,7 @@ import io.github.some_example_name.Camera.Camera;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import io.github.some_example_name.Entities.Enemies.StateEnemy.StateEnemy;
 
 public class MapRenderer {
     private RayHandler rayHandler;
@@ -57,6 +59,7 @@ public class MapRenderer {
     private ShadowRenderer shadowRenderer;
     private CraftItensRenderer craftItensRenderer;
     private CorpseManager corpseManager;
+    private StateEnemy stateEnemy;
 
     private DestructibleRenderer destructibleRenderer;
     // private MeleeAttackRenderer meleeAttackRenderer;
@@ -205,6 +208,11 @@ public class MapRenderer {
                     Castor castor = (Castor) enemy;
                     castor.update(delta);
                     castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
+                    Vector2 worldPos = castor.getBody().getPosition();
+                    float screenX = offsetX + worldPos.x * TILE_SIZE;
+                    float screenY = offsetY + worldPos.y * TILE_SIZE;
+                    castor.ai.getStateEnemy().updatePosition(new Vector2(screenX, screenY));
+                    castor.ai.getStateEnemy().render(spriteBatch);
                 }
 
             }
@@ -225,15 +233,15 @@ public class MapRenderer {
             craftItensRenderer.render(spriteBatch, mapa.getCraftItems(), offsetX, offsetY);
         }
         spriteBatch.end();
- shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-         for (Enemy enemy : mapa.getEnemies()) 
-          if (enemy instanceof Castor) {
-                    Castor castor = (Castor) enemy;
-                  castor.debugRender(shapeRenderer);
-                  castor.ai.debugRenderVision(shapeRenderer);
-                  
-                }
+        for (Enemy enemy : mapa.getEnemies())
+            if (enemy instanceof Castor) {
+                Castor castor = (Castor) enemy;
+                castor.debugRender(shapeRenderer);
+                castor.ai.debugRenderVision(shapeRenderer);
+
+            }
         shapeRenderer.end();
 
         // --- DEBUG RENDER ---
@@ -379,6 +387,13 @@ public class MapRenderer {
         uiStage.dispose();
         uiSkin.dispose();
         castorRenderer.dispose();
+        ratRenderer.dispose();
+        for (Enemy enemy : mapa.getEnemies()) {
+        if (enemy instanceof Castor) {
+            ((Castor) enemy).ai.getStateEnemy().dispose();
+        }
+    }
+        
 
     }
 }
