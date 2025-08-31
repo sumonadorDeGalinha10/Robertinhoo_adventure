@@ -7,6 +7,7 @@ import io.github.some_example_name.Entities.Enemies.IA.ChaseSystem;
 import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
 import io.github.some_example_name.Entities.Enemies.IA.PatrolSystem;
 import io.github.some_example_name.Entities.Enemies.IA.ShootSystem;
+import io.github.some_example_name.Entities.Enemies.StateEnemy.StateEnemy;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.MapConfig.Mapa;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -27,6 +28,7 @@ public class CastorIA {
     private List<Vector2> chasePath = new ArrayList<>();
     private final ChaseSystem chaseSystem;
     private final ShootSystem shootSystem;
+    private StateEnemy stateEnemy;
     private int chasePathIndex = 0;
 
     private enum State {
@@ -67,9 +69,24 @@ public class CastorIA {
         this.patrolSystem = new PatrolSystem(mapa, castor.getBody(), pathfindingSystem);
         this.chaseSystem = new ChaseSystem(pathfindingSystem, mapa);
         this.shootSystem = new ShootSystem(castor, pathfindingSystem, mapa);
+        this.stateEnemy = new StateEnemy();
     }
 
     public void update(float deltaTime, Body body) {
+
+        stateEnemy.update(deltaTime);
+
+        switch (currentState) {
+        case PATROL:
+            stateEnemy.setState(StateEnemy.StateIcon.PATROL);
+            break;
+        case CHASE:
+            stateEnemy.setState(StateEnemy.StateIcon.CHASE);
+            break;
+        case SHOOTING:
+            stateEnemy.setState(StateEnemy.StateIcon.SHOOTING);
+            break;
+    }
         // debugMovementInfo();
         Vector2 currentPosition = body.getPosition();
         Vector2 targetPosition = target.getPosition();
@@ -265,5 +282,8 @@ public class CastorIA {
         }
 
         shapeRenderer.line(currentPos.x, currentPos.y, targetPos.x, targetPos.y);
+    }
+    public StateEnemy getStateEnemy() {
+        return stateEnemy;
     }
 }

@@ -31,7 +31,7 @@ public class Grid {
 
 public List<Node> getNeighbors(Node node) {
     List<Node> neigh = new ArrayList<>();
-    // 8 deltas: 4 cardeais + 4 diagonais
+
     final int[][] deltas = {
         { 1,  0}, {-1,  0}, { 0,  1}, { 0, -1},
         { 1,  1}, { 1, -1}, {-1,  1}, {-1, -1}
