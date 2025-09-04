@@ -8,6 +8,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import box2dLight.PointLight;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.MapConfig.Mapa;
 
 import java.util.List;
@@ -60,7 +61,7 @@ public class Projectile {
         this.mapa = mapa;
         createBody(mapa, position, velocity);
         mapa.addProjectile(this);
-        
+
     }
 
     public void updateStateTime(float delta) {
@@ -83,21 +84,17 @@ public class Projectile {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
         fixtureDef.density = 0.5f;
-           fixtureDef.isSensor = true; 
-
-        fixtureDef.filter.categoryBits = Mapa.CATEGORY_PROJECTILE;
-        fixtureDef.filter.maskBits = Mapa.MASK_PROJECTILE;
+        fixtureDef.isSensor = true;
+        fixtureDef.filter.categoryBits = Constants.BIT_PROJECTILE;
+        fixtureDef.filter.maskBits = Constants.BIT_PLAYER | Constants.BIT_WALL |
+                Constants.BIT_ENEMY | Constants.BIT_OBJECT;
 
         body.createFixture(fixtureDef);
         shape.dispose();
         body.setLinearVelocity(velocity);
         body.setUserData(this);
-  
-   
-     
-    
-}
-    
+
+    }
 
     public void update(float delta) {
         if (light != null && body != null) {

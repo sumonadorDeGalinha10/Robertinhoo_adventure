@@ -52,8 +52,4 @@ public abstract class Enemy {
   public abstract Body getBody(); 
 
    public abstract float getAttackDamage();
-
-
-
-
 }

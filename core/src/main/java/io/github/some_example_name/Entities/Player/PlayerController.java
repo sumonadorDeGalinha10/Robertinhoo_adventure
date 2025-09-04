@@ -14,11 +14,11 @@ public class PlayerController {
     private boolean isMoving = false;
 
     private final DashSystem dashSystem;
-    private InventoryController inventoryController;
+
     private float meleeCooldown = 0;
 
     // Constantes
-    public static final float ACCELERATION = 5f;
+    public static final float ACCELERATION = 2.5f;
     private boolean canMeleeAttack = true;
     public static final float MELEE_COOLDOWN = 0.5f;
     public static final float MELEE_STAMINA_COST = 30f;
@@ -26,7 +26,7 @@ public class PlayerController {
 
     public PlayerController(Robertinhoo player) {
         this.player = player;
-        this.inventoryController = player.inventoryController;
+      
         this.dashSystem = new DashSystem(player);
     }
 
