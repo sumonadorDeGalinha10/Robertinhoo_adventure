@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.MapConfig.Mapa;
 
 public class Missile extends Projectile {
-    private static final float MISSILE_SPEED = 8f;
+    private static final float MISSILE_SPEED = 5f;
     private static final float MISSILE_DAMAGE = 25f;
     private static final float MISSILE_LIFESPAN = 4f;
     public Missile(Mapa mapa, Vector2 position, Vector2 direction) {

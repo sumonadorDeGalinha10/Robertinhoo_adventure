@@ -67,9 +67,6 @@ public class Mapa {
     public WallOtimizations agruparParedes;
     public MapGenerator mapGenerator;
 
-    public static final short CATEGORY_PROJECTILE = 0x0002;
-    public static final short MASK_PROJECTILE = ~CATEGORY_PROJECTILE;
-
     static int TILE = 0x000000; // #000000 (tiles normais)
     static int START = 0xFF0000; // #FF0000 (ponto de início)
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)

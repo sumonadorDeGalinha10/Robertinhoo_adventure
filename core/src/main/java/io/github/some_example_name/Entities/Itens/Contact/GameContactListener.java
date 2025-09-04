@@ -15,7 +15,7 @@ public class GameContactListener implements ContactListener {
     
     public GameContactListener(Robertinhoo player) {
         handlers.add(new PlayerItemHandler(player));
-        handlers.add(new ProjectileHandler());
+        handlers.add(new ProjectileHandler(player));
         handlers.add(new MeleeAttackHandler());
         handlers.add(new EnemyHandler(player));
         handlers.add(new BarrelHandler());

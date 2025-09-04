@@ -217,7 +217,7 @@ public class ShootSystem {
 
     private void applySteeringForce(Body body, Vector2 desiredVelocity) {
         Vector2 currentVelocity = body.getLinearVelocity();
-        Vector2 steering = desiredVelocity.sub(currentVelocity).scl(body.getMass() * 8f);
+         Vector2 steering = desiredVelocity.cpy().sub(currentVelocity).scl(body.getMass() * 8f);
         body.applyForceToCenter(steering, true);
     }
 

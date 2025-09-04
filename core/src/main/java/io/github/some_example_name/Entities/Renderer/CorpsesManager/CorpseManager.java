@@ -31,7 +31,7 @@ public class CorpseManager {
     public void addCorpse(Ratinho rat, RatRenderer ratRenderer, 
                           TextureRegion corpseTexture) {
         Vector2 pos = rat.getPosition().cpy();
-        Vector2 renderOffset = ratRenderer.calculateRenderOffset(rat); // Novo método
+        Vector2 renderOffset = ratRenderer.calculateRenderOffset(rat);
         float width = ratRenderer.getRatRenderWidth();
         float height = ratRenderer.getRatRenderHeight();
         

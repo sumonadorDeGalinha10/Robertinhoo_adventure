@@ -89,10 +89,10 @@ private Body createBody(float x, float y) {
 
     FixtureDef fd = new FixtureDef();
     fd.shape = shape;
-       fd.density = 1.2f;
+    fd.density = 1.2f;
     fd.friction = 0.3f;
     fd.filter.categoryBits = Constants.BIT_ENEMY;
-    fd.filter.maskBits = Constants.BIT_GROUND | Constants.BIT_WALL | Constants.BIT_PLAYER;
+    fd.filter.maskBits = Constants.BIT_GROUND | Constants.BIT_WALL | Constants.BIT_PLAYER |Constants.BIT_OBJECT;
 
     body.createFixture(fd);
     shape.dispose();
