@@ -17,28 +17,28 @@ public class EnemyHandler implements ContactHandler {
     public void handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
-        
+
         if (dataA instanceof Enemy && "PLAYER".equals(dataB)) {
             handleEnemyAttack((Enemy) dataA);
         } else if (dataB instanceof Enemy && "PLAYER".equals(dataA)) {
             handleEnemyAttack((Enemy) dataB);
         }
-        
+
         if (dataA instanceof Enemy && dataB instanceof Enemy) {
             handleEnemyCollision((Enemy) dataA, (Enemy) dataB);
         }
     }
-    
+
     private void handleEnemyAttack(Enemy enemy) {
         player.takeDamage(enemy.getAttackDamage());
 
     }
-    
+
     private void handleEnemyCollision(Enemy enemy1, Enemy enemy2) {
         Vector2 direction = new Vector2(enemy1.getBody().getPosition())
-            .sub(enemy2.getBody().getPosition())
-            .nor();
-        
+                .sub(enemy2.getBody().getPosition())
+                .nor();
+
     }
 
     @Override

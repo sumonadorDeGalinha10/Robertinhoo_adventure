@@ -30,6 +30,8 @@ public class CastorIA {
     private final ShootSystem shootSystem;
     private StateEnemy stateEnemy;
     private int chasePathIndex = 0;
+    private boolean isShootingAnimationInProgress = false;
+      private boolean wasInterruptedByDamage = false;
 
     private enum State {
         PATROL, CHASE, SHOOTING
@@ -40,13 +42,10 @@ public class CastorIA {
     private static final float DETECTION_RANGE = 12f;
     private static final float SHOOTING_RANGE = 7f;
     private static final float LOSE_SIGHT_RANGE = 15f;
-    private static final float IDEAL_SHOOTING_DISTANCE = 6f;
-    private static final float MIN_SHOOTING_DISTANCE = 3f;
 
     private float reactionTime = 0f;
     private static final float REACTION_DELAY = 0.7f;
     private static final float REACTION_VARIABILITY = 0.3f;
-    private static final float MOVEMENT_ERROR = 0.4f;
 
     private float stateCooldown = 0f;
     private static final float STATE_COOLDOWN_TIME = 3f;
@@ -73,20 +72,32 @@ public class CastorIA {
     }
 
     public void update(float deltaTime, Body body) {
+        if (castor.isDead() || castor.isTakingDamage()) {
+            return;
+        }
+               if (wasInterruptedByDamage && !castor.isTakingDamage()) {
+            wasInterruptedByDamage = false;
+            // Reinicia a IA quando sai do estado de dano
+            resetAIState();
+        }
+                if (castor.isDead() || castor.isTakingDamage()) {
+            wasInterruptedByDamage = true;
+            return;
+        }
 
         stateEnemy.update(deltaTime);
 
         switch (currentState) {
-        case PATROL:
-            stateEnemy.setState(StateEnemy.StateIcon.PATROL);
-            break;
-        case CHASE:
-            stateEnemy.setState(StateEnemy.StateIcon.CHASE);
-            break;
-        case SHOOTING:
-            stateEnemy.setState(StateEnemy.StateIcon.SHOOTING);
-            break;
-    }
+            case PATROL:
+                stateEnemy.setState(StateEnemy.StateIcon.PATROL);
+                break;
+            case CHASE:
+                stateEnemy.setState(StateEnemy.StateIcon.CHASE);
+                break;
+            case SHOOTING:
+                stateEnemy.setState(StateEnemy.StateIcon.SHOOTING);
+                break;
+        }
         // debugMovementInfo();
         Vector2 currentPosition = body.getPosition();
         Vector2 targetPosition = target.getPosition();
@@ -148,6 +159,11 @@ public class CastorIA {
             case SHOOTING:
                 Gdx.app.log("CastorIA", "Executando ATIRAR");
                 boolean shouldChase = shootSystem.update(deltaTime, body, currentPosition, targetPosition);
+
+                if (castor.canShoot() && !castor.isShooting()) {
+                    Gdx.app.log("CastorIA", "Iniciando animação de tiro via CastorIA");
+                    castor.startShooting();
+                }
                 if (shouldChase) {
                     currentState = State.CHASE;
                     stateCooldown = STATE_COOLDOWN_TIME;
@@ -155,6 +171,17 @@ public class CastorIA {
                 break;
         }
     }
+
+        private void resetAIState() {
+        // Reinicia para um estado seguro (perseguição)
+        currentState = State.CHASE;
+        stateCooldown = 0f;
+        chasePersistenceTimer = CHASE_PERSISTENCE_TIME;
+        hasRecentSight = true;
+        lastKnownTargetPosition = new Vector2(target.getPosition());
+        Gdx.app.log("CastorIA", "Reiniciando IA após dano");
+    }
+    
 
     private void updateChaseState(float deltaTime, Body body, Vector2 currentPosition,
             Vector2 targetPosition, boolean hasLOS) {
@@ -283,6 +310,7 @@ public class CastorIA {
 
         shapeRenderer.line(currentPos.x, currentPos.y, targetPos.x, targetPos.y);
     }
+
     public StateEnemy getStateEnemy() {
         return stateEnemy;
     }

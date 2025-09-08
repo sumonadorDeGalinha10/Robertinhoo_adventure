@@ -61,7 +61,7 @@ public class Barrel extends BaseDestructible implements ShadowEntity {
         fixtureDef.density = 1.0f;
         fixtureDef.friction = 0.5f;
         fixtureDef.filter.categoryBits = Constants.BIT_OBJECT;
-        fixtureDef.filter.maskBits = Constants.BIT_PLAYER | Constants.BIT_PLAYER_ATTACK;
+        fixtureDef.filter.maskBits = Constants.BIT_PLAYER | Constants.BIT_PLAYER_ATTACK | Constants.BIT_PROJECTILE | Constants.BIT_ENEMY;
 
         Fixture fixture = body.createFixture(fixtureDef);
         fixture.setUserData(this);
@@ -114,27 +114,28 @@ public class Barrel extends BaseDestructible implements ShadowEntity {
         isAnimating = true;
         animationTime = 0f;
     }
-private void dropGunpowder() {
-    if (!hasDropped) {
-        hasDropped = true;
-        final Vector2 barrelBodyPos = body.getPosition().cpy();
-        Gdx.app.log("Barrel", "Posição do barril: " + barrelBodyPos.x + ", " + barrelBodyPos.y);
 
-        mapa.addPendingAction(() -> {
-            float x = barrelBodyPos.x-0.54f;
-            float y = barrelBodyPos.y-0.54f;
-            Gdx.app.log("Barrel", "Dropando polvora em: " + x + ", " + y);
+    private void dropGunpowder() {
+        if (!hasDropped) {
+            hasDropped = true;
+            final Vector2 barrelBodyPos = body.getPosition().cpy();
+            Gdx.app.log("Barrel", "Posição do barril: " + barrelBodyPos.x + ", " + barrelBodyPos.y);
 
-            PolvoraBruta polvoraBruta = new PolvoraBruta(
-                    mapa.world,
-                    x,
-                    y);
+            mapa.addPendingAction(() -> {
+                float x = barrelBodyPos.x - 0.54f;
+                float y = barrelBodyPos.y - 0.54f;
+                Gdx.app.log("Barrel", "Dropando polvora em: " + x + ", " + y);
 
-            polvoraBruta.createBody(new Vector2(x, y));
-            mapa.addCraftItem(polvoraBruta);
-        });
+                PolvoraBruta polvoraBruta = new PolvoraBruta(
+                        mapa.world,
+                        x,
+                        y);
+
+                polvoraBruta.createBody(new Vector2(x, y));
+                mapa.addCraftItem(polvoraBruta);
+            });
+        }
     }
-}
 
     public void destroyBody() {
         if (body != null) {

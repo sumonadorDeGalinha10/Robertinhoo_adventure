@@ -330,64 +330,60 @@ public class Mapa {
     }
 
     public void update(float deltaTime) {
-        java.util.Iterator<Projectile> it = projectiles.iterator();
-        while (it.hasNext()) {
-            Projectile p = it.next();
-            p.update(deltaTime);
-            if (p.isMarkedForDestruction()) {
-                p.destroy();
-                it.remove();
-            }
+    java.util.Iterator<Projectile> it = projectiles.iterator();
+    while (it.hasNext()) {
+        Projectile p = it.next();
+        p.update(deltaTime);
+        if (p.isMarkedForDestruction()) {
+            p.destroy();
+            it.remove();
         }
-
-        java.util.Iterator<Enemy> iterator = enemies.iterator();
-        while (iterator.hasNext()) {
-            Enemy enemy = iterator.next();
-            if (enemy instanceof Ratinho) {
-                Ratinho rat = (Ratinho) enemy;
-                if (rat.isMarkedForDestruction()) {
-                    world.destroyBody(rat.getBody());
-                    iterator.remove();
-                }
-            }
-        }
-
-        for (Destructible d : destructibles) {
-            d.update(deltaTime);
-        }
-
-        java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
-        while (destructibleIterator.hasNext()) {
-            Destructible d = destructibleIterator.next();
-
-            if (d instanceof Barrel) {
-                Barrel barrel = (Barrel) d;
-
-                if (barrel.isBodyMarkedForDestruction()) {
-                    barrel.destroyBody();
-                    barrel.setBodyMarkedForDestruction(false);
-                }
-
-                // Remove após a animação terminar
-                if (barrel.isAnimationFinished() && barrel.isDestroyed()) {
-                    destructibleIterator.remove();
-                }
-            }
-        }
-        processPendingActions();
-
-        // java.util.Iterator<Item> craftIt = craftItems.iterator();
-        // while (craftIt.hasNext()) {
-        // Item item = craftIt.next();
-        // if (item.isMarkedForRemoval()) {
-        // if (item instanceof Polvora) {
-        // ((Polvora) item).destroyBody();
-        // }
-        // craftIt.remove();
-        // }
-        // }
     }
 
+    java.util.Iterator<Enemy> iterator = enemies.iterator();
+    while (iterator.hasNext()) {
+        Enemy enemy = iterator.next();
+        if (enemy instanceof Ratinho) {
+            Ratinho rat = (Ratinho) enemy;
+            if (rat.isMarkedForDestruction()) {
+                world.destroyBody(rat.getBody());
+                iterator.remove();
+                Gdx.app.log("Mapa", "Ratinho removido do jogo.");
+            }
+        } else if (enemy instanceof Castor) {
+            Castor castor = (Castor) enemy;
+            if (castor.isMarkedForDestruction()) {
+                world.destroyBody(castor.getBody());
+                iterator.remove();
+                Gdx.app.log("Mapa", "Castor removido do jogo.");
+            }
+        }
+    }
+
+    for (Destructible d : destructibles) {
+        d.update(deltaTime);
+    }
+
+    java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
+    while (destructibleIterator.hasNext()) {
+        Destructible d = destructibleIterator.next();
+
+        if (d instanceof Barrel) {
+            Barrel barrel = (Barrel) d;
+
+            if (barrel.isBodyMarkedForDestruction()) {
+                barrel.destroyBody();
+                barrel.setBodyMarkedForDestruction(false);
+            }
+
+            // Remove após a animação terminar
+            if (barrel.isAnimationFinished() && barrel.isDestroyed()) {
+                destructibleIterator.remove();
+            }
+        }
+    }
+    processPendingActions();
+}
     public void addPendingAction(Runnable action) {
         pendingActions.add(action);
     }

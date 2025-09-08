@@ -17,20 +17,23 @@ public class CastorRenderer {
     private static final float FRAME_DURATION = 0.1f;
     private Direction currentDirection = Direction.DOWN;
     private boolean isMoving = false;
+    private Animation<TextureRegion> shootLeftAnimation;
+    private Animation<TextureRegion> shootDownAnimation;
+    private Animation<TextureRegion> shootUpAnimation;
+    private boolean isShooting = false;
+    private float shootAnimationTime = 0f;
 
     private enum Direction {
         LEFT, RIGHT, DOWN, UP
     }
 
     public CastorRenderer() {
-        // Carrega a spritesheet do idle
         Texture idleSheet = new Texture(Gdx.files.internal("enemies/castor/idle-Sheet.png"));
         TextureRegion[][] idleFramesGrid = TextureRegion.split(idleSheet, 
             idleSheet.getWidth() / 8, 
             idleSheet.getHeight());
         idleAnimation = new Animation<>(FRAME_DURATION, idleFramesGrid[0]);
         
-        // Carrega a spritesheet do run
         Texture runSheet = new Texture(Gdx.files.internal("enemies/castor/RUN-Sheet.png"));
         int runFrameWidth = runSheet.getWidth() / 5;
         int runFrameHeight = runSheet.getHeight() / 3;
@@ -41,9 +44,34 @@ public class CastorRenderer {
         runUpAnimation = new Animation<>(FRAME_DURATION, runFrames[2]);
         
         stateTime = 0f;
-    }
 
-    private Direction getDirection(Vector2 velocity) {
+        Texture shootSheet = new Texture(Gdx.files.internal("enemies/castor/all_shoot-Sheet.png"));
+        int shootFrameWidth = shootSheet.getWidth() / 6;
+        int shootFrameHeight = shootSheet.getHeight() / 3;
+        TextureRegion[][] shootFrames = TextureRegion.split(shootSheet, shootFrameWidth, shootFrameHeight);
+        
+        shootLeftAnimation = new Animation<>(FRAME_DURATION, shootFrames[0]);
+        shootDownAnimation = new Animation<>(FRAME_DURATION, shootFrames[1]);
+        shootUpAnimation = new Animation<>(FRAME_DURATION, shootFrames[2]);
+    }
+    
+    private Direction getDirection(Vector2 velocity, Vector2 targetPosition, Vector2 currentPosition, boolean isShooting) {
+        // Durante o tiro, usa a direção do alvo em vez da velocidade
+        if (isShooting) {
+            Vector2 directionToTarget = targetPosition.cpy().sub(currentPosition).nor();
+            
+            // Determina a direção principal baseada no vetor para o alvo
+            float absX = Math.abs(directionToTarget.x);
+            float absY = Math.abs(directionToTarget.y);
+            
+            if (absX > absY) {
+                return directionToTarget.x > 0 ? Direction.RIGHT : Direction.LEFT;
+            } else {
+                return directionToTarget.y > 0 ? Direction.UP : Direction.DOWN;
+            }
+        }
+        
+        // Comportamento normal para movimento
         float absVelX = Math.abs(velocity.x);
         float absVelY = Math.abs(velocity.y);
         
@@ -56,17 +84,50 @@ public class CastorRenderer {
 
     public void render(SpriteBatch batch, Castor castor, float offsetX, float offsetY, float delta) {
         Vector2 velocity = castor.getLinearVelocity();
-        isMoving = velocity.len() > 0.1f;
+        Vector2 currentPosition = castor.getPosition();
+        Vector2 targetPosition = castor.target.getPosition();
         
-        if (isMoving) {
-            currentDirection = getDirection(velocity);
+        isMoving = velocity.len() > 0.1f;
+        isShooting = castor.isShooting();
+
+        if (isShooting) {
+            shootAnimationTime += delta;
+        } else {
+            shootAnimationTime = 0f;
         }
+        
+        // Sempre atualiza a direção, especialmente durante o tiro
+        currentDirection = getDirection(velocity, targetPosition, currentPosition, isShooting);
         
         stateTime += delta;
         TextureRegion currentFrame;
         boolean flipX = false;
         
-        if (isMoving) {
+        if (isShooting) {
+            switch (currentDirection) {
+                case LEFT:
+                    currentFrame = shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
+                    break;
+                case RIGHT:
+                    currentFrame = shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
+                    flipX = true;
+                    break;
+                case DOWN:
+                    currentFrame = shootDownAnimation.getKeyFrame(shootAnimationTime, false);
+                    break;
+                case UP:
+                    currentFrame = shootUpAnimation.getKeyFrame(shootAnimationTime, false);
+                    break;
+                default:
+                    currentFrame = idleAnimation.getKeyFrame(stateTime, true);
+            }
+
+            if (shootAnimationTime >= 0.5f && !castor.hasShot()) {
+            castor.setHasShot(true);
+            castor.fireProjectile();
+        }
+    }
+        else if (isMoving) {
             switch (currentDirection) {
                 case LEFT:
                     currentFrame = runLeftAnimation.getKeyFrame(stateTime, true);
@@ -88,9 +149,8 @@ public class CastorRenderer {
             currentFrame = idleAnimation.getKeyFrame(stateTime, true);
         }
         
-        Vector2 position = castor.getPosition();
-        float x = offsetX + position.x * 16 - 8;
-        float y = offsetY + position.y * 16 - 8;
+        float x = offsetX + currentPosition.x * 16 - 8;
+        float y = offsetY + currentPosition.y * 16 - 8;
         
         if (flipX) {
             batch.draw(currentFrame, x + 16, y, -16, 16);
@@ -102,5 +162,6 @@ public class CastorRenderer {
     public void dispose() {
         idleAnimation.getKeyFrames()[0].getTexture().dispose();
         runLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+        shootLeftAnimation.getKeyFrames()[0].getTexture().dispose();
     }
 }
