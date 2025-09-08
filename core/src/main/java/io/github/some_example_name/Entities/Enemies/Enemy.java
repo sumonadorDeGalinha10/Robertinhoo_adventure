@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 
 public abstract class Enemy {
-    
+
     protected Vector2 position;
     protected float health;
     protected float speed;
@@ -18,12 +18,14 @@ public abstract class Enemy {
         this.speed = speed;
         this.isAlive = true;
     }
+
     public abstract void update(float deltaTime);
+
     public abstract TextureRegion getCurrentFrame(float deltaTime);
 
     public void takeDamage(float damage) {
         health -= damage;
-        
+
         if (health <= 0) {
             isAlive = false;
         }
@@ -45,11 +47,12 @@ public abstract class Enemy {
         return health;
     }
 
-    public boolean isDead(){
+    public boolean isDead() {
         return isAlive;
 
     }
-  public abstract Body getBody(); 
 
-   public abstract float getAttackDamage();
+    public abstract Body getBody();
+
+    public abstract float getAttackDamage();
 }

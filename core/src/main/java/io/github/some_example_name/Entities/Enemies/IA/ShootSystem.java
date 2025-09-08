@@ -15,7 +15,7 @@ public class ShootSystem {
     private final PathfindingSystem pathfindingSystem;
     private final Mapa mapa;
     private final Random random;
-    
+
     private static final float IDEAL_SHOOTING_DISTANCE = 6f;
     private static final float MIN_SHOOTING_DISTANCE = 3f;
     private static final float MOVEMENT_ERROR = 0.4f;
@@ -46,22 +46,21 @@ public class ShootSystem {
 
         if (distanceToTarget > SHOOTING_RANGE) {
             Gdx.app.log("ShootSystem", "Fora do alcance, voltando a perseguir");
-            return true; // Indica que deve mudar para estado CHASE
+            return true;
         }
 
-        // Comportamento normal de shooting à distância
         handleRangedCombat(body, currentPosition, targetPosition, distanceToTarget);
 
-        if (castor.canShoot() && hasLOS) {
-            castor.shootAtPlayer();
+        if (castor.canShoot() && hasLOS && !castor.isShooting()) {
+            castor.startShooting();
         }
-        
+
         return false;
     }
 
     private boolean handleRepositioning(Body body, Vector2 currentPosition, Vector2 targetPosition) {
         Vector2 repositionTarget = findRepositionTarget(currentPosition, targetPosition);
-        
+
         if (repositionTarget != null) {
             List<Vector2> repositionPath = pathfindingSystem.findPath(currentPosition, repositionTarget);
 
@@ -109,7 +108,8 @@ public class ShootSystem {
         }
     }
 
-    private void handleRangedCombat(Body body, Vector2 currentPosition, Vector2 targetPosition, float distanceToTarget) {
+    private void handleRangedCombat(Body body, Vector2 currentPosition, Vector2 targetPosition,
+            float distanceToTarget) {
         float adjustedIdealDistance = IDEAL_SHOOTING_DISTANCE *
                 (1 + (random.nextFloat() * 2 - 1) * MOVEMENT_ERROR);
 
@@ -217,7 +217,7 @@ public class ShootSystem {
 
     private void applySteeringForce(Body body, Vector2 desiredVelocity) {
         Vector2 currentVelocity = body.getLinearVelocity();
-         Vector2 steering = desiredVelocity.cpy().sub(currentVelocity).scl(body.getMass() * 8f);
+        Vector2 steering = desiredVelocity.cpy().sub(currentVelocity).scl(body.getMass() * 8f);
         body.applyForceToCenter(steering, true);
     }
 
