@@ -103,7 +103,8 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
             Missile missile = new Missile(
                     mapa,
                     launchPosition,
-                    direction);
+                    direction,
+                     this );
 
             mapa.addProjectile(missile);
             shootCooldown = SHOOT_COOLDOWN_TIME;

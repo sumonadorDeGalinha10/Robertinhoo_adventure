@@ -5,7 +5,7 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Timer;
 
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
-import io.github.some_example_name.MapConfig.Mapa;
+
 
 public class MeleeAttackSystem {
     private final Robertinhoo player;
@@ -13,6 +13,7 @@ public class MeleeAttackSystem {
     private boolean attackInProgress;
     private float attackDuration;
     private final World world;
+    private final ParrySystem parrySystem;
 
     public MeleeAttackSystem(Robertinhoo player) {
         this.player = player;
@@ -20,6 +21,7 @@ public class MeleeAttackSystem {
         this.attackInProgress = false;
         this.attackDuration = 0.2f; // Duração do ataque
         this.attackDuration = player.getMeleeAttackDuration();
+          this.parrySystem = new ParrySystem(player);
     }
 
     public void startAttack(int direction) {
@@ -27,6 +29,9 @@ public class MeleeAttackSystem {
             return;
 
         attackInProgress = true;
+        
+
+        parrySystem.activateParry();
 
         Timer.schedule(new Timer.Task() {
             @Override
@@ -108,4 +113,9 @@ public class MeleeAttackSystem {
     public Body getMeleeHitboxBody() {
         return meleeHitboxBody;
     }
+
+        public ParrySystem getParrySystem() {
+        return parrySystem;
+    }
+
 }
