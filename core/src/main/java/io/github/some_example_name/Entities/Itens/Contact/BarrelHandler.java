@@ -6,7 +6,7 @@ import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
 
 public class BarrelHandler implements ContactHandler {
     @Override
-    public void handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
+    public boolean handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
         
@@ -15,6 +15,8 @@ public class BarrelHandler implements ContactHandler {
         } else if ("MELEE_ATTACK".equals(dataB) && dataA instanceof Barrel) {
             ((Barrel) dataA).takeDamage(1);
         }
+
+        return false;
     }
     @Override
     public void handleEndContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {

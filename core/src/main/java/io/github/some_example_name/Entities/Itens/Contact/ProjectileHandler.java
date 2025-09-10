@@ -1,9 +1,11 @@
 package io.github.some_example_name.Entities.Itens.Contact;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 
 import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
+import io.github.some_example_name.Entities.Itens.Weapon.Missile;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Enemies.Enemy;
@@ -11,26 +13,31 @@ import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Inventory.Item;
 
 public class ProjectileHandler implements ContactHandler {
-
-     private final Robertinhoo player;
-        
-        public ProjectileHandler(Robertinhoo player) {
+    private final Robertinhoo player;
+    
+    public ProjectileHandler(Robertinhoo player) {
         this.player = player;
     }
 
     @Override
-    public void handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
+    public boolean handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
 
-        System.out.println("Contato detectado entre: " + dataA + " e " + dataB);
+        Gdx.app.log("ProjectileHandler", "Contato detectado entre: " + dataA + " e " + dataB);
 
-        // Colisão com paredes
+        if (player.getMeleeAttackSystem().getParrySystem().isParryActive() &&
+            ((dataA instanceof Missile && "PLAYER".equals(dataB)) ||
+             (dataB instanceof Missile && "PLAYER".equals(dataA)))) {
+            Gdx.app.log("ProjectileHandler", "Parry ativo - ignorando colisão com jogador");
+            return false;
+        }
+
         if ((dataA instanceof Projectile && "WALL".equals(dataB)) ||
                 (dataB instanceof Projectile && "WALL".equals(dataA))) {
             handleProjectileWallCollision(dataA, dataB);
         }
-        // Colisão com inimigos
+
         else if ((dataA instanceof Projectile && dataB instanceof Enemy) ||
                 (dataB instanceof Projectile && dataA instanceof Enemy)) {
                  
@@ -38,14 +45,15 @@ public class ProjectileHandler implements ContactHandler {
         }
         else if ((dataA instanceof Projectile && "PLAYER".equals(dataB)) ||
                 (dataB instanceof Projectile && "PLAYER".equals(dataA))) {
-                       System.out.println("Colisão detectada entre projétil e player.");
+            System.out.println("Colisão detectada entre projétil e player.");
             handleProjectilePlayerCollision(dataA, dataB);
         }
-        // Colisão com objetos (barris)
+
         else if ((dataA instanceof Projectile && dataB instanceof Barrel) ||
                 (dataB instanceof Projectile && dataA instanceof Barrel)) {
             handleProjectileBarrelCollision(dataA, dataB);
         }
+        return false;
     }
 
     private void handleProjectileWallCollision(Object dataA, Object dataB) {
@@ -85,6 +93,6 @@ public class ProjectileHandler implements ContactHandler {
 
     @Override
     public void handleEndContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
-        // Nenhuma ação necessária ao sair do contato
+
     }
 }

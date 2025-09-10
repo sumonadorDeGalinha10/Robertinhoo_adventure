@@ -20,7 +20,7 @@ public class PlayerItemHandler implements ContactHandler {
     }
 
     @Override
-    public void handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
+    public boolean  handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
         
@@ -48,10 +48,10 @@ public class PlayerItemHandler implements ContactHandler {
                 itemFixtures.put(item, itemFixture);
                 System.out.println("[DEBUG] Item adicionado à lista: " + item);
             }
-            
-            // Atualizar o item mais próximo
+      
             updateNearestItem();
         }
+        return false;
     }
 
     @Override

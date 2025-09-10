@@ -174,6 +174,7 @@ public class Robertinhoo implements ShadowEntity {
     public void update(float deltaTime) {
         inventoryController.update(deltaTime);
         playerController.update(deltaTime);
+        meleeSystem.getParrySystem().update(deltaTime);
         if (isTakingDamage) {
             damageTimer -= deltaTime;
             if (damageTimer <= 0) {

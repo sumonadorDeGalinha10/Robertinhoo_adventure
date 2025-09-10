@@ -14,7 +14,7 @@ public class EnemyHandler implements ContactHandler {
     }
 
     @Override
-    public void handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
+    public boolean handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
 
@@ -27,6 +27,8 @@ public class EnemyHandler implements ContactHandler {
         if (dataA instanceof Enemy && dataB instanceof Enemy) {
             handleEnemyCollision((Enemy) dataA, (Enemy) dataB);
         }
+
+        return false; // Continua o processamento com outros handlers
     }
 
     private void handleEnemyAttack(Enemy enemy) {

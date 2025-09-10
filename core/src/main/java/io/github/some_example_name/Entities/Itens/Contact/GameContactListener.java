@@ -14,15 +14,16 @@ public class GameContactListener implements ContactListener {
     private final List<ContactHandler> handlers = new ArrayList<>();
     
     public GameContactListener(Robertinhoo player) {
+       
+        handlers.add(new MeleeAttackHandler(player));
         handlers.add(new PlayerItemHandler(player));
         handlers.add(new ProjectileHandler(player));
-        handlers.add(new MeleeAttackHandler());
         handlers.add(new EnemyHandler(player));
         handlers.add(new BarrelHandler());
     }
     
     public void addHandler(ContactHandler handler) {
-        handlers.add(handler);
+        handlers.add(0, handler);
     }
 
     @Override
@@ -31,7 +32,10 @@ public class GameContactListener implements ContactListener {
         Fixture fixtureB = contact.getFixtureB();
         
         for (ContactHandler handler : handlers) {
-            handler.handleBeginContact(contact, fixtureA, fixtureB);
+            if (handler.handleBeginContact(contact, fixtureA, fixtureB)) {
+                // Se o handler retornar true, para de processar este contato
+                break;
+            }
         }
     }
 
