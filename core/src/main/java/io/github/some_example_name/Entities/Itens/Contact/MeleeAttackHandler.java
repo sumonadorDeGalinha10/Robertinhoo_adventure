@@ -11,7 +11,7 @@ import com.badlogic.gdx.Gdx;
 
 public class MeleeAttackHandler implements ContactHandler {
     private final Robertinhoo player;
-    
+
     public MeleeAttackHandler(Robertinhoo player) {
         this.player = player;
     }
@@ -20,73 +20,76 @@ public class MeleeAttackHandler implements ContactHandler {
     public boolean handleBeginContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
-        
-        System.out.println("Início de contato entre: " + 
-                          fixtureA.getBody().getUserData() + 
-                          " e " + 
-                          fixtureB.getBody().getUserData());
-        
-        // Primeiro verifica se é uma colisão com míssil para parry
+
+        Gdx.app.log("MeleeAttackHandler", "Início de contato entre: " + dataA + " e " + dataB);
+
         if (checkMissileParry(contact, fixtureA, fixtureB)) {
-            return true; // Contato totalmente tratado - para processamento
+            return true;
         }
-        
-        // Depois verifica colisões com inimigos
+
         if (("MELEE_ATTACK".equals(dataA) && dataB instanceof Enemy)) {
             handleMeleeAttack((Enemy) dataB, fixtureA.getBody().getPosition());
         } else if ("MELEE_ATTACK".equals(dataB) && dataA instanceof Enemy) {
             handleMeleeAttack((Enemy) dataA, fixtureB.getBody().getPosition());
         }
-        
-        return false; // Continua o processamento com outros handlers
+
+        return false;
     }
-    
+
     private boolean checkMissileParry(Contact contact, Fixture fixtureA, Fixture fixtureB) {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
-        
-        // Verifica se é uma colisão entre MELEE_ATTACK e Missile
+
         boolean isMeleeVsMissile = ("MELEE_ATTACK".equals(dataA) && dataB instanceof Missile) ||
-                                  ("MELEE_ATTACK".equals(dataB) && dataA instanceof Missile);
-        
-        if (isMeleeVsMissile && player.getMeleeAttackSystem().getParrySystem().isParryActive()) {
-            Missile missile = (Missile) ("MELEE_ATTACK".equals(dataA) ? dataB : dataA);
-            
-            // Verifica se o míssil pode ser rebatido (não está já rebatido)
+                ("MELEE_ATTACK".equals(dataB) && dataA instanceof Missile);
+
+        boolean isPlayerVsMissile = player.getMeleeAttackSystem().getParrySystem().isParryActive() &&
+                (("PLAYER".equals(dataA) && dataB instanceof Missile) ||
+                        ("PLAYER".equals(dataB) && dataA instanceof Missile));
+
+        if (isMeleeVsMissile || isPlayerVsMissile) {
+            Missile missile = (Missile) ((dataA instanceof Missile) ? dataA : dataB);
+
+            Gdx.app.log("MeleeAttackHandler", "Colisão de parry detectada: " +
+                    (isMeleeVsMissile ? "MELEE_ATTACK vs Missile" : "PLAYER vs Missile"));
+
             if (!missile.isReflected() && missile.getOwner() != null) {
-                // Calcula direção de retorno (do jogador para o Castor)
+
                 Vector2 returnDirection = missile.getOwner().getPosition()
-                    .cpy().sub(player.getPosition()).nor();
-                
-                // Reflete o míssil
+                        .cpy().sub(missile.getPosition()).nor();
+
                 missile.reflect(returnDirection);
-                
+
                 Gdx.app.log("MeleeAttackHandler", "Míssil rebatido com sucesso!");
                 player.getMeleeAttackSystem().getParrySystem().deactivateParry();
-                return true; // Parry bem-sucedido - contato totalmente tratado
+                return true;
+            } else {
+                Gdx.app.log("MeleeAttackHandler", "Míssil não pode ser rebatido - já refletido: " +
+                        missile.isReflected() + ", owner: " + (missile.getOwner() != null));
             }
         }
-        
+
         return false;
     }
+
     private void handleMeleeAttack(Enemy enemy, Vector2 attackPosition) {
-        // Ignora inimigos já mortos
-        if (enemy.isDead()) return;
-        
+        if (enemy.isDead())
+            return;
+
         enemy.takeDamage(15);
         Vector2 direction = new Vector2(enemy.getBody().getPosition()).sub(attackPosition).nor();
         enemy.getBody().applyLinearImpulse(direction.scl(1f), enemy.getBody().getWorldCenter(), true);
-        
+
         if (enemy.getHealth() <= 0) {
             if (enemy instanceof Ratinho) {
                 ((Ratinho) enemy).die(Ratinho.DeathType.MELEE);
             }
-            // Não marca para destruição aqui! Apenas inicia a morte
+
         }
     }
 
     @Override
     public void handleEndContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
-        // Nenhuma ação necessária ao sair do contato
+
     }
 }

@@ -13,10 +13,9 @@ import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Inventory.Item;
 
 public class ProjectileHandler implements ContactHandler {
-
-     private final Robertinhoo player;
-        
-        public ProjectileHandler(Robertinhoo player) {
+    private final Robertinhoo player;
+    
+    public ProjectileHandler(Robertinhoo player) {
         this.player = player;
     }
 
@@ -25,9 +24,8 @@ public class ProjectileHandler implements ContactHandler {
         Object dataA = fixtureA.getBody().getUserData();
         Object dataB = fixtureB.getBody().getUserData();
 
-        System.out.println("Contato detectado entre: " + dataA + " e " + dataB);
+        Gdx.app.log("ProjectileHandler", "Contato detectado entre: " + dataA + " e " + dataB);
 
-        // Se o parry está ativo, não processa colisões com o jogador
         if (player.getMeleeAttackSystem().getParrySystem().isParryActive() &&
             ((dataA instanceof Missile && "PLAYER".equals(dataB)) ||
              (dataB instanceof Missile && "PLAYER".equals(dataA)))) {
@@ -35,12 +33,11 @@ public class ProjectileHandler implements ContactHandler {
             return false;
         }
 
-        // Colisão com paredes
         if ((dataA instanceof Projectile && "WALL".equals(dataB)) ||
                 (dataB instanceof Projectile && "WALL".equals(dataA))) {
             handleProjectileWallCollision(dataA, dataB);
         }
-        // Colisão com inimigos
+
         else if ((dataA instanceof Projectile && dataB instanceof Enemy) ||
                 (dataB instanceof Projectile && dataA instanceof Enemy)) {
                  
@@ -51,7 +48,7 @@ public class ProjectileHandler implements ContactHandler {
             System.out.println("Colisão detectada entre projétil e player.");
             handleProjectilePlayerCollision(dataA, dataB);
         }
-        // Colisão com objetos (barris)
+
         else if ((dataA instanceof Projectile && dataB instanceof Barrel) ||
                 (dataB instanceof Projectile && dataA instanceof Barrel)) {
             handleProjectileBarrelCollision(dataA, dataB);
@@ -96,6 +93,6 @@ public class ProjectileHandler implements ContactHandler {
 
     @Override
     public void handleEndContact(Contact contact, Fixture fixtureA, Fixture fixtureB) {
-        // Nenhuma ação necessária ao sair do contato
+
     }
 }

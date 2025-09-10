@@ -14,7 +14,7 @@ public class GameContactListener implements ContactListener {
     private final List<ContactHandler> handlers = new ArrayList<>();
     
     public GameContactListener(Robertinhoo player) {
-        // Adiciona o MeleeAttackHandler primeiro para prioridade no parry
+       
         handlers.add(new MeleeAttackHandler(player));
         handlers.add(new PlayerItemHandler(player));
         handlers.add(new ProjectileHandler(player));
@@ -23,7 +23,7 @@ public class GameContactListener implements ContactListener {
     }
     
     public void addHandler(ContactHandler handler) {
-        handlers.add(0, handler); // Adiciona no início para prioridade
+        handlers.add(0, handler);
     }
 
     @Override
