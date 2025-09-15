@@ -26,7 +26,7 @@ public class PlayerController {
 
     public PlayerController(Robertinhoo player) {
         this.player = player;
-      
+
         this.dashSystem = new DashSystem(player);
     }
 
@@ -143,8 +143,7 @@ public class PlayerController {
                 System.out.println("[DEBUG] Pegando munição: " + player.ammoToPickup);
                 player.inventoryController.enterPlacementMode(player.ammoToPickup);
                 player.clearAmmoToPickup();
-            }
-            else if (player.itemToPickup != null) {
+            } else if (player.itemToPickup != null) {
                 System.out.println("[DEBUG] Pegando item: " + player.itemToPickup);
                 player.inventoryController.enterPlacementMode(player.itemToPickup);
                 player.clearItemToPickup();
@@ -175,15 +174,20 @@ public class PlayerController {
                 System.out.println("MELEE ATTACK BLOCKED: Insufficient stamina");
             }
         }
-        // Disparar
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             Weapon currentWeapon = player.getCurrentWeapon();
             if (currentWeapon != null) {
-                Vector2 firePosition = player.weaponSystem.getTrueMuzzlePosition();
+                Vector2 firePosition = player.weaponSystem.getTrueMuzzlePosition().cpy();
                 Vector2 direction = player.weaponSystem.getAimDirection().cpy().nor();
+
+                // >>> deslocamento pra frente em unidades de mundo
+                float spawnOffset = 0.35f; // ajuste: 0.2-0.6 costuma funcionar
+                firePosition.mulAdd(direction, spawnOffset);
+
                 currentWeapon.shoot(firePosition, direction);
             }
         }
+
     }
 
     public DashSystem getDashSystem() {

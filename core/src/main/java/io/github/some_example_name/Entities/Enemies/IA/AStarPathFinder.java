@@ -83,10 +83,9 @@ public class AStarPathFinder {
             }
         }
 
-        // Reconstruir o caminho
         List<Vector2> path = new ArrayList<>();
         Node curr = end;
-        while (curr != null) { // Inclui o nó inicial agora
+        while (curr != null) {
             path.add(0, mapa.tileToWorld(curr.x, curr.y));
             curr = curr.parent;
         }
