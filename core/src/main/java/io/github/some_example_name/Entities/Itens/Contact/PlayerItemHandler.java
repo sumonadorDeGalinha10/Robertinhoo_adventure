@@ -42,7 +42,6 @@ public class PlayerItemHandler implements ContactHandler {
         if (itemData != null) {
             Item item = (Item) itemData;
             
-            // Registrar o item e sua fixture
             if (!nearbyItems.contains(item)) {
                 nearbyItems.add(item);
                 itemFixtures.put(item, itemFixture);
@@ -71,8 +70,7 @@ public class PlayerItemHandler implements ContactHandler {
             nearbyItems.remove(item);
             itemFixtures.remove(item);
             System.out.println("[DEBUG] Item removido da lista: " + item);
-            
-            // Atualizar o item mais próximo
+
             updateNearestItem();
         }
     }

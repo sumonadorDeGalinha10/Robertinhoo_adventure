@@ -4,36 +4,38 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
 import io.github.some_example_name.MapConfig.Mapa;
+import com.badlogic.gdx.graphics.Color;
+
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class ChaseSystem {
     private final PathfindingSystem pathfindingSystem;
     private final Mapa mapa;
     private final Random random;
-    
+    private static final float TARGET_REACHED_DISTANCE = 1.5f;
+
+    private static final boolean DEBUG_LOGS = true;
+
     private List<Vector2> chasePath = new ArrayList<>();
     private int chasePathIndex = 0;
-    
+    private Deque<Vector2> targetTrail = new ArrayDeque<>();
+    private static final int TRAIL_SIZE = 5;
+
     private float repathTimer = 0;
     private static final float REPATH_INTERVAL = 0.3f; // Reduzido para reagir mais rápido
-    private static final float CHASE_SPEED = 4f; // Velocidade reduzida para melhor controle
-    private static final float STEERING_FORCE = 12f; // Aumentado para respostas mais rápidas
-    private static final float PATH_NODE_TOLERANCE = 1.2f; // Aumentado para avançar nós mais cedo
-    
-    // Sistema de memória e persistência
+    private static final float CHASE_SPEED = 4f;
+    private static final float STEERING_FORCE = 12f;
+    private static final float PATH_NODE_TOLERANCE = 1.2f;
+    private boolean reachedLastKnown = false;
+
     private Vector2 lastKnownTargetPosition = null;
     private float lastKnownPositionTimer = 0;
-    private static final float LAST_KNOWN_POSITION_DURATION = 5f; // 5 segundos de memória
-    private static final float INVESTIGATION_RADIUS = 3f; // Raio para investigar área
-    
-    // Sistema de busca quando perde o alvo
-    private boolean isInvestigating = false;
-    private Vector2 investigationPoint = null;
-    private float investigationTimer = 0;
-    private static final float INVESTIGATION_TIME = 3f;
 
     public ChaseSystem(PathfindingSystem pathfindingSystem, Mapa mapa) {
         this.pathfindingSystem = pathfindingSystem;
@@ -41,82 +43,126 @@ public class ChaseSystem {
         this.random = new Random();
     }
 
-    public void update(float deltaTime, Body body, Vector2 currentPosition, 
-                      Vector2 targetPosition, boolean hasDirectSight) {
+    public void update(float deltaTime, Body body, Vector2 currentPosition,
+            Vector2 targetPosition, boolean hasDirectSight) {
         repathTimer += deltaTime;
         lastKnownPositionTimer += deltaTime;
 
-        // Atualizar última posição conhecida se tiver visão direta
-        if (hasDirectSight) {
-            lastKnownTargetPosition = new Vector2(targetPosition);
-            lastKnownPositionTimer = 0;
-            isInvestigating = false; // Parar investigação se avistar o alvo
+        if (DEBUG_LOGS) {
+            Gdx.app.log("ChaseSystem", "=== UPDATE ===");
+            Gdx.app.log("ChaseSystem", "Posição atual: " + currentPosition);
+            Gdx.app.log("ChaseSystem", "Posição alvo (param): " + targetPosition);
+            Gdx.app.log("ChaseSystem", "Visão direta: " + hasDirectSight);
+            Gdx.app.log("ChaseSystem", "Timer repath: " + repathTimer + "/" + REPATH_INTERVAL);
         }
 
-        // Determinar posição alvo efetiva
-        Vector2 effectiveTargetPosition = getEffectiveTargetPosition(targetPosition, hasDirectSight);
+        if (hasDirectSight && targetPosition != null) {
+            // Atualiza última posição conhecida e o timer
+            lastKnownTargetPosition = new Vector2(targetPosition);
+            lastKnownPositionTimer = 0f;
+            reachedLastKnown = false;
 
-        // Recalcular caminho se necessário
+            // Trail (breadcrumbs) para seguir a trilha do player
+            targetTrail.addLast(new Vector2(targetPosition));
+            if (targetTrail.size() > TRAIL_SIZE) {
+                targetTrail.removeFirst();
+            }
+        }
+
+        Vector2 effectiveTargetPosition = getEffectiveTargetPosition(currentPosition, targetPosition, hasDirectSight);
+
+        // Agora nunca retornamos prematuramente sem tentar um fallback.
+        if (effectiveTargetPosition == null) {
+            // Sem target conhecido — limpar e aplicar fallback de movimentação (pequeno
+            // empurrão pra frente)
+            chasePath.clear();
+            chasePathIndex = 0;
+            // fallback simples: andar um pouco para frente (evita ficar travado)
+            Vector2 fallback = currentPosition.cpy().add((random.nextFloat() - 0.5f) * 0.5f,
+                    (random.nextFloat() - 0.5f) * 0.5f);
+            moveDirectlyToTarget(body, currentPosition, fallback, CHASE_SPEED * 0.5f);
+            if (DEBUG_LOGS)
+                Gdx.app.log("ChaseSystem", "No effective target -> fallback move");
+            return;
+        }
+
+        float distanceToTarget = currentPosition.dst(effectiveTargetPosition);
+
+        // Se estiver muito perto do alvo efetivo e não temos visão direta, apenas parar
+        // de tentar recalcular
+        if (distanceToTarget < TARGET_REACHED_DISTANCE && !hasDirectSight) {
+            // Indicamos que chegamos ao last-known e não encontramos o jogador.
+            // Isso avisa o CastorIA para voltar à patrulha.
+            chasePath.clear();
+            chasePathIndex = 0;
+            reachedLastKnown = true; // <-- sinaliza
+            lastKnownTargetPosition = null; // <-- limpa para não reusar
+            if (DEBUG_LOGS)
+                Gdx.app.log("ChaseSystem", "Alcançou last-known; reachedLastKnown = true");
+            return;
+        }
+
         if (shouldRecalculatePath(currentPosition, effectiveTargetPosition)) {
             calculateNewChasePath(currentPosition, effectiveTargetPosition);
             repathTimer = 0;
         }
 
-        // Seguir o caminho ou investigar
-        if (isInvestigating) {
-            updateInvestigation(deltaTime, body, currentPosition);
-        } else if (chasePath != null && !chasePath.isEmpty()) {
-            followChasePath(body, currentPosition, CHASE_SPEED, deltaTime);
+        // Seguir o caminho se houver, senão mover diretamente para
+        // effectiveTargetPosition
+        if (chasePath != null && !chasePath.isEmpty()) {
+            followChasePath(body, currentPosition, CHASE_SPEED, Gdx.graphics.getDeltaTime());
         } else {
-            // Movimento direto como fallback
             moveDirectlyToTarget(body, currentPosition, effectiveTargetPosition, CHASE_SPEED);
-        }
-
-        // Verificar se precisa iniciar investigação
-        if (!hasDirectSight && lastKnownPositionTimer > LAST_KNOWN_POSITION_DURATION && !isInvestigating) {
-            startInvestigation(lastKnownTargetPosition != null ? 
-                lastKnownTargetPosition : currentPosition);
         }
     }
 
-    private Vector2 getEffectiveTargetPosition(Vector2 currentTargetPosition, boolean hasDirectSight) {
-        if (hasDirectSight) {
+    private Vector2 getEffectiveTargetPosition(Vector2 currentPosition, Vector2 currentTargetPosition,
+            boolean hasDirectSight) {
+        if (hasDirectSight && currentTargetPosition != null) {
             return currentTargetPosition;
-        } else if (lastKnownTargetPosition != null && lastKnownPositionTimer < LAST_KNOWN_POSITION_DURATION) {
-            return lastKnownTargetPosition;
-        } else {
-            return currentTargetPosition; // Fallback
         }
+
+        // Usa a última posição conhecida pelo próprio ChaseSystem
+        if (lastKnownTargetPosition != null) {
+            return lastKnownTargetPosition;
+        }
+
+        // Usa o último breadcrumb se existir
+        if (!targetTrail.isEmpty()) {
+            return targetTrail.getLast();
+        }
+
+        // Sem nada útil — retornar null para acionar fallback
+        return null;
     }
 
     private boolean shouldRecalculatePath(Vector2 currentPosition, Vector2 targetPosition) {
-        // Recalcular se:
-        // 1. É tempo de recalcular
-        // 2. O caminho está vazio
-        // 3. O alvo se moveu significativamente
-        // 4. Está preso em um obstáculo
-        
-        if (repathTimer >= REPATH_INTERVAL || chasePath.isEmpty()) {
+        if (targetPosition == null)
+            return true; // força fallback path quando target indefinido
+
+        if (chasePath == null || chasePath.isEmpty()) {
             return true;
         }
-        
-        if (lastKnownTargetPosition != null && 
-            targetPosition.dst(lastKnownTargetPosition) > 2.0f) {
+
+        if (repathTimer >= REPATH_INTERVAL) {
             return true;
         }
-        
-        // Verificar se está preso (pouco movimento)
+
+        if (lastKnownTargetPosition != null &&
+                targetPosition.dst(lastKnownTargetPosition) > 1.5f) {
+            return true;
+        }
+
+        // Se estivermos "presa" no nó
         if (chasePathIndex > 0 && chasePathIndex < chasePath.size()) {
             Vector2 currentTarget = chasePath.get(chasePathIndex);
-            if (currentPosition.dst(currentTarget) < 0.5f) {
-                // Avançar para o próximo ponto do caminho
-                chasePathIndex++;
-                if (chasePathIndex >= chasePath.size()) {
-                    return true; // Precisa de novo caminho
-                }
+            float distanceToNode = currentPosition.dst(currentTarget);
+
+            if (distanceToNode < 0.3f && repathTimer > REPATH_INTERVAL * 0.5f) {
+                return true;
             }
         }
-        
+
         return false;
     }
 
@@ -128,7 +174,12 @@ public class ChaseSystem {
         Vector2 targetNode = chasePath.get(chasePathIndex);
         float distanceToNode = currentPosition.dst(targetNode);
 
-        // Avançar para o próximo nó se estiver próximo o suficiente
+        if (DEBUG_LOGS) {
+            Gdx.app.log("ChaseSystem", "Seguindo nó " + chasePathIndex + "/" + (chasePath.size() - 1));
+            Gdx.app.log("ChaseSystem", "Nó atual: " + targetNode);
+            Gdx.app.log("ChaseSystem", "Distância até nó: " + distanceToNode);
+        }
+
         if (distanceToNode < PATH_NODE_TOLERANCE) {
             chasePathIndex++;
             if (chasePathIndex >= chasePath.size()) {
@@ -137,22 +188,25 @@ public class ChaseSystem {
             targetNode = chasePath.get(chasePathIndex);
         }
 
-        // Calcular direção e aplicar força
         Vector2 direction = targetNode.cpy().sub(currentPosition).nor();
         Vector2 desiredVelocity = direction.scl(speed);
         applySteeringForce(body, desiredVelocity, deltaTime);
     }
 
-    private void moveDirectlyToTarget(Body body, Vector2 currentPosition, 
-                                    Vector2 targetPosition, float speed) {
+    private void moveDirectlyToTarget(Body body, Vector2 currentPosition,
+            Vector2 targetPosition, float speed) {
+        if (targetPosition == null) {
+            body.setLinearVelocity(0, 0);
+            return;
+        }
+
         float distance = currentPosition.dst(targetPosition);
-        
+
         if (distance > 0.5f) {
             Vector2 direction = targetPosition.cpy().sub(currentPosition).nor();
             Vector2 desiredVelocity = direction.scl(speed);
-            applySteeringForce(body, desiredVelocity, 0.1f); // deltaTime fixo para movimento direto
+            applySteeringForce(body, desiredVelocity, 0.1f);
         } else {
-            // Parar quando chegar muito perto
             body.setLinearVelocity(0, 0);
         }
     }
@@ -161,16 +215,22 @@ public class ChaseSystem {
         Vector2 currentVelocity = body.getLinearVelocity();
         Vector2 velocityError = desiredVelocity.cpy().sub(currentVelocity);
         Vector2 steeringForce = velocityError.scl(STEERING_FORCE * body.getMass());
-        
         body.applyForceToCenter(steeringForce, true);
-        
-        // Limitar velocidade máxima
+
         if (body.getLinearVelocity().len() > CHASE_SPEED) {
             body.setLinearVelocity(body.getLinearVelocity().nor().scl(CHASE_SPEED));
         }
     }
 
     private void calculateNewChasePath(Vector2 start, Vector2 end) {
+        if (start == null || end == null) {
+            chasePath = new ArrayList<>();
+            chasePathIndex = 0;
+            if (DEBUG_LOGS)
+                Gdx.app.log("ChaseSystem", "calculateNewChasePath: start ou end nulo");
+            return;
+        }
+
         chasePath = pathfindingSystem.findPath(start, end);
         chasePathIndex = 0;
 
@@ -182,59 +242,72 @@ public class ChaseSystem {
         }
     }
 
-    private void startInvestigation(Vector2 point) {
-        isInvestigating = true;
-        investigationPoint = new Vector2(point);
-        investigationTimer = 0;
-        Gdx.app.log("ChaseSystem", "Iniciando investigação em: " + point);
-    }
-
-    private void updateInvestigation(float deltaTime, Body body, Vector2 currentPosition) {
-        investigationTimer += deltaTime;
-        
-        if (investigationTimer > INVESTIGATION_TIME) {
-            // Terminar investigação
-            isInvestigating = false;
-            Gdx.app.log("ChaseSystem", "Investigação concluída");
-            return;
-        }
-        
-        // Mover-se para o ponto de investigação
-        if (investigationPoint != null) {
-            if (currentPosition.dst(investigationPoint) > 0.5f) {
-                Vector2 direction = investigationPoint.cpy().sub(currentPosition).nor();
-                Vector2 desiredVelocity = direction.scl(CHASE_SPEED * 0.6f); // Velocidade reduzida
-                applySteeringForce(body, desiredVelocity, deltaTime);
-            } else {
-                // Procurar em pontos aleatórios próximos
-                float angle = random.nextFloat() * 6.2832f; // 0-2π
-                float distance = random.nextFloat() * INVESTIGATION_RADIUS;
-                investigationPoint.set(
-                    currentPosition.x + (float)Math.cos(angle) * distance,
-                    currentPosition.y + (float)Math.sin(angle) * distance
-                );
-            }
-        }
-    }
-
     public void reset() {
         chasePath.clear();
         chasePathIndex = 0;
         repathTimer = 0;
         lastKnownTargetPosition = null;
-        lastKnownPositionTimer = LAST_KNOWN_POSITION_DURATION;
-        isInvestigating = false;
     }
+
+    public boolean hasReachedLastKnown() {
+    return reachedLastKnown;
+}
+
+public void clearReachedLastKnown() {
+    reachedLastKnown = false;
+}
 
     public List<Vector2> getChasePath() {
         return chasePath;
     }
-    
-    public boolean isInvestigating() {
-        return isInvestigating;
-    }
-    
+
     public Vector2 getLastKnownPosition() {
         return lastKnownTargetPosition;
+    }
+
+    public void debugRender(ShapeRenderer shapeRenderer, Vector2 cameraOffset, float tileSize) {
+        ShapeRenderer.ShapeType originalType = shapeRenderer.getCurrentType();
+
+        if (chasePath != null && !chasePath.isEmpty()) {
+            shapeRenderer.set(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(Color.YELLOW);
+
+            for (int i = 0; i < chasePath.size() - 1; i++) {
+                Vector2 start = chasePath.get(i);
+                Vector2 end = chasePath.get(i + 1);
+
+                float startX = cameraOffset.x + start.x * tileSize;
+                float startY = cameraOffset.y + start.y * tileSize;
+                float endX = cameraOffset.x + end.x * tileSize;
+                float endY = cameraOffset.y + end.y * tileSize;
+
+                shapeRenderer.line(startX, startY, endX, endY);
+            }
+
+            shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
+            for (int i = 0; i < chasePath.size(); i++) {
+                Vector2 point = chasePath.get(i);
+                float pointX = cameraOffset.x + point.x * tileSize;
+                float pointY = cameraOffset.y + point.y * tileSize;
+
+                shapeRenderer.setColor(Color.YELLOW);
+                shapeRenderer.circle(pointX, pointY, 2f);
+
+                if (i == chasePathIndex) {
+                    shapeRenderer.setColor(Color.RED);
+                    shapeRenderer.circle(pointX, pointY, 3f);
+                }
+            }
+        }
+
+        if (lastKnownTargetPosition != null) {
+            shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(Color.ORANGE);
+            float posX = cameraOffset.x + lastKnownTargetPosition.x * tileSize;
+            float posY = cameraOffset.y + lastKnownTargetPosition.y * tileSize;
+            shapeRenderer.circle(posX, posY, 4f);
+        }
+
+        shapeRenderer.set(originalType);
     }
 }

@@ -90,6 +90,7 @@ public class MapRenderer {
         playerLight.setSoftnessLength(8f);
 
         shapeRenderer = new ShapeRenderer();
+        shapeRenderer.setAutoShapeType(true);
         spriteBatch = new SpriteBatch();
         cameraController = new Camera();
         this.tileRenderer = new TileRenderer(mapa, TILE_SIZE);
@@ -238,7 +239,7 @@ public class MapRenderer {
         for (Enemy enemy : mapa.getEnemies())
             if (enemy instanceof Castor) {
                 Castor castor = (Castor) enemy;
-                castor.debugRender(shapeRenderer);
+                 castor.debugRender(shapeRenderer, new Vector2(offsetX, offsetY), TILE_SIZE);
                 castor.ai.debugRenderVision(shapeRenderer);
 
             }
@@ -389,11 +390,10 @@ public class MapRenderer {
         castorRenderer.dispose();
         ratRenderer.dispose();
         for (Enemy enemy : mapa.getEnemies()) {
-        if (enemy instanceof Castor) {
-            ((Castor) enemy).ai.getStateEnemy().dispose();
+            if (enemy instanceof Castor) {
+                ((Castor) enemy).ai.getStateEnemy().dispose();
+            }
         }
-    }
-        
 
     }
 }

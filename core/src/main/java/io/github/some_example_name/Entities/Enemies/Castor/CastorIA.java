@@ -31,7 +31,7 @@ public class CastorIA {
     private StateEnemy stateEnemy;
     private int chasePathIndex = 0;
     private boolean isShootingAnimationInProgress = false;
-      private boolean wasInterruptedByDamage = false;
+    private boolean wasInterruptedByDamage = false;
 
     private enum State {
         PATROL, CHASE, SHOOTING
@@ -39,18 +39,20 @@ public class CastorIA {
 
     private State currentState = State.PATROL;
 
-    private static final float DETECTION_RANGE = 12f;
-    private static final float SHOOTING_RANGE = 7f;
-    private static final float LOSE_SIGHT_RANGE = 15f;
-
     private float reactionTime = 0f;
     private static final float REACTION_DELAY = 0.7f;
     private static final float REACTION_VARIABILITY = 0.3f;
 
     private float stateCooldown = 0f;
     private static final float STATE_COOLDOWN_TIME = 3f;
-    private static final float CHASE_PERSISTENCE_TIME = 8.0f;
+
     private static final float LAST_KNOWN_POSITION_UPDATE_INTERVAL = 1.0f;
+    private static final float DETECTION_RANGE = 15f;
+    private static final float SHOOTING_RANGE = 8f;
+    private static final float LOSE_SIGHT_RANGE = 25f;
+    private static final float CHASE_PERSISTENCE_TIME = 15.0f;
+    private static final float MIN_CHASE_DISTANCE = 12f;
+    private boolean reachedLastKnown = false;
 
     private Vector2 lastKnownTargetPosition = null;
     private float chasePersistenceTimer = 0f;
@@ -75,18 +77,20 @@ public class CastorIA {
         if (castor.isDead() || castor.isTakingDamage()) {
             return;
         }
-               if (wasInterruptedByDamage && !castor.isTakingDamage()) {
+
+        if (wasInterruptedByDamage && !castor.isTakingDamage()) {
             wasInterruptedByDamage = false;
-            // Reinicia a IA quando sai do estado de dano
             resetAIState();
         }
-                if (castor.isDead() || castor.isTakingDamage()) {
+
+        if (castor.isDead() || castor.isTakingDamage()) {
             wasInterruptedByDamage = true;
             return;
         }
 
         stateEnemy.update(deltaTime);
 
+        // Atualizar estado visual
         switch (currentState) {
             case PATROL:
                 stateEnemy.setState(StateEnemy.StateIcon.PATROL);
@@ -98,20 +102,28 @@ public class CastorIA {
                 stateEnemy.setState(StateEnemy.StateIcon.SHOOTING);
                 break;
         }
-        // debugMovementInfo();
+
         Vector2 currentPosition = body.getPosition();
         Vector2 targetPosition = target.getPosition();
         float distanceToTarget = currentPosition.dst(targetPosition);
 
-        // Atualizar temporizadores
+        // Atualizar temporizadores - apenas se não estiver no modo PATROL
         if (stateCooldown > 0) {
             stateCooldown -= deltaTime;
         }
 
-        chasePersistenceTimer -= deltaTime;
-        lastKnownPositionUpdateTimer -= deltaTime;
+        // Só decrementar o timer de persistência se não tiver visão direta
+        boolean hasLOS = hasLineOfSight(currentPosition, targetPosition);
+        if (!hasLOS && currentState == State.CHASE) {
+            chasePersistenceTimer -= deltaTime;
+        } else if (hasLOS && currentState == State.CHASE) {
+            // Reset do timer se tiver visão durante a perseguição
+            chasePersistenceTimer = CHASE_PERSISTENCE_TIME;
+        }
 
+        lastKnownPositionUpdateTimer -= deltaTime;
         reactionTime -= deltaTime;
+
         if (reactionTime > 0) {
             return;
         }
@@ -121,9 +133,6 @@ public class CastorIA {
             Gdx.app.log("CastorIA-ERROR", "Target ou posição do target é nula!");
             return;
         }
-
-        // Verificar linha de visão
-        boolean hasLOS = hasLineOfSight(currentPosition, targetPosition);
 
         // Atualizar última posição conhecida se tiver visão
         if (hasLOS) {
@@ -140,7 +149,8 @@ public class CastorIA {
         Gdx.app.log("CastorIA", "Estado atual: " + currentState +
                 ", Distância: " + distanceToTarget +
                 ", Posição: " + currentPosition +
-                ", Tempo Persistência: " + chasePersistenceTimer);
+                ", Tempo Persistência: " + chasePersistenceTimer +
+                ", Tempo Cooldown: " + stateCooldown);
 
         if (stateCooldown <= 0) {
             checkStateTransitions(distanceToTarget, hasLOS);
@@ -155,12 +165,35 @@ public class CastorIA {
                 Gdx.app.log("CastorIA", "Executando PERSEGUIR");
                 updateChaseState(deltaTime, body, currentPosition,
                         hasLOS ? targetPosition : lastKnownTargetPosition, hasLOS);
+
+                if (chaseSystem.hasReachedLastKnown()) {
+                    Gdx.app.log("CastorIA", "ChaseSystem informou: reachedLastKnown -> voltando a PATROL");
+                    currentState = State.PATROL;
+                    patrolSystem.reset();
+                    stateCooldown = STATE_COOLDOWN_TIME;
+                    hasRecentSight = false;
+                    lastKnownTargetPosition = null;
+                    chaseSystem.clearReachedLastKnown(); // limpa o flag para próxima vez
+                    break;
+                }
                 break;
+
             case SHOOTING:
                 Gdx.app.log("CastorIA", "Executando ATIRAR");
+
+                // Verificação crítica: só continua atirando se ainda tiver linha de visão
+                boolean stillHasLOS = hasLineOfSight(currentPosition, targetPosition);
+
+                if (!stillHasLOS) {
+                    Gdx.app.log("CastorIA", "Perdeu linha de visão, voltando a perseguir");
+                    currentState = State.CHASE;
+                    stateCooldown = STATE_COOLDOWN_TIME;
+                    break;
+                }
+
                 boolean shouldChase = shootSystem.update(deltaTime, body, currentPosition, targetPosition);
 
-                if (castor.canShoot() && !castor.isShooting()) {
+                if (castor.canShoot() && !castor.isShooting() && stillHasLOS) {
                     Gdx.app.log("CastorIA", "Iniciando animação de tiro via CastorIA");
                     castor.startShooting();
                 }
@@ -172,7 +205,7 @@ public class CastorIA {
         }
     }
 
-        private void resetAIState() {
+    private void resetAIState() {
         // Reinicia para um estado seguro (perseguição)
         currentState = State.CHASE;
         stateCooldown = 0f;
@@ -181,7 +214,6 @@ public class CastorIA {
         lastKnownTargetPosition = new Vector2(target.getPosition());
         Gdx.app.log("CastorIA", "Reiniciando IA após dano");
     }
-    
 
     private void updateChaseState(float deltaTime, Body body, Vector2 currentPosition,
             Vector2 targetPosition, boolean hasLOS) {
@@ -207,34 +239,48 @@ public class CastorIA {
                 break;
 
             case CHASE:
-                // Só volta para patrulha se não tiver visão e o tempo de persistência acabou
-                if ((distanceToTarget > LOSE_SIGHT_RANGE || !hasLOS) && chasePersistenceTimer <= 0) {
-                    currentState = State.PATROL;
-                    patrolSystem.reset();
-                    stateCooldown = STATE_COOLDOWN_TIME;
-                    hasRecentSight = false;
-                    lastKnownTargetPosition = null;
-                    Gdx.app.log("CastorIA", "Modo: PATRULHA (persistência esgotada)");
-                } else if (distanceToTarget <= SHOOTING_RANGE && hasLOS) {
+                // Sem investigação: se perder visão por tempo e estiver longe, volta a
+                // patrulhar.
+                if (!hasLOS && chasePersistenceTimer <= 0) {
+                    if (lastKnownTargetPosition == null || distanceToTarget > MIN_CHASE_DISTANCE) {
+                        currentState = State.PATROL;
+                        patrolSystem.reset();
+                        stateCooldown = STATE_COOLDOWN_TIME;
+                        hasRecentSight = false;
+                        lastKnownTargetPosition = null;
+                        Gdx.app.log("CastorIA", "Modo: PATRULHA (sem visão)");
+                    }
+                }
+                // Se está no alcance de tiro e tem visão, atira
+                else if (distanceToTarget <= SHOOTING_RANGE && hasLOS) {
                     currentState = State.SHOOTING;
                     stateCooldown = STATE_COOLDOWN_TIME;
                     Gdx.app.log("CastorIA", "Modo: ATIRANDO (jogador visível)");
                 }
+                // Se tem visão, resetar o timer de persistência e atualizar última posição
+                // vista
+                else if (hasLOS) {
+                    chasePersistenceTimer = CHASE_PERSISTENCE_TIME;
+                    lastKnownTargetPosition = new Vector2(target.getPosition());
+                }
                 break;
 
             case SHOOTING:
-                if (distanceToTarget > SHOOTING_RANGE * 1.1f || !hasLOS) {
+                // Volta a perseguir se sair do alcance de tiro
+                if (distanceToTarget > SHOOTING_RANGE * 1.2f) {
                     currentState = State.CHASE;
                     stateCooldown = STATE_COOLDOWN_TIME;
                     chasePersistenceTimer = CHASE_PERSISTENCE_TIME;
-                    Gdx.app.log("CastorIA", "Modo: PERSEGUIR (saiu do alcance ou perdeu visão)");
-                } else if (distanceToTarget > LOSE_SIGHT_RANGE) {
+                    Gdx.app.log("CastorIA", "Modo: PERSEGUIR (saiu do alcance de tiro)");
+                }
+                // Volta para patrulha se perder completamente o jogador de vista
+                else if (!hasLOS && distanceToTarget > LOSE_SIGHT_RANGE) {
                     currentState = State.PATROL;
                     patrolSystem.reset();
                     stateCooldown = STATE_COOLDOWN_TIME;
                     hasRecentSight = false;
                     lastKnownTargetPosition = null;
-                    Gdx.app.log("CastorIA", "Modo: PATRULHA (perdeu visão)");
+                    Gdx.app.log("CastorIA", "Modo: PATRULHA (perdeu o jogador)");
                 }
                 break;
         }
@@ -268,6 +314,19 @@ public class CastorIA {
         if (patrolSystem != null) {
             patrolSystem.debugRender(shapeRenderer);
         }
+
+        // Adicionar renderização do sistema de perseguição
+
+        Vector2 currentPos = castor.getBody().getPosition();
+        Vector2 targetPos = target.getPosition();
+
+        if (hasLineOfSight(currentPos, targetPos)) {
+            shapeRenderer.setColor(Color.GREEN);
+        } else {
+            shapeRenderer.setColor(Color.RED);
+        }
+
+        shapeRenderer.line(currentPos.x, currentPos.y, targetPos.x, targetPos.y);
     }
 
     private boolean hasDetailedLineOfSight(Vector2 start, Vector2 end) {
@@ -309,6 +368,12 @@ public class CastorIA {
         }
 
         shapeRenderer.line(currentPos.x, currentPos.y, targetPos.x, targetPos.y);
+    }
+
+    public void debugRenderChaseSystem(ShapeRenderer shapeRenderer, Vector2 cameraOffset, float tileSize) {
+        if (chaseSystem != null) {
+            chaseSystem.debugRender(shapeRenderer, cameraOffset, tileSize);
+        }
     }
 
     public StateEnemy getStateEnemy() {

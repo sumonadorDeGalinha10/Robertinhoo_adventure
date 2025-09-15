@@ -270,11 +270,12 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         return shadowComponent;
     }
 
-    public void debugRender(ShapeRenderer shapeRenderer) {
-        if (ai != null) {
-            ai.debugRender(shapeRenderer);
-        }
+public void debugRender(ShapeRenderer shapeRenderer, Vector2 cameraOffset, float tileSize) {
+    if (ai != null) {
+        ai.debugRender(shapeRenderer);
+        ai.debugRenderChaseSystem(shapeRenderer, cameraOffset, tileSize);
     }
+}
    
     @Override
     public void takeDamage(float damage) {
@@ -284,14 +285,12 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         damageTimer = DAMAGE_ANIMATION_DURATION;
         isTakingDamage = true;
         
-        // Interrompe qualquer ação de tiro quando leva dano
         if (isShooting) {
             isShooting = false;
             hasShot = false;
             shootAnimationTime = 0f;
         }
         
-        // Aplica um pequeno empurrão para trás quando leva dano
         Vector2 knockbackDirection = target.getPosition().cpy().sub(body.getPosition()).nor().scl(-1);
         body.applyLinearImpulse(
             knockbackDirection.scl(3f * body.getMass()),
