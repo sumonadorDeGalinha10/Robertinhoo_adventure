@@ -148,8 +148,9 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
         FixtureDef fd = new FixtureDef();
         fd.shape = shape;
-        fd.density = 1.2f;
-        fd.friction = 0.3f;
+        fd.density = 4f;
+        fd.friction = 3f;
+        
         fd.filter.categoryBits = Constants.BIT_ENEMY;
         fd.filter.maskBits = (short) (Constants.BIT_GROUND
                 | Constants.BIT_WALL
