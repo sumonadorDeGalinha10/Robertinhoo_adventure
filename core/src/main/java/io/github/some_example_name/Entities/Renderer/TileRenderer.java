@@ -24,7 +24,7 @@ public class TileRenderer {
         this.tileSize = tileSize;
 
         // floor como antes
-        floorTexture = new Texture(Gdx.files.internal("Tiles/tiles_fase_1/textura_chão .png"));
+        floorTexture = new Texture(Gdx.files.internal("Tiles/tiles_fase_1/textura_chão.png"));
         floorTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         floorTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
         floorRegion = new TextureRegion(floorTexture);

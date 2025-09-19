@@ -22,6 +22,7 @@ public class CastorRenderer {
     private Animation<TextureRegion> shootUpAnimation;
     private boolean isShooting = false;
     private float shootAnimationTime = 0f;
+    private int TILE_SIZE = 64;
 
     private enum Direction {
         LEFT, RIGHT, DOWN, UP
@@ -149,13 +150,13 @@ public class CastorRenderer {
             currentFrame = idleAnimation.getKeyFrame(stateTime, true);
         }
         
-        float x = offsetX + currentPosition.x * 16 - 8;
-        float y = offsetY + currentPosition.y * 16 - 8;
+        float x = offsetX + currentPosition.x * TILE_SIZE - 8;
+        float y = offsetY + currentPosition.y * TILE_SIZE - 8;
         
         if (flipX) {
-            batch.draw(currentFrame, x + 16, y, -16, 16);
+            batch.draw(currentFrame, x + TILE_SIZE, y, -TILE_SIZE, TILE_SIZE);
         } else {
-            batch.draw(currentFrame, x, y, 16, 16);
+            batch.draw(currentFrame, x, y, TILE_SIZE, TILE_SIZE);
         }
     }
 

@@ -112,9 +112,9 @@ public class Robertinhoo implements ShadowEntity {
         this.meleeSystem = new MeleeAttackSystem(this);
         this.staminaSystem = new StaminaSystem(100f, 10f, 23f, 0.95f);
         this.shadowComponent = new ShadowComponent(
-                8, // Largura
-                4, // Altura
-                -0.25f,
+                25, // Largura
+                20, // Altura
+                -0.24f,
                 0.7f,
                 new Color(0.05f, 0.05f, 0.05f, 1) // Cinza
         );
