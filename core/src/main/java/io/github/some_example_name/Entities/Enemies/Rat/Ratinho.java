@@ -66,6 +66,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private RatAI ai;
     public RatRenderer renderer = new RatRenderer();
     private Rectangle homeRoom; 
+    private int TILE_SIZE = 64;
 
     public enum DeathType {
         NONE, MELEE, PROJECTILE
@@ -285,14 +286,14 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
             shape.getVertex(i, local);
 
             // Rotaciona em torno da origem do body e converte pra pixel
-            float worldX = (local.x * 16) * MathUtils.cos(angle)
-                    - (local.y * 16) * MathUtils.sin(angle);
-            float worldY = (local.x * 16) * MathUtils.sin(angle)
-                    + (local.y * 16) * MathUtils.cos(angle);
+            float worldX = (local.x *TILE_SIZE) * MathUtils.cos(angle)
+                    - (local.y *TILE_SIZE) * MathUtils.sin(angle);
+            float worldY = (local.x *TILE_SIZE) * MathUtils.sin(angle)
+                    + (local.y *TILE_SIZE) * MathUtils.cos(angle);
 
             verts[i] = new Vector2(
-                    offsetX + (position.x * 16) + worldX,
-                    offsetY + (position.y * 16) + worldY);
+                    offsetX + (position.x *TILE_SIZE) + worldX,
+                    offsetY + (position.y *TILE_SIZE) + worldY);
         }
 
         renderer.setColor(Color.RED);

@@ -10,7 +10,7 @@ public class PathfindingSystem {
     private Grid grid;
     private final AStarPathFinder pathFinder;
     private final Mapa mapa;
-    private final int tileSize = 16;
+    private final int tileSize = 64;
 
     public PathfindingSystem(Mapa mapa) {
         this.mapa = mapa;

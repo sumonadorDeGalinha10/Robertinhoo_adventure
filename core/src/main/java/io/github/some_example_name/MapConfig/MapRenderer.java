@@ -64,7 +64,7 @@ public class MapRenderer {
     private DestructibleRenderer destructibleRenderer;
     // private MeleeAttackRenderer meleeAttackRenderer;
     private PointLight debugLight;
-    public static final int TILE_SIZE = 16;
+    public static final int TILE_SIZE = 64;
     public float offsetX;
     public float offsetY;
 
@@ -227,7 +227,7 @@ public class MapRenderer {
                         frame,
                         offsetX + weapon.getPosition().x * TILE_SIZE,
                         offsetY + floatY,
-                        10, 6);
+                        40, 25);
             }
 
             ammoRenderer.render(spriteBatch, mapa.getAmmo(), offsetX, offsetY);

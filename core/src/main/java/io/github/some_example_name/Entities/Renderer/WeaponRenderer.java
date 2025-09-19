@@ -121,12 +121,12 @@ public class WeaponRenderer {
             return;
         }
 
-        float scale = 0.35f;
+        float scale = 1.4f;
         float width = frame.getRegionWidth() * scale;
         float height = frame.getRegionHeight() * scale;
 
-        float adjustedX = position.x - width * 0.35f;
-        float adjustedY = position.y - height * 0.2f;
+        float adjustedX = position.x - width * 0.57f;
+        float adjustedY = position.y - height * 0.52f;
         
         batch.draw(frame,
                 adjustedX,
