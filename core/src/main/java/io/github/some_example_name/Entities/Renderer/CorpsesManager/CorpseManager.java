@@ -40,10 +40,8 @@ public class CorpseManager {
 
     public void render(SpriteBatch batch, float offsetX, float offsetY) {
         for (Corpse corpse : corpses) {
-            float renderX = offsetX + (corpse.position.x + corpse.renderOffset.x) * 16;
-            float renderY = offsetY + (corpse.position.y + corpse.renderOffset.y) * 16;
-            
-       
+            float renderX = offsetX + (corpse.position.x + corpse.renderOffset.x) * 64;
+            float renderY = offsetY + (corpse.position.y + corpse.renderOffset.y) * 64;
                 batch.draw(
                     corpse.texture,
                     renderX,

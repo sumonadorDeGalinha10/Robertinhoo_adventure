@@ -16,6 +16,7 @@ public class MissileRenderer {
     private Animation<TextureRegion> explosionAnimation;
     private final Texture missileTexture;
     private final Texture explosionTexture;
+    private static final float TILE_SIZE = 64f;
 
     private final Map<Missile, Float> missileStateTimes = new HashMap<>();
     private final Map<Missile, Vector2> explosionPositions = new HashMap<>(); // Armazena a posição exata da explosão
@@ -54,8 +55,8 @@ public class MissileRenderer {
         missileStateTimes.put(missile, stateTime);
 
         Vector2 position = missile.getPosition();
-        float x = offsetX + position.x * 16f - 8f;
-        float y = offsetY + position.y * 16f - 8f;
+        float x = offsetX + position.x * TILE_SIZE - 8f;
+        float y = offsetY + position.y * TILE_SIZE - 8f;
 
         if (!missile.isDestroying()) {
             TextureRegion frame = missileAnimation.getKeyFrame(stateTime, true);
@@ -64,7 +65,7 @@ public class MissileRenderer {
                 frame,
                 x, y,
                 8f, 8f,  
-                9f, 9f, 
+                40f, 40f, 
                 1f, 1f,  
                 missile.getAngle() 
             );
@@ -78,8 +79,8 @@ public class MissileRenderer {
                 explosionPosition = position; // Fallback se não tiver posição armazenada
             }
             
-            float explosionX = offsetX + explosionPosition.x * 16f - 8f;
-            float explosionY = offsetY + explosionPosition.y * 16f - 8f;
+            float explosionX = offsetX + explosionPosition.x * TILE_SIZE - 8f;
+            float explosionY = offsetY + explosionPosition.y * TILE_SIZE - 8f;
             
             float destroyTime = missile.getDestructionTime();
             TextureRegion explosionFrame = explosionAnimation.getKeyFrame(destroyTime, false);
@@ -87,7 +88,7 @@ public class MissileRenderer {
             float explosionProgress = destroyTime / EXPLOSION_TOTAL_DURATION;
             if (explosionProgress > 1f) explosionProgress = 1f;
 
-            float maxExplosionSize = 32f;
+            float maxExplosionSize = 64f;
             float explosionSize = maxExplosionSize * explosionProgress;
             if (explosionSize < 1f) explosionSize = 1f;
 

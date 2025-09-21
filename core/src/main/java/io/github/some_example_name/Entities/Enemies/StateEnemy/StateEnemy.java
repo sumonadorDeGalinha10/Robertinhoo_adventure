@@ -31,7 +31,7 @@ public class StateEnemy {
 
         this.currentState = StateIcon.NONE;
         this.entityPosition = new Vector2();
-        this.iconHeight = 1.5f;
+        this.iconHeight =44f;
         this.stateTime = 0f;
     }
 
@@ -82,9 +82,9 @@ public class StateEnemy {
 
         if (currentAnimation != null) {
             TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
-            float width = currentFrame.getRegionWidth() / 16f;
-            float height = currentFrame.getRegionHeight() / 16f;
-            float x = entityPosition.x - width / 2;
+            float width = currentFrame.getRegionWidth() / 4f;
+            float height = currentFrame.getRegionHeight() / 4f;
+            float x = entityPosition.x + 15f;
             float y = entityPosition.y + iconHeight;
           
 

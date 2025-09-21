@@ -9,13 +9,13 @@ import io.github.some_example_name.MapConfig.MapRenderer;
 
 public class Camera {
     public OrthographicCamera camera;
-    public static final int TILE_SIZE = 16;
+    public static final int TILE_SIZE = 64;
     private float zoom;
     public MapRenderer mapRenderer;
 
     public Camera() {
         camera = new OrthographicCamera();
-        zoom = 0.5f;
+        zoom = 10f;
         camera.setToOrtho(
                 false,
                 Gdx.graphics.getWidth() * zoom / TILE_SIZE,

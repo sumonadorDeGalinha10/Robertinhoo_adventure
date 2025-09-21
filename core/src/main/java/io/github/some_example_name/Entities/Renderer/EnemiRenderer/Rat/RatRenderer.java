@@ -21,11 +21,12 @@ public class RatRenderer {
     private final Texture deathSheet;
     private final Animation<TextureRegion> meleeDeathAnimation;
     private final Animation<TextureRegion> projectileDeathAnimation;
+    private static final float TILE_SIZE =64f;
 
-    private static final float RAT_WIDTH = 16f;
-    private static final float RAT_HEIGHT = 16f;
-    private static final float RAT_RENDER_WIDTH = 12f;
-    private static final float RAT_RENDER_HEIGHT = 12f;
+    private static final float RAT_WIDTH = TILE_SIZE;
+    private static final float RAT_HEIGHT = TILE_SIZE;
+    private static final float RAT_RENDER_WIDTH = 40f;
+    private static final float RAT_RENDER_HEIGHT = 40f;
     private static final int SHEET_COLS = 6;
     private static final int SHEET_ROWS = 5;
 
@@ -93,8 +94,8 @@ public class RatRenderer {
         }
             batch.draw(
                     frame,
-                    offsetX + renderPos.x * 16,
-                    offsetY + renderPos.y * 16,
+                    offsetX + renderPos.x * TILE_SIZE,
+                    offsetY + renderPos.y * TILE_SIZE,
                     renderSize.x,
                     renderSize.y);
 

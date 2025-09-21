@@ -71,9 +71,9 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
-                5,
-                2,
-                -0.1f,
+                20,
+                20,
+                -0.25f,
                 0.7f,
                 new Color(0.05f, 0.05f, 0.05f, 1f));
     }
