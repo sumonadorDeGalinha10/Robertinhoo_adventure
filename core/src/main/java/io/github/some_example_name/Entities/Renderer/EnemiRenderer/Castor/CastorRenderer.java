@@ -57,11 +57,11 @@ public class CastorRenderer {
     }
     
     private Direction getDirection(Vector2 velocity, Vector2 targetPosition, Vector2 currentPosition, boolean isShooting) {
-        // Durante o tiro, usa a direção do alvo em vez da velocidade
+
         if (isShooting) {
             Vector2 directionToTarget = targetPosition.cpy().sub(currentPosition).nor();
             
-            // Determina a direção principal baseada no vetor para o alvo
+
             float absX = Math.abs(directionToTarget.x);
             float absY = Math.abs(directionToTarget.y);
             
@@ -72,7 +72,7 @@ public class CastorRenderer {
             }
         }
         
-        // Comportamento normal para movimento
+
         float absVelX = Math.abs(velocity.x);
         float absVelY = Math.abs(velocity.y);
         
@@ -90,14 +90,13 @@ public class CastorRenderer {
         
         isMoving = velocity.len() > 0.1f;
         isShooting = castor.isShooting();
-
+    
         if (isShooting) {
             shootAnimationTime += delta;
         } else {
             shootAnimationTime = 0f;
         }
         
-        // Sempre atualiza a direção, especialmente durante o tiro
         currentDirection = getDirection(velocity, targetPosition, currentPosition, isShooting);
         
         stateTime += delta;
@@ -122,12 +121,12 @@ public class CastorRenderer {
                 default:
                     currentFrame = idleAnimation.getKeyFrame(stateTime, true);
             }
-
+    
             if (shootAnimationTime >= 0.5f && !castor.hasShot()) {
-            castor.setHasShot(true);
-            castor.fireProjectile();
+                castor.setHasShot(true);
+                castor.fireProjectile();
+            }
         }
-    }
         else if (isMoving) {
             switch (currentDirection) {
                 case LEFT:
@@ -149,14 +148,18 @@ public class CastorRenderer {
         } else {
             currentFrame = idleAnimation.getKeyFrame(stateTime, true);
         }
+
+        float drawWidth = TILE_SIZE;
+        float drawHeight = TILE_SIZE;
         
-        float x = offsetX + currentPosition.x * TILE_SIZE - 8;
-        float y = offsetY + currentPosition.y * TILE_SIZE - 8;
+ 
+        float x = offsetX + (currentPosition.x - 0.5f) * TILE_SIZE;
+        float y = offsetY + (currentPosition.y - 0.5f) * TILE_SIZE;
         
         if (flipX) {
-            batch.draw(currentFrame, x + TILE_SIZE, y, -TILE_SIZE, TILE_SIZE);
+            batch.draw(currentFrame, x + drawWidth, y, -drawWidth, drawHeight);
         } else {
-            batch.draw(currentFrame, x, y, TILE_SIZE, TILE_SIZE);
+            batch.draw(currentFrame, x, y, drawWidth, drawHeight);
         }
     }
 
