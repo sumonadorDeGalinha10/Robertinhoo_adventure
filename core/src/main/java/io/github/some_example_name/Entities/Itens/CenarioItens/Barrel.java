@@ -168,6 +168,10 @@ public class Barrel extends BaseDestructible implements ShadowEntity {
         return flashActive;
     }
 
+    public Body getBody() {
+        return body;
+    }
+
     @Override
     public ShadowComponent getShadowComponent() {
         return shadowComponent;

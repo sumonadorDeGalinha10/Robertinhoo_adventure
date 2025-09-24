@@ -130,22 +130,23 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     public void setHasShot(boolean hasShot) {
         this.hasShot = hasShot;
     }
-
-    // No método createBody do Castor.java
     private Body createBody(float x, float y) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(x + 0.5f, y + 0.5f);
         bodyDef.fixedRotation = true;
-
+    
         Body body = mapa.world.createBody(bodyDef);
-
-        float halfWidth = (6f / 3f) / 12;
-        float halfHeight = (6f / 3f) / 12;
-
+    
+        // AJUSTE: Corrigir as dimensões para a nova escala (64 pixels)
+        // Antes: (6f / 3f) / 12 = muito pequeno para 64px
+        // Agora: usar dimensões proporcionais à nova escala
+        float halfWidth = (16f / 64f) / 2f;  // 16 pixels em unidades de mundo (64px = 1 unidade)
+        float halfHeight = (16f / 64f) / 2f;
+    
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(halfWidth, halfHeight);
-
+    
         FixtureDef fd = new FixtureDef();
         fd.shape = shape;
         fd.density = 4f;
@@ -158,17 +159,16 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
                 | Constants.BIT_OBJECT
                 | Constants.BIT_PLAYER_ATTACK
                 | Constants.BIT_PROJECTILE);
-
+    
         body.createFixture(fd);
         shape.dispose();
-
+    
         body.setLinearDamping(1f);
         body.setAngularDamping(1f);
         body.setUserData(this);
-
+    
         return body;
     }
-
     public void shootAtPlayer() {
         // Se a animação já está em progresso, ignora chamadas diretas
         if (isShooting) {
@@ -329,7 +329,6 @@ public void debugRender(ShapeRenderer shapeRenderer, Vector2 cameraOffset, float
         return isDead;
     }
     
-
     /*
      * ============================
      * Métodos exigidos por Steerable/Location/Limiter
