@@ -18,9 +18,9 @@ public class Grid {
                 boolean blocked = mapa.isTileBlocked(x, y);
                 nodes[x][y] = new Node(x, y, !blocked);
                 
-                if (blocked) {
-                    System.out.println("Tile bloqueado em: (" + x + ", " + y + ")");
-                }
+                // if (blocked) {
+                //     System.out.println("Tile bloqueado em: (" + x + ", " + y + ")");
+                // }
             }
         }
     }
