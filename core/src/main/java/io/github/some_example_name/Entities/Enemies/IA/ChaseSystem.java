@@ -20,7 +20,7 @@ public class ChaseSystem {
     private final Random random;
     private static final float TARGET_REACHED_DISTANCE = 1.5f;
 
-    private static final boolean DEBUG_LOGS = true;
+    private static final boolean DEBUG_LOGS = false;
 
     private List<Vector2> chasePath = new ArrayList<>();
     private int chasePathIndex = 0;

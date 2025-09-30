@@ -1,53 +1,43 @@
 package io.github.some_example_name.MapConfig;
 
-import io.github.some_example_name.Otimizations.WallOtimizations;
-
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.maps.Map;
-import com.badlogic.gdx.math.Vector2;
-import io.github.some_example_name.Entities.Enemies.Enemy;
-import io.github.some_example_name.Entities.Enemies.Castor.Castor;
-import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
-import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
-import io.github.some_example_name.Entities.Inventory.Item;
-import io.github.some_example_name.Entities.Itens.Contact.Constants;
-import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
-import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
-import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
-import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
-import io.github.some_example_name.Entities.Player.Robertinhoo;
-import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
-import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
-import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
-import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
-import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
-import com.badlogic.gdx.graphics.Color;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 
 import box2dLight.RayHandler;
-
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
+import io.github.some_example_name.Entities.Enemies.Castor.Castor;
+import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
+import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
+import io.github.some_example_name.Entities.Inventory.Item;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo;
+import io.github.some_example_name.Entities.Itens.Ammo.Ammo9mm;
+import io.github.some_example_name.Entities.Itens.CenarioItens.Barrel;
+import io.github.some_example_name.Entities.Itens.Contact.Constants;
+import io.github.some_example_name.Entities.Itens.Contact.GameContactListener;
 import io.github.some_example_name.Entities.Itens.CraftinItens.Polvora;
-
-import java.util.List;
+import io.github.some_example_name.Entities.Itens.CraftinItens.PolvoraBruta;
+import io.github.some_example_name.Entities.Itens.Weapon.Pistol.Pistol;
+import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
+import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
+import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Entities.Renderer.ItensRenderer.Destructible;
+import io.github.some_example_name.Otimizations.MapBorderManager;
+import io.github.some_example_name.Otimizations.WallOtimizations;
+import io.github.some_example_name.MapConfig.Spawner.BarrelSpawner;
 
 public class Mapa {
 
@@ -66,8 +56,9 @@ public class Mapa {
     public World world;
     public WallOtimizations agruparParedes;
     public MapGenerator mapGenerator;
+    private BarrelSpawner barrelSpawner;
 
-    static int TILE = 0x000000; // #000000 (tiles normais)
+    public static int TILE = 0x000000; // #000000 (tiles normais)
     static int START = 0xFF0000; // #FF0000 (ponto de início)
     public static int PAREDE = 0x00FFF4; // #00FFF4 (paredes)
     public static int ENEMY = 0X913d77; // #913d77 (inimigos)
@@ -107,7 +98,7 @@ public class Mapa {
 
         // 1. Criar gerador de mapa
         this.mapGenerator = new MapGenerator(50, 50);
-
+        
         initializeLights();
 
         // 2. Copiar dados do mapa
@@ -162,94 +153,70 @@ public class Mapa {
         }
     }
 
-    private void addRandomEntities() {
-        Random rand = new Random();
-        List<Vector2> validTilePositions = new ArrayList<>();
-
-        for (int x = 0; x < mapWidth; x++) {
-            for (int y = 0; y < mapHeight; y++) {
+private void addRandomEntities() {
+    Random rand = new Random();
+    List<Vector2> validRoomPositions = new ArrayList<>();
+    for (Rectangle room : rooms) {
+        for (int x = (int) room.x + 1; x < room.x + room.width - 1; x++) {
+            for (int y = (int) room.y + 1; y < room.y + room.height - 1; y++) {
                 if (tiles[x][y] == TILE) {
                     if (x != (int) startPosition.x || y != (int) startPosition.y) {
-                        validTilePositions.add(new Vector2(x, y));
+                        validRoomPositions.add(new Vector2(x, y));
                     }
                 }
             }
         }
+    }
 
-        java.util.Collections.shuffle(validTilePositions, rand);
+    java.util.Collections.shuffle(validRoomPositions, rand);
 
-        // 3. Adicionar itens (usando coordenadas de mundo)
-        for (int i = 0; i < 3 && i < validTilePositions.size(); i++) {
-            Vector2 tilePos = validTilePositions.get(i);
-            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+    for (int i = 0; i < 3 && i < validRoomPositions.size(); i++) {
+        Vector2 tilePos = validRoomPositions.get(i);
+        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
 
-            if (rand.nextBoolean()) {
-                weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
-            } else {
-                ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
-            }
-        }
-
-        int ratsAdded = 0;
-        for (int i = 0; i < validTilePositions.size() && ratsAdded < 2; i++) {
-            Vector2 tilePos = validTilePositions.get(i);
-
-            boolean inRoom = false;
-            Rectangle ratRoom = null;
-
-            for (Rectangle room : rooms) {
-
-                if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
-                        tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
-                    inRoom = true;
-                    ratRoom = room;
-                    break;
-                }
-            }
-
-            if (!inRoom) {
-                continue;
-            }
-
-            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
-            enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
-            ratsAdded++;
-
-            Gdx.app.log("Mapa", "Rato adicionado na sala: " + ratRoom + " em posição: " + tilePos);
-        }
-        int castoresAdded = 0;
-        for (int i = 8; i < validTilePositions.size() && castoresAdded < 1; i++) {
-            Vector2 tilePos = validTilePositions.get(i);
-
-            boolean inRoom = false;
-            Rectangle castorRoom = null;
-
-            for (Rectangle room : rooms) {
-                if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
-                        tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
-                    inRoom = true;
-                    castorRoom = room;
-                    break;
-                }
-            }
-
-            if (!inRoom) {
-                continue;
-            }
-
-            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
-            enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
-            castoresAdded++;
-
-            Gdx.app.log("Mapa", "Castor adicionado na sala: " + castorRoom + " em posição: " + tilePos);
-        }
-
-        for (int i = 8; i < 11 && i < validTilePositions.size(); i++) {
-            Vector2 tilePos = validTilePositions.get(i);
-            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
-            destructibles.add(new Barrel(this, worldPos.x, worldPos.y, null, null));
+        if (rand.nextBoolean()) {
+            weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
+        } else {
+            ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
         }
     }
+
+    int ratsAdded = 0;
+    for (int i = 0; i < validRoomPositions.size() && ratsAdded < 2; i++) {
+        Vector2 tilePos = validRoomPositions.get(i);
+        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+        Rectangle ratRoom = findRoomContainingTile(tilePos);
+        enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
+        ratsAdded++;
+    }
+
+    int castoresAdded = 0;
+    for (int i = 8; i < validRoomPositions.size() && castoresAdded < 1; i++) {
+        Vector2 tilePos = validRoomPositions.get(i);
+        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+        enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
+        castoresAdded++;
+    }
+    BarrelSpawner.spawnBarrels(this, 14);
+
+}
+public Rectangle findRoomContainingTile(Vector2 tilePos) {
+    // Gdx.app.log("Mapa", "Procurando sala para tile: " + tilePos);
+    
+    for (Rectangle room : rooms) {
+        // Gdx.app.log("Mapa", "Verificando sala: " + room);
+        
+        // Verificar se o tile está dentro da sala (excluindo as paredes)
+        if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
+            tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
+            Gdx.app.log("Mapa", "✅ Sala encontrada: " + room);
+            return room;
+        }
+    }
+    
+    // Gdx.app.error("Mapa", "❌ Nenhuma sala encontrada para tile: " + tilePos);
+    return null;
+}
 
     public List<Enemy> getEnemies() {
         return enemies;
@@ -260,13 +227,20 @@ public class Mapa {
     }
 
     private void agruparEPCriarParedes() {
+        // 1. Criar bordas do mapa otimizadas (apenas onde necessário)
+        MapBorderManager.createOptimizedMapBorders(this);
+        
+        // 2. Otimizar e criar paredes internas (salas + corredores)
         List<Rectangle> retangulos = agruparParedes.optimizeWalls(wallPositions);
         for (Rectangle ret : retangulos) {
             createWallBody(ret);
         }
+        
+        Gdx.app.log("Mapa", "Sistema de colisão otimizado criado:");
+        Gdx.app.log("Mapa", "- Bordas: criadas apenas onde necessário");
+        Gdx.app.log("Mapa", "- Paredes internas: " + retangulos.size() + " retângulos otimizados");
     }
-
-    private void createWallBody(Rectangle ret) {
+    public void createWallBody(Rectangle ret) {
         float escala = 1.0f;
 
         BodyDef bodyDef = new BodyDef();
