@@ -16,7 +16,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class ChaseSystem {
     private final PathfindingSystem pathfindingSystem;
-    private final Mapa mapa;
     private final Random random;
     private static final float TARGET_REACHED_DISTANCE = 1.5f;
 
@@ -25,7 +24,6 @@ public class ChaseSystem {
     private List<Vector2> chasePath = new ArrayList<>();
     private int chasePathIndex = 0;
     private Deque<Vector2> targetTrail = new ArrayDeque<>();
-    private static final int TRAIL_SIZE = 5;
 
     private float repathTimer = 0;
     private static final float REPATH_INTERVAL = 0.3f; // Reduzido para reagir mais rápido
@@ -35,84 +33,78 @@ public class ChaseSystem {
     private boolean reachedLastKnown = false;
 
     private Vector2 lastKnownTargetPosition = null;
-    private float lastKnownPositionTimer = 0;
 
     public ChaseSystem(PathfindingSystem pathfindingSystem, Mapa mapa) {
         this.pathfindingSystem = pathfindingSystem;
-        this.mapa = mapa;
         this.random = new Random();
     }
 
     public void update(float deltaTime, Body body, Vector2 currentPosition,
             Vector2 targetPosition, boolean hasDirectSight) {
         repathTimer += deltaTime;
-        lastKnownPositionTimer += deltaTime;
 
         if (DEBUG_LOGS) {
-            Gdx.app.log("ChaseSystem", "=== UPDATE ===");
             Gdx.app.log("ChaseSystem", "Posição atual: " + currentPosition);
-            Gdx.app.log("ChaseSystem", "Posição alvo (param): " + targetPosition);
+            Gdx.app.log("ChaseSystem", "Alvo: " + targetPosition);
             Gdx.app.log("ChaseSystem", "Visão direta: " + hasDirectSight);
-            Gdx.app.log("ChaseSystem", "Timer repath: " + repathTimer + "/" + REPATH_INTERVAL);
         }
 
+        // Atualiza última posição conhecida se tiver visão
         if (hasDirectSight && targetPosition != null) {
-            // Atualiza última posição conhecida e o timer
             lastKnownTargetPosition = new Vector2(targetPosition);
-            lastKnownPositionTimer = 0f;
-            reachedLastKnown = false;
-
-            // Trail (breadcrumbs) para seguir a trilha do player
-            targetTrail.addLast(new Vector2(targetPosition));
-            if (targetTrail.size() > TRAIL_SIZE) {
-                targetTrail.removeFirst();
-            }
+            reachedLastKnown = false; // Reset pois tem visão do alvo
         }
 
         Vector2 effectiveTargetPosition = getEffectiveTargetPosition(currentPosition, targetPosition, hasDirectSight);
 
-        // Agora nunca retornamos prematuramente sem tentar um fallback.
         if (effectiveTargetPosition == null) {
-            // Sem target conhecido — limpar e aplicar fallback de movimentação (pequeno
-            // empurrão pra frente)
+            // Fallback para movimento aleatório suave
             chasePath.clear();
-            chasePathIndex = 0;
-            // fallback simples: andar um pouco para frente (evita ficar travado)
-            Vector2 fallback = currentPosition.cpy().add((random.nextFloat() - 0.5f) * 0.5f,
-                    (random.nextFloat() - 0.5f) * 0.5f);
-            moveDirectlyToTarget(body, currentPosition, fallback, CHASE_SPEED * 0.5f);
-            if (DEBUG_LOGS)
-                Gdx.app.log("ChaseSystem", "No effective target -> fallback move");
+            applyWanderBehavior(body, deltaTime);
             return;
         }
 
         float distanceToTarget = currentPosition.dst(effectiveTargetPosition);
 
-        // Se estiver muito perto do alvo efetivo e não temos visão direta, apenas parar
-        // de tentar recalcular
+        // VERIFICAÇÃO MELHORADA: Só marca como "alcançado" se não tiver visão direta
         if (distanceToTarget < TARGET_REACHED_DISTANCE && !hasDirectSight) {
-            // Indicamos que chegamos ao last-known e não encontramos o jogador.
-            // Isso avisa o CastorIA para voltar à patrulha.
             chasePath.clear();
-            chasePathIndex = 0;
-            reachedLastKnown = true; // <-- sinaliza
-            lastKnownTargetPosition = null; // <-- limpa para não reusar
+            reachedLastKnown = true;
             if (DEBUG_LOGS)
-                Gdx.app.log("ChaseSystem", "Alcançou last-known; reachedLastKnown = true");
+                Gdx.app.log("ChaseSystem", "✅ Alcançou última posição conhecida sem visão do jogador");
             return;
         }
 
+        // Recalcula caminho se necessário
         if (shouldRecalculatePath(currentPosition, effectiveTargetPosition)) {
             calculateNewChasePath(currentPosition, effectiveTargetPosition);
             repathTimer = 0;
         }
 
-        // Seguir o caminho se houver, senão mover diretamente para
-        // effectiveTargetPosition
+        // Segue o caminho ou move diretamente
         if (chasePath != null && !chasePath.isEmpty()) {
-            followChasePath(body, currentPosition, CHASE_SPEED, Gdx.graphics.getDeltaTime());
+            followChasePath(body, currentPosition, CHASE_SPEED, deltaTime);
         } else {
             moveDirectlyToTarget(body, currentPosition, effectiveTargetPosition, CHASE_SPEED);
+        }
+    }
+
+    // Novo método para comportamento de "vaguear" quando não tem alvo
+    private void applyWanderBehavior(Body body, float deltaTime) {
+        Vector2 currentVelocity = body.getLinearVelocity();
+
+        // Aplica um pequeno movimento aleatório suave
+        if (currentVelocity.len() < 1.0f) {
+            Vector2 wanderForce = new Vector2(
+                    (random.nextFloat() - 0.5f) * 2f,
+                    (random.nextFloat() - 0.5f) * 2f).nor().scl(CHASE_SPEED * 0.3f);
+
+            body.applyForceToCenter(wanderForce, true);
+        }
+
+        // Limita velocidade máxima
+        if (body.getLinearVelocity().len() > CHASE_SPEED * 0.3f) {
+            body.setLinearVelocity(body.getLinearVelocity().nor().scl(CHASE_SPEED * 0.3f));
         }
     }
 
@@ -250,12 +242,12 @@ public class ChaseSystem {
     }
 
     public boolean hasReachedLastKnown() {
-    return reachedLastKnown;
-}
+        return reachedLastKnown;
+    }
 
-public void clearReachedLastKnown() {
-    reachedLastKnown = false;
-}
+    public void clearReachedLastKnown() {
+        reachedLastKnown = false;
+    }
 
     public List<Vector2> getChasePath() {
         return chasePath;

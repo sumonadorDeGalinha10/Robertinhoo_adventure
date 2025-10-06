@@ -21,7 +21,7 @@ public class RatRenderer {
     private final Texture deathSheet;
     private final Animation<TextureRegion> meleeDeathAnimation;
     private final Animation<TextureRegion> projectileDeathAnimation;
-    private static final float TILE_SIZE =64f;
+    private static final float TILE_SIZE = 64f;
 
     private static final float RAT_WIDTH = TILE_SIZE;
     private static final float RAT_HEIGHT = TILE_SIZE;
@@ -79,19 +79,19 @@ public class RatRenderer {
         rat.update(delta);
         boolean flip = shouldFlip(rat);
 
-       if (!rat.isDead() || rat.isDying() )  {
+        if (!rat.isDead() || rat.isDying()) {
             TextureRegion frame = getFrame(rat, flip);
             Vector2 renderPos = calculateRenderPosition(rat);
             Vector2 renderSize = calculateRenderSize(rat);
 
             if (rat.isTakingDamage()) {
-            float t = rat.getDamageAnimationTime();
-            float flashPeriod = 0.1f;
-            int phase = (int)(t / flashPeriod) % 2;
-            if (phase == 0) {
-                batch.setColor(1f, 0.5f, 0.5f, 1f);
+                float t = rat.getDamageAnimationTime();
+                float flashPeriod = 0.1f;
+                int phase = (int) (t / flashPeriod) % 2;
+                if (phase == 0) {
+                    batch.setColor(1f, 0.5f, 0.5f, 1f);
+                }
             }
-        }
             batch.draw(
                     frame,
                     offsetX + renderPos.x * TILE_SIZE,
@@ -111,57 +111,57 @@ public class RatRenderer {
                         rat.getState() == State.DASHING);
     }
 
-public TextureRegion getFrame(Ratinho rat, boolean flip) {
-    TextureRegion originalFrame = null;
+    public TextureRegion getFrame(Ratinho rat, boolean flip) {
+        TextureRegion originalFrame = null;
 
-    // Primeiro verifique se está morrendo
-    if (rat.isDying()) {
-        switch (rat.getState()) {
-            case MELEE_DEATH:
-                originalFrame = meleeDeathAnimation.getKeyFrame(rat.getDeathAnimationTime(), true);
-                break;
-            case PROJECTILE_DEATH:
-                originalFrame = projectileDeathAnimation.getKeyFrame(rat.getDeathAnimationTime(), true);
-                break;
+        // Primeiro verifique se está morrendo
+        if (rat.isDying()) {
+            switch (rat.getState()) {
+                case MELEE_DEATH:
+                    originalFrame = meleeDeathAnimation.getKeyFrame(rat.getDeathAnimationTime(), true);
+                    break;
+                case PROJECTILE_DEATH:
+                    originalFrame = projectileDeathAnimation.getKeyFrame(rat.getDeathAnimationTime(), true);
+                    break;
+            }
         }
-    }
-    
-    // Se não está morrendo ou não encontrou frame de morte, verifica outros estados
-    if (originalFrame == null) {
-        switch (rat.getState()) {
-            case RUNNING_HORIZONTAL:
-                originalFrame = runHorizontalAnimation.getKeyFrame(rat.getAnimationTime(), true);
-                break;
 
-            case RUNNING_DOWN:
-                originalFrame = runHorizontalAnimation.getKeyFrame(rat.getAnimationTime(), true);
-                break;
-            case GOT_DAMAGE:
-                originalFrame = gotDamageAnimation.getKeyFrame(rat.getDamageAnimationTime(), false);
-                break;
-            case PREPARING_DASH:
-                originalFrame = prepareDashAnimation.getKeyFrame(rat.getAnimationTime(), true);
-                break;
-            case DASHING:
-                originalFrame = dashAnimation.getKeyFrame(rat.getAnimationTime(), true);
-                break;
-            default:
-                originalFrame = idleAnimation.getKeyFrame(rat.getAnimationTime(), true);
+        // Se não está morrendo ou não encontrou frame de morte, verifica outros estados
+        if (originalFrame == null) {
+            switch (rat.getState()) {
+                case RUNNING_HORIZONTAL:
+                    originalFrame = runHorizontalAnimation.getKeyFrame(rat.getAnimationTime(), true);
+                    break;
+
+                case RUNNING_DOWN:
+                    originalFrame = runHorizontalAnimation.getKeyFrame(rat.getAnimationTime(), true);
+                    break;
+                case GOT_DAMAGE:
+                    originalFrame = gotDamageAnimation.getKeyFrame(rat.getDamageAnimationTime(), false);
+                    break;
+                case PREPARING_DASH:
+                    originalFrame = prepareDashAnimation.getKeyFrame(rat.getAnimationTime(), true);
+                    break;
+                case DASHING:
+                    originalFrame = dashAnimation.getKeyFrame(rat.getAnimationTime(), true);
+                    break;
+                default:
+                    originalFrame = idleAnimation.getKeyFrame(rat.getAnimationTime(), true);
+            }
         }
-    }
 
-    // Garante que sempre teremos um frame
-    if (originalFrame == null) {
-        originalFrame = idleAnimation.getKeyFrame(0, true);
-    }
+        // Garante que sempre teremos um frame
+        if (originalFrame == null) {
+            originalFrame = idleAnimation.getKeyFrame(0, true);
+        }
 
-    TextureRegion frame = new TextureRegion(originalFrame);
-    if (flip) {
-        frame.flip(true, false);
-    }
+        TextureRegion frame = new TextureRegion(originalFrame);
+        if (flip) {
+            frame.flip(true, false);
+        }
 
-    return frame;
-}
+        return frame;
+    }
 
     public Vector2 calculateRenderPosition(Ratinho rat) {
         Vector2 position = new Vector2(rat.getPosition());
@@ -233,40 +233,28 @@ public TextureRegion getFrame(Ratinho rat, boolean flip) {
         return rat.getDirectionX() < 0;
     }
 
-    private Vector2 calculateCorpsePosition(Ratinho rat) {
-    Vector2 position = new Vector2(rat.getPosition());
-    position.x -= (RAT_RENDER_WIDTH / RAT_WIDTH) / 2f;
-    position.y -= (RAT_RENDER_HEIGHT / RAT_HEIGHT) / 2f;
-    return position;
-}
+    public Vector2 calculateRenderOffset(Ratinho rat) {
+        Vector2 offset = new Vector2();
 
-private Vector2 calculateCorpseSize(Ratinho rat) {
-    return new Vector2(RAT_RENDER_WIDTH, RAT_RENDER_HEIGHT);
-}
+        // Aplica os mesmos ajustes de posição usados na renderização
+        switch (rat.getState()) {
+            case DASHING:
+                offset.x = -0.1f;
+                offset.y = -0.05f;
+                break;
+            case PREPARING_DASH:
+                offset.x = 0.05f;
+                break;
+            case GOT_DAMAGE:
+                offset.y = -0.03f;
+                break;
+        }
 
+        // Aplica o offset centralizador
+        offset.x -= (RAT_RENDER_WIDTH / RAT_WIDTH) / 2f;
+        offset.y -= (RAT_RENDER_HEIGHT / RAT_HEIGHT) / 2f;
 
-public Vector2 calculateRenderOffset(Ratinho rat) {
-    Vector2 offset = new Vector2();
-    
-    // Aplica os mesmos ajustes de posição usados na renderização
-    switch (rat.getState()) {
-        case DASHING:
-            offset.x = -0.1f;
-            offset.y = -0.05f;
-            break;
-        case PREPARING_DASH:
-            offset.x = 0.05f;
-            break;
-        case GOT_DAMAGE:
-            offset.y = -0.03f;
-            break;
+        return offset;
     }
-    
-    // Aplica o offset centralizador
-    offset.x -= (RAT_RENDER_WIDTH / RAT_WIDTH) / 2f;
-    offset.y -= (RAT_RENDER_HEIGHT / RAT_HEIGHT) / 2f;
-    
-    return offset;
-}
 
 }

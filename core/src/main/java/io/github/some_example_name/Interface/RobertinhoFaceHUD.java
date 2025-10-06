@@ -2,10 +2,11 @@ package io.github.some_example_name.Interface;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.graphics.g2d.Animation;
+
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
 public class RobertinhoFaceHUD {
@@ -28,10 +29,10 @@ public class RobertinhoFaceHUD {
     private static final float BATIMENTO_WIDTH = 225;
     private static final float BATIMENTO_HEIGHT = 82;
     private static final float SPACING = 2f;
-      private static final float STAMINA_WIDTH = 230;
+    private static final float STAMINA_WIDTH = 230;
     private static final float STAMINA_HEIGHT = 15;
     private static final float STAMINA_Y_OFFSET = 2;
-      private static final float STAMINA_X_OFFSET = 2;
+    private static final float STAMINA_X_OFFSET = 2;
     private float x;
     private float y;
     private float batimentoX;
@@ -83,8 +84,8 @@ public class RobertinhoFaceHUD {
         }
 
         faceAnimation = new Animation<>(0.4f, idleFrames);
-         exhaustedAnimation = createFaceAnimation(exhaustedSheet, 5);
-           lastExhaustedState = robertinhoo.getStaminaSystem().isExhausted();
+        exhaustedAnimation = createFaceAnimation(exhaustedSheet, 5);
+        lastExhaustedState = robertinhoo.getStaminaSystem().isExhausted();
 
         stateTime = 0f;
     }

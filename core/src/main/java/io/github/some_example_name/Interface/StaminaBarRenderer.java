@@ -1,16 +1,17 @@
 package io.github.some_example_name.Interface;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
+
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
 /**
  * Stamina bar com visual melhorado: cores vibrantes, gradiente, glow e efeitos de animação.
  */
+
 public class StaminaBarRenderer {
     private final Robertinhoo robertinhoo;
     private final ShapeRenderer shapeRenderer;
