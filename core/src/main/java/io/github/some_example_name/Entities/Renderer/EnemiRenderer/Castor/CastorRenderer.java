@@ -1,85 +1,45 @@
 package io.github.some_example_name.Entities.Renderer.EnemiRenderer.Castor;
 
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import io.github.some_example_name.Entities.Enemies.Castor.Castor;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.Gdx;
 
 public class CastorRenderer {
-    private Animation<TextureRegion> idleAnimation;
-    private Animation<TextureRegion> runLeftAnimation;
-    private Animation<TextureRegion> runDownAnimation;
-    private Animation<TextureRegion> runUpAnimation;
-    private float stateTime;
-    private static final float FRAME_DURATION = 0.1f;
-    private Direction currentDirection = Direction.DOWN;
-    private boolean isMoving = false;
-    private Animation<TextureRegion> shootLeftAnimation;
-    private Animation<TextureRegion> shootDownAnimation;
-    private Animation<TextureRegion> shootUpAnimation;
-    private boolean isShooting = false;
-    private float shootAnimationTime = 0f;
+    private CastorAnimationSystem animationSystem;
+    private CastorAnimationSystem.Direction currentDirection;
     private int TILE_SIZE = 64;
 
-    private enum Direction {
-        LEFT, RIGHT, DOWN, UP
-    }
-
     public CastorRenderer() {
-        Texture idleSheet = new Texture(Gdx.files.internal("enemies/castor/idle-Sheet.png"));
-        TextureRegion[][] idleFramesGrid = TextureRegion.split(idleSheet, 
-            idleSheet.getWidth() / 8, 
-            idleSheet.getHeight());
-        idleAnimation = new Animation<>(FRAME_DURATION, idleFramesGrid[0]);
-        
-        Texture runSheet = new Texture(Gdx.files.internal("enemies/castor/RUN-Sheet.png"));
-        int runFrameWidth = runSheet.getWidth() / 5;
-        int runFrameHeight = runSheet.getHeight() / 3;
-        TextureRegion[][] runFrames = TextureRegion.split(runSheet, runFrameWidth, runFrameHeight);
-        
-        runLeftAnimation = new Animation<>(FRAME_DURATION, runFrames[0]);
-        runDownAnimation = new Animation<>(FRAME_DURATION, runFrames[1]);
-        runUpAnimation = new Animation<>(FRAME_DURATION, runFrames[2]);
-        
-        stateTime = 0f;
-
-        Texture shootSheet = new Texture(Gdx.files.internal("enemies/castor/all_shoot-Sheet.png"));
-        int shootFrameWidth = shootSheet.getWidth() / 6;
-        int shootFrameHeight = shootSheet.getHeight() / 3;
-        TextureRegion[][] shootFrames = TextureRegion.split(shootSheet, shootFrameWidth, shootFrameHeight);
-        
-        shootLeftAnimation = new Animation<>(FRAME_DURATION, shootFrames[0]);
-        shootDownAnimation = new Animation<>(FRAME_DURATION, shootFrames[1]);
-        shootUpAnimation = new Animation<>(FRAME_DURATION, shootFrames[2]);
+        this.animationSystem = new CastorAnimationSystem();
     }
-    
-    private Direction getDirection(Vector2 velocity, Vector2 targetPosition, Vector2 currentPosition, boolean isShooting) {
+
+    private CastorAnimationSystem.Direction getDirection(Vector2 velocity, Vector2 targetPosition,
+            Vector2 currentPosition, boolean isShooting) {
 
         if (isShooting) {
             Vector2 directionToTarget = targetPosition.cpy().sub(currentPosition).nor();
-            
 
             float absX = Math.abs(directionToTarget.x);
             float absY = Math.abs(directionToTarget.y);
-            
+
             if (absX > absY) {
-                return directionToTarget.x > 0 ? Direction.RIGHT : Direction.LEFT;
+                return directionToTarget.x > 0 ? CastorAnimationSystem.Direction.RIGHT
+                        : CastorAnimationSystem.Direction.LEFT;
             } else {
-                return directionToTarget.y > 0 ? Direction.UP : Direction.DOWN;
+                return directionToTarget.y > 0 ? CastorAnimationSystem.Direction.UP
+                        : CastorAnimationSystem.Direction.DOWN;
             }
         }
-        
 
         float absVelX = Math.abs(velocity.x);
         float absVelY = Math.abs(velocity.y);
-        
+
         if (absVelX > absVelY) {
-            return velocity.x > 0 ? Direction.RIGHT : Direction.LEFT;
+            return velocity.x > 0 ? CastorAnimationSystem.Direction.RIGHT : CastorAnimationSystem.Direction.LEFT;
         } else {
-            return velocity.y > 0 ? Direction.UP : Direction.DOWN;
+            return velocity.y > 0 ? CastorAnimationSystem.Direction.UP : CastorAnimationSystem.Direction.DOWN;
         }
     }
 
@@ -87,85 +47,121 @@ public class CastorRenderer {
         Vector2 velocity = castor.getLinearVelocity();
         Vector2 currentPosition = castor.getPosition();
         Vector2 targetPosition = castor.target.getPosition();
-        
-        isMoving = velocity.len() > 0.1f;
-        isShooting = castor.isShooting();
-    
+
+        boolean isMoving = velocity.len() > 0.1f;
+        boolean isShooting = castor.isShooting();
+        boolean isTakingDamage = castor.isTakingDamage();
+        boolean isDashing = castor.isDashing();
+
+        // Atualizar sistema de animação
+        animationSystem.update(delta);
+
+        // Atualizar tempos específicos
         if (isShooting) {
-            shootAnimationTime += delta;
+            animationSystem.updateShootTime(delta);
         } else {
-            shootAnimationTime = 0f;
+            animationSystem.resetShootTime();
         }
-        
+
+        if (isTakingDamage) {
+            animationSystem.updateDamageTime(delta);
+        } else {
+            animationSystem.resetDamageTime();
+        }
+
+        if (isDashing) {
+            animationSystem.updateDashTime(delta);
+
+            // 🔥 MELHOR LOG: Mostrar fase atual do dash
+            float dashTime = animationSystem.getDashTime();
+            if (dashTime < 0.6f) {
+                // Fase de preparação
+                if ((int) (dashTime * 10) % 10 == 0) { // Log a cada 0.1s
+                    Gdx.app.log("CastorRenderer", "⏳ Dash PREPARATION - Time: " + dashTime);
+                }
+            } else {
+                // Fase de execução
+                if ((int) (dashTime * 10) % 5 == 0) { // Log mais frequente
+                    Gdx.app.log("CastorRenderer", "🚀 Dash EXECUTION - Time: " + dashTime);
+                }
+            }
+        } else {
+            animationSystem.resetDashTime();
+        }
+
         currentDirection = getDirection(velocity, targetPosition, currentPosition, isShooting);
-        
-        stateTime += delta;
-        TextureRegion currentFrame;
-        boolean flipX = false;
-        
-        if (isShooting) {
-            switch (currentDirection) {
-                case LEFT:
-                    currentFrame = shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
-                    break;
-                case RIGHT:
-                    currentFrame = shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
-                    flipX = true;
-                    break;
-                case DOWN:
-                    currentFrame = shootDownAnimation.getKeyFrame(shootAnimationTime, false);
-                    break;
-                case UP:
-                    currentFrame = shootUpAnimation.getKeyFrame(shootAnimationTime, false);
-                    break;
-                default:
-                    currentFrame = idleAnimation.getKeyFrame(stateTime, true);
-            }
-    
-            if (shootAnimationTime >= 0.5f && !castor.hasShot()) {
-                castor.setHasShot(true);
-                castor.fireProjectile();
-            }
-        }
-        else if (isMoving) {
-            switch (currentDirection) {
-                case LEFT:
-                    currentFrame = runLeftAnimation.getKeyFrame(stateTime, true);
-                    break;
-                case RIGHT:
-                    currentFrame = runLeftAnimation.getKeyFrame(stateTime, true);
-                    flipX = true;
-                    break;
-                case DOWN:
-                    currentFrame = runDownAnimation.getKeyFrame(stateTime, true);
-                    break;
-                case UP:
-                    currentFrame = runUpAnimation.getKeyFrame(stateTime, true);
-                    break;
-                default:
-                    currentFrame = idleAnimation.getKeyFrame(stateTime, true);
-            }
-        } else {
-            currentFrame = idleAnimation.getKeyFrame(stateTime, true);
-        }
+
+        // Obter estado e frame atual
+        CastorAnimationSystem.CastorState state = getCastorState(isMoving, isShooting, isTakingDamage, isDashing);
+        CastorAnimationSystem.AnimationFrame animationFrame = animationSystem.getCurrentFrame(state, currentDirection,
+                velocity, targetPosition, currentPosition);
 
         float drawWidth = TILE_SIZE;
         float drawHeight = TILE_SIZE;
-        
- 
+
         float x = offsetX + (currentPosition.x - 0.5f) * TILE_SIZE;
         float y = offsetY + (currentPosition.y - 0.5f) * TILE_SIZE;
-        
-        if (flipX) {
-            batch.draw(currentFrame, x + drawWidth, y, -drawWidth, drawHeight);
+
+        // Efeito visual durante o dano
+        if (isTakingDamage) {
+            if ((int) (animationSystem.getDamageTime() * 10) % 2 == 0) {
+                batch.setColor(1, 0.3f, 0.3f, 1);
+            } else {
+                batch.setColor(1, 1, 1, 1);
+            }
+        }
+
+        // 🔥 FLIP CORRIGIDO: Aplicado baseado no AnimationSystem
+        if (animationFrame.flipX) {
+            batch.draw(animationFrame.frame, x + drawWidth, y, -drawWidth, drawHeight);
+            if (isDashing && animationFrame.dashPhase == CastorAnimationSystem.DashPhase.DASH) {
+                Gdx.app.log("CastorRenderer", "🔄 Dash com FLIP para DIREITA");
+            }
         } else {
-            batch.draw(currentFrame, x, y, drawWidth, drawHeight);
+            batch.draw(animationFrame.frame, x, y, drawWidth, drawHeight);
+            if (isDashing && animationFrame.dashPhase == CastorAnimationSystem.DashPhase.DASH) {
+                Gdx.app.log("CastorRenderer", "⬅️ Dash sem flip para ESQUERDA");
+            }
+        }
+
+        // Resetar cor
+        batch.setColor(1, 1, 1, 1);
+
+        // Disparar projeto no momento certo
+        if (isShooting && animationSystem.isShootAtFirePoint() && !castor.hasShot()) {
+            castor.setHasShot(true);
+            castor.fireProjectile();
+        }
+    }
+
+    /**
+     * 🔥 SIMPLIFICADO: Determina o estado atual do castor
+     */
+    private CastorAnimationSystem.CastorState getCastorState(boolean isMoving, boolean isShooting,
+            boolean isTakingDamage, boolean isDashing) {
+        if (isDashing) {
+            return CastorAnimationSystem.CastorState.DASHING;
+        } else if (isTakingDamage) {
+            return CastorAnimationSystem.CastorState.TAKING_DAMAGE;
+        } else if (isShooting) {
+            return CastorAnimationSystem.CastorState.SHOOTING;
+        } else if (isMoving) {
+            return CastorAnimationSystem.CastorState.MOVING;
+        } else {
+            return CastorAnimationSystem.CastorState.IDLE;
         }
     }
 
     public void dispose() {
-        idleAnimation.getKeyFrames()[0].getTexture().dispose();
-        runLeftAnimation.getKeyFrames()[0].getTexture().dispose();
-        shootLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+        animationSystem.dispose();
+    }
+
+    // 🔥 NOVO: Getters para acesso aos tempos (se necessário)
+    public float getDamageAnimationTime() {
+        return animationSystem.getDamageTime();
+    }
+
+    public float getDashAnimationTime() {
+        return animationSystem.getDashTime();
     }
 }

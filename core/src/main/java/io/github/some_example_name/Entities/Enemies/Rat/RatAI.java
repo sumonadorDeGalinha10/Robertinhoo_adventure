@@ -119,24 +119,29 @@ public class RatAI {
     }
 
     private void followPath(Body body, float deltaTime, Vector2 currentPosition) {
-        if (DEBUG) {
-            if (currentPath == null) {
-                Gdx.app.log(ratId, "❌ FOLLOW PATH: currentPath é NULL");
-                return;
-            }
-            
-            if (currentPath.isEmpty()) {
-                Gdx.app.log(ratId, "❌ FOLLOW PATH: currentPath está VAZIO");
-                return;
-            }
-            
-            if (currentPathIndex >= currentPath.size()) {
-                Gdx.app.log(ratId, "❌ FOLLOW PATH: currentPathIndex (" + currentPathIndex + ") >= tamanho do path (" + currentPath.size() + ")");
-                return;
-            }
+        // Validações mais rigorosas
+        if (currentPath == null || currentPath.isEmpty()) {
+            if (DEBUG) Gdx.app.log(ratId, "❌ FOLLOW PATH: Caminho inválido - null ou vazio");
+            body.setLinearVelocity(0, 0);
+            return;
+        }
+        
+        if (currentPathIndex < 0 || currentPathIndex >= currentPath.size()) {
+            if (DEBUG) Gdx.app.log(ratId, "❌ FOLLOW PATH: Índice inválido - " + currentPathIndex + " em path de tamanho " + currentPath.size());
+            body.setLinearVelocity(0, 0);
+            currentPathIndex = 0; // Reset para evitar problemas futuros
+            return;
         }
         
         Vector2 targetPosition = currentPath.get(currentPathIndex);
+        
+        // Validação adicional da posição alvo
+        if (targetPosition == null) {
+            if (DEBUG) Gdx.app.log(ratId, "❌ FOLLOW PATH: Posição alvo é null");
+            body.setLinearVelocity(0, 0);
+            return;
+        }
+        
         float distanceToTarget = currentPosition.dst(targetPosition);
         
         if (DEBUG) {
@@ -146,35 +151,35 @@ public class RatAI {
             Gdx.app.log(ratId, "  Distância para alvo: " + distanceToTarget);
         }
         
+        // Resto do método permanece igual...
         if (distanceToTarget < 0.5f) {
             if (DEBUG) Gdx.app.log(ratId, "✅ Ponto " + currentPathIndex + " alcançado, indo para próximo");
             currentPathIndex++;
             
             if (currentPathIndex >= currentPath.size()) {
                 if (DEBUG) Gdx.app.log(ratId, "🏁 Fim do caminho alcançado");
+                currentPath = null; // Limpa o caminho quando terminar
+                return;
+            }
+            
+            // Valida o próximo ponto também
+            if (currentPath.get(currentPathIndex) == null) {
+                if (DEBUG) Gdx.app.log(ratId, "❌ Próximo ponto do caminho é null, cancelando");
+                currentPath = null;
                 return;
             }
             
             targetPosition = currentPath.get(currentPathIndex);
             if (DEBUG) Gdx.app.log(ratId, "🎯 Novo alvo: ponto " + currentPathIndex + " - " + targetPosition);
         }
-
+    
         Vector2 direction = targetPosition.cpy().sub(currentPosition).nor();
         Vector2 desiredVelocity = direction.scl(3f);
         Vector2 currentVelocity = body.getLinearVelocity();
         Vector2 steering = desiredVelocity.sub(currentVelocity);
-
-        if (DEBUG) {
-            Gdx.app.log(ratId, "🎯 Movimento - Direção: " + direction + ", Velocidade desejada: " + desiredVelocity + ", Velocidade atual: " + currentVelocity);
-        }
         
         body.applyForceToCenter(steering.scl(body.getMass()), true);
-        
-        if (DEBUG) {
-            Gdx.app.log(ratId, "🎯 Força aplicada: " + steering.scl(body.getMass()));
-        }
     }
-
     private boolean isPlayerInSameRoom(Vector2 playerPosition) {
         if (homeRoom == null) {
             if (DEBUG) Gdx.app.log(ratId, "❌ HOME ROOM: homeRoom é NULL");

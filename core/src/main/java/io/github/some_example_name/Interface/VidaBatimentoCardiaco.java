@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 
 public class VidaBatimentoCardiaco {
@@ -115,8 +116,6 @@ public class VidaBatimentoCardiaco {
         return width;
     }
 
-
-    
     public float getY() {
         return y;
     }

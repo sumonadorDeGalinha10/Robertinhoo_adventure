@@ -98,7 +98,7 @@ public class Mapa {
 
         // 1. Criar gerador de mapa
         this.mapGenerator = new MapGenerator(50, 50);
-        
+
         initializeLights();
 
         // 2. Copiar dados do mapa
@@ -153,70 +153,71 @@ public class Mapa {
         }
     }
 
-private void addRandomEntities() {
-    Random rand = new Random();
-    List<Vector2> validRoomPositions = new ArrayList<>();
-    for (Rectangle room : rooms) {
-        for (int x = (int) room.x + 1; x < room.x + room.width - 1; x++) {
-            for (int y = (int) room.y + 1; y < room.y + room.height - 1; y++) {
-                if (tiles[x][y] == TILE) {
-                    if (x != (int) startPosition.x || y != (int) startPosition.y) {
-                        validRoomPositions.add(new Vector2(x, y));
+    private void addRandomEntities() {
+        Random rand = new Random();
+        List<Vector2> validRoomPositions = new ArrayList<>();
+        for (Rectangle room : rooms) {
+            for (int x = (int) room.x + 1; x < room.x + room.width - 1; x++) {
+                for (int y = (int) room.y + 1; y < room.y + room.height - 1; y++) {
+                    if (tiles[x][y] == TILE) {
+                        if (x != (int) startPosition.x || y != (int) startPosition.y) {
+                            validRoomPositions.add(new Vector2(x, y));
+                        }
                     }
                 }
             }
         }
-    }
 
-    java.util.Collections.shuffle(validRoomPositions, rand);
+        java.util.Collections.shuffle(validRoomPositions, rand);
 
-    for (int i = 0; i < 3 && i < validRoomPositions.size(); i++) {
-        Vector2 tilePos = validRoomPositions.get(i);
-        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+        for (int i = 0; i < 3 && i < validRoomPositions.size(); i++) {
+            Vector2 tilePos = validRoomPositions.get(i);
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
 
-        if (rand.nextBoolean()) {
-            weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
-        } else {
-            ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
+            if (rand.nextBoolean()) {
+                weapons.add(new Pistol(this, worldPos.x, worldPos.y, robertinhoo.getInventory()));
+            } else {
+                ammo.add(new Ammo9mm(this, worldPos.x, worldPos.y));
+            }
         }
-    }
 
-    int ratsAdded = 0;
-    for (int i = 0; i < validRoomPositions.size() && ratsAdded < 2; i++) {
-        Vector2 tilePos = validRoomPositions.get(i);
-        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
-        Rectangle ratRoom = findRoomContainingTile(tilePos);
-        enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
-        ratsAdded++;
-    }
-
-    int castoresAdded = 0;
-    for (int i = 8; i < validRoomPositions.size() && castoresAdded < 1; i++) {
-        Vector2 tilePos = validRoomPositions.get(i);
-        Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
-        enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
-        castoresAdded++;
-    }
-    BarrelSpawner.spawnBarrels(this, 14);
-
-}
-public Rectangle findRoomContainingTile(Vector2 tilePos) {
-    // Gdx.app.log("Mapa", "Procurando sala para tile: " + tilePos);
-    
-    for (Rectangle room : rooms) {
-        // Gdx.app.log("Mapa", "Verificando sala: " + room);
-        
-        // Verificar se o tile está dentro da sala (excluindo as paredes)
-        if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
-            tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
-            Gdx.app.log("Mapa", "✅ Sala encontrada: " + room);
-            return room;
+        int ratsAdded = 0;
+        for (int i = 0; i < validRoomPositions.size() && ratsAdded < 4; i++) {
+            Vector2 tilePos = validRoomPositions.get(i);
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+            Rectangle ratRoom = findRoomContainingTile(tilePos);
+            enemies.add(new Ratinho(this, worldPos.x, worldPos.y, robertinhoo, ratRoom));
+            ratsAdded++;
         }
+
+        int castoresAdded = 0;
+        for (int i = 8; i < validRoomPositions.size() && castoresAdded < 1; i++) {
+            Vector2 tilePos = validRoomPositions.get(i);
+            Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
+            enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
+            castoresAdded++;
+        }
+        BarrelSpawner.spawnBarrels(this, 14);
+
     }
-    
-    // Gdx.app.error("Mapa", "❌ Nenhuma sala encontrada para tile: " + tilePos);
-    return null;
-}
+
+    public Rectangle findRoomContainingTile(Vector2 tilePos) {
+        // Gdx.app.log("Mapa", "Procurando sala para tile: " + tilePos);
+
+        for (Rectangle room : rooms) {
+            // Gdx.app.log("Mapa", "Verificando sala: " + room);
+
+            // Verificar se o tile está dentro da sala (excluindo as paredes)
+            if (tilePos.x >= room.x + 1 && tilePos.x < room.x + room.width - 1 &&
+                    tilePos.y >= room.y + 1 && tilePos.y < room.y + room.height - 1) {
+                Gdx.app.log("Mapa", "✅ Sala encontrada: " + room);
+                return room;
+            }
+        }
+
+        // Gdx.app.error("Mapa", "❌ Nenhuma sala encontrada para tile: " + tilePos);
+        return null;
+    }
 
     public List<Enemy> getEnemies() {
         return enemies;
@@ -229,17 +230,18 @@ public Rectangle findRoomContainingTile(Vector2 tilePos) {
     private void agruparEPCriarParedes() {
         // 1. Criar bordas do mapa otimizadas (apenas onde necessário)
         MapBorderManager.createOptimizedMapBorders(this);
-        
+
         // 2. Otimizar e criar paredes internas (salas + corredores)
         List<Rectangle> retangulos = agruparParedes.optimizeWalls(wallPositions);
         for (Rectangle ret : retangulos) {
             createWallBody(ret);
         }
-        
+
         Gdx.app.log("Mapa", "Sistema de colisão otimizado criado:");
         Gdx.app.log("Mapa", "- Bordas: criadas apenas onde necessário");
         Gdx.app.log("Mapa", "- Paredes internas: " + retangulos.size() + " retângulos otimizados");
     }
+
     public void createWallBody(Rectangle ret) {
         float escala = 1.0f;
 
@@ -304,60 +306,61 @@ public Rectangle findRoomContainingTile(Vector2 tilePos) {
     }
 
     public void update(float deltaTime) {
-    java.util.Iterator<Projectile> it = projectiles.iterator();
-    while (it.hasNext()) {
-        Projectile p = it.next();
-        p.update(deltaTime);
-        if (p.isMarkedForDestruction()) {
-            p.destroy();
-            it.remove();
-        }
-    }
-
-    java.util.Iterator<Enemy> iterator = enemies.iterator();
-    while (iterator.hasNext()) {
-        Enemy enemy = iterator.next();
-        if (enemy instanceof Ratinho) {
-            Ratinho rat = (Ratinho) enemy;
-            if (rat.isMarkedForDestruction()) {
-                world.destroyBody(rat.getBody());
-                iterator.remove();
-                Gdx.app.log("Mapa", "Ratinho removido do jogo.");
-            }
-        } else if (enemy instanceof Castor) {
-            Castor castor = (Castor) enemy;
-            if (castor.isMarkedForDestruction()) {
-                world.destroyBody(castor.getBody());
-                iterator.remove();
-                Gdx.app.log("Mapa", "Castor removido do jogo.");
+        java.util.Iterator<Projectile> it = projectiles.iterator();
+        while (it.hasNext()) {
+            Projectile p = it.next();
+            p.update(deltaTime);
+            if (p.isMarkedForDestruction()) {
+                p.destroy();
+                it.remove();
             }
         }
-    }
 
-    for (Destructible d : destructibles) {
-        d.update(deltaTime);
-    }
-
-    java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
-    while (destructibleIterator.hasNext()) {
-        Destructible d = destructibleIterator.next();
-
-        if (d instanceof Barrel) {
-            Barrel barrel = (Barrel) d;
-
-            if (barrel.isBodyMarkedForDestruction()) {
-                barrel.destroyBody();
-                barrel.setBodyMarkedForDestruction(false);
-            }
-
-            // Remove após a animação terminar
-            if (barrel.isAnimationFinished() && barrel.isDestroyed()) {
-                destructibleIterator.remove();
+        java.util.Iterator<Enemy> iterator = enemies.iterator();
+        while (iterator.hasNext()) {
+            Enemy enemy = iterator.next();
+            if (enemy instanceof Ratinho) {
+                Ratinho rat = (Ratinho) enemy;
+                if (rat.isMarkedForDestruction()) {
+                    world.destroyBody(rat.getBody());
+                    iterator.remove();
+                    Gdx.app.log("Mapa", "Ratinho removido do jogo.");
+                }
+            } else if (enemy instanceof Castor) {
+                Castor castor = (Castor) enemy;
+                if (castor.isMarkedForDestruction()) {
+                    world.destroyBody(castor.getBody());
+                    iterator.remove();
+                    Gdx.app.log("Mapa", "Castor removido do jogo.");
+                }
             }
         }
+
+        for (Destructible d : destructibles) {
+            d.update(deltaTime);
+        }
+
+        java.util.Iterator<Destructible> destructibleIterator = destructibles.iterator();
+        while (destructibleIterator.hasNext()) {
+            Destructible d = destructibleIterator.next();
+
+            if (d instanceof Barrel) {
+                Barrel barrel = (Barrel) d;
+
+                if (barrel.isBodyMarkedForDestruction()) {
+                    barrel.destroyBody();
+                    barrel.setBodyMarkedForDestruction(false);
+                }
+
+                // Remove após a animação terminar
+                if (barrel.isAnimationFinished() && barrel.isDestroyed()) {
+                    destructibleIterator.remove();
+                }
+            }
+        }
+        processPendingActions();
     }
-    processPendingActions();
-}
+
     public void addPendingAction(Runnable action) {
         pendingActions.add(action);
     }
@@ -472,5 +475,5 @@ public Rectangle findRoomContainingTile(Vector2 tilePos) {
 
     public MapGenerator getMapGenerator() {
         return mapGenerator;
-    }   
+    }
 }

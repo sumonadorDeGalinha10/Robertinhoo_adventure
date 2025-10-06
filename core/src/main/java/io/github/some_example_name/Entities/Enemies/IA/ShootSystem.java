@@ -28,38 +28,36 @@ public class ShootSystem {
         this.random = new Random();
     }
 
-public boolean update(float deltaTime, Body body, Vector2 currentPosition, Vector2 targetPosition) {
-    float distanceToTarget = currentPosition.dst(targetPosition);
-    boolean hasLOS = hasLineOfSight(currentPosition, targetPosition);
+    public boolean update(float deltaTime, Body body, Vector2 currentPosition, Vector2 targetPosition) {
+        float distanceToTarget = currentPosition.dst(targetPosition);
+        boolean hasLOS = hasLineOfSight(currentPosition, targetPosition);
 
-    // VERIFICAÇÃO CRÍTICA: Não permitir atirar sem linha de visão
-    if (!hasLOS) {
-        Gdx.app.log("ShootSystem", "Sem linha de visão, tentando reposicionar");
-        return handleRepositioning(body, currentPosition, targetPosition);
-    }
+        // VERIFICAÇÃO CRÍTICA: Não permitir atirar sem linha de visão
+        if (!hasLOS) {
+            Gdx.app.log("ShootSystem", "Sem linha de visão, tentando reposicionar");
+            return handleRepositioning(body, currentPosition, targetPosition);
+        }
 
-    // Comportamento de combate corpo a corpo
-    if (distanceToTarget < MIN_SHOOTING_DISTANCE) {
-        handleCloseCombat(body, currentPosition, targetPosition);
+        // Comportamento de combate corpo a corpo
+        if (distanceToTarget < MIN_SHOOTING_DISTANCE) {
+            handleCloseCombat(body, currentPosition, targetPosition);
+            return false;
+        }
+
+        if (distanceToTarget > SHOOTING_RANGE) {
+            Gdx.app.log("ShootSystem", "Fora do alcance, voltando a perseguir");
+            return true;
+        }
+
+        handleRangedCombat(body, currentPosition, targetPosition, distanceToTarget);
+
+        // VERIFICAÇÃO EXTRA: Só permitir atirar se tiver linha de visão
+        if (castor.canShoot() && hasLOS && !castor.isShooting()) {
+            castor.startShooting();
+        }
+
         return false;
     }
-
-    if (distanceToTarget > SHOOTING_RANGE) {
-        Gdx.app.log("ShootSystem", "Fora do alcance, voltando a perseguir");
-        return true;
-    }
-
-    handleRangedCombat(body, currentPosition, targetPosition, distanceToTarget);
-
-    // VERIFICAÇÃO EXTRA: Só permitir atirar se tiver linha de visão
-    if (castor.canShoot() && hasLOS && !castor.isShooting()) {
-        castor.startShooting();
-    }
-
-    return false;
-}
-
-
 
     private boolean handleRepositioning(Body body, Vector2 currentPosition, Vector2 targetPosition) {
         Vector2 repositionTarget = findRepositionTarget(currentPosition, targetPosition);
@@ -224,28 +222,28 @@ public boolean update(float deltaTime, Body body, Vector2 currentPosition, Vecto
         body.applyForceToCenter(steering, true);
     }
 
-// Adicione este método para verificação de linha de visão mais precisa
-private boolean hasLineOfSight(Vector2 start, Vector2 end) {
-    float distance = start.dst(end);
-    int samples = (int) (distance * 3); // Aumentado de 2 para 3 amostras
+    // Adicione este método para verificação de linha de visão mais precisa
+    private boolean hasLineOfSight(Vector2 start, Vector2 end) {
+        float distance = start.dst(end);
+        int samples = (int) (distance * 3); // Aumentado de 2 para 3 amostras
 
-    for (int i = 1; i <= samples; i++) {
-        float t = (float) i / samples;
-        Vector2 point = start.cpy().lerp(end, t);
-        Vector2 tilePoint = mapa.worldToTile(point);
-        int tileX = (int) tilePoint.x;
-        int tileY = (int) tilePoint.y;
+        for (int i = 1; i <= samples; i++) {
+            float t = (float) i / samples;
+            Vector2 point = start.cpy().lerp(end, t);
+            Vector2 tilePoint = mapa.worldToTile(point);
+            int tileX = (int) tilePoint.x;
+            int tileY = (int) tilePoint.y;
 
-        // Verificar também os tiles adjacentes para evitar "furos" na parede
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (mapa.isTileBlocked(tileX + dx, tileY + dy)) {
-                    return false;
+            // Verificar também os tiles adjacentes para evitar "furos" na parede
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (mapa.isTileBlocked(tileX + dx, tileY + dy)) {
+                        return false;
+                    }
                 }
             }
         }
-    }
 
-    return true;
-}
+        return true;
+    }
 }
