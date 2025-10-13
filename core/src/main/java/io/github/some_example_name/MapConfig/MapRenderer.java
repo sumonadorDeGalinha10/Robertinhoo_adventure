@@ -20,7 +20,7 @@ import com.badlogic.gdx.graphics.GL20;
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Enemies.Castor.Castor;
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
-import io.github.some_example_name.Entities.Enemies.Rat.Ratinho.DeathType;
+
 import io.github.some_example_name.Entities.Itens.Weapon.Weapon;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
 import io.github.some_example_name.Entities.Renderer.TileRenderer;
@@ -97,8 +97,9 @@ public class MapRenderer {
         this.projectileRenderer = new ProjectileRenderer(mapa, TILE_SIZE);
         this.playerRenderer = new PlayerRenderer(mapa.robertinhoo.getWeaponSystem());
         this.ammoRenderer = new AmmoRenderer(TILE_SIZE);
-        ratRenderer = new RatRenderer();
+
         castorRenderer = new CastorRenderer();
+        ratRenderer = new RatRenderer();
 
         this.renderInventory = new RenderInventory(
                 mapa.robertinhoo.getInventory(),
@@ -184,36 +185,41 @@ public class MapRenderer {
                     Ratinho rat = (Ratinho) enemy;
 
                     if (rat.isDead()) {
-                        float duration = (rat.getDeathType() == DeathType.MELEE) ? ratRenderer.getMeleeDeathDuration()
-                                : ratRenderer.getProjectileDeathDuration();
-
-                        if (rat.isDeathAnimationFinished(duration)) {
+                        if (rat.isDeathAnimationFinished()) {
                             if (!rat.isMarkedForDestruction()) {
-
-                                TextureRegion corpseTexture = ratRenderer.getCorpseFrame(rat);
-                                // boolean flip = ratRenderer.flipou(rat);
-                                corpseManager.addCorpse(rat, ratRenderer, corpseTexture);
-
+                                // AGORA GENÉRICO!
+                                corpseManager.addCorpse(rat, ratRenderer);
                                 rat.markForDestruction();
                             }
                         } else {
-                            // Renderiza animação de morte em andamento
                             ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
                         }
                     } else {
-                        // Renderiza rato vivo
                         ratRenderer.render(spriteBatch, delta, rat, offsetX, offsetY);
                     }
                 }
+
                 if (enemy instanceof Castor) {
                     Castor castor = (Castor) enemy;
                     castor.update(delta);
-                    castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
-                    Vector2 worldPos = castor.getBody().getPosition();
-                    float screenX = offsetX + worldPos.x * TILE_SIZE;
-                    float screenY = offsetY + worldPos.y * TILE_SIZE;
-                    castor.ai.getStateEnemy().updatePosition(new Vector2(screenX, screenY));
-                    castor.ai.getStateEnemy().render(spriteBatch);
+
+                    if (castor.isDead()) {
+                        if (castor.isDeathAnimationFinished()) {
+                            if (!castor.isMarkedForDestruction()) {
+                                corpseManager.addCorpse(castor, castorRenderer);
+                                castor.markForDestruction();
+                            }
+                        } else {
+                            castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
+                        }
+                    } else {
+                        castorRenderer.render(spriteBatch, castor, offsetX, offsetY, delta);
+                        Vector2 worldPos = castor.getBody().getPosition();
+                        float screenX = offsetX + worldPos.x * TILE_SIZE;
+                        float screenY = offsetY + worldPos.y * TILE_SIZE;
+                        castor.ai.getStateEnemy().updatePosition(new Vector2(screenX, screenY));
+                        castor.ai.getStateEnemy().render(spriteBatch);
+                    }
                 }
 
             }
@@ -239,7 +245,7 @@ public class MapRenderer {
         for (Enemy enemy : mapa.getEnemies())
             if (enemy instanceof Castor) {
                 Castor castor = (Castor) enemy;
-                 castor.debugRender(shapeRenderer, new Vector2(offsetX, offsetY), TILE_SIZE);
+                castor.debugRender(shapeRenderer, new Vector2(offsetX, offsetY), TILE_SIZE);
                 castor.ai.debugRenderVision(shapeRenderer);
 
             }

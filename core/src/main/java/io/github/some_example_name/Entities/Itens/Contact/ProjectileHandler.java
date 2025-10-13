@@ -14,7 +14,7 @@ import io.github.some_example_name.Entities.Inventory.Item;
 
 public class ProjectileHandler implements ContactHandler {
     private final Robertinhoo player;
-    
+
     public ProjectileHandler(Robertinhoo player) {
         this.player = player;
     }
@@ -27,8 +27,8 @@ public class ProjectileHandler implements ContactHandler {
         Gdx.app.log("ProjectileHandler", "Contato detectado entre: " + dataA + " e " + dataB);
 
         if (player.getMeleeAttackSystem().getParrySystem().isParryActive() &&
-            ((dataA instanceof Missile && "PLAYER".equals(dataB)) ||
-             (dataB instanceof Missile && "PLAYER".equals(dataA)))) {
+                ((dataA instanceof Missile && "PLAYER".equals(dataB)) ||
+                        (dataB instanceof Missile && "PLAYER".equals(dataA)))) {
             Gdx.app.log("ProjectileHandler", "Parry ativo - ignorando colisão com jogador");
             return false;
         }
@@ -40,10 +40,9 @@ public class ProjectileHandler implements ContactHandler {
 
         else if ((dataA instanceof Projectile && dataB instanceof Enemy) ||
                 (dataB instanceof Projectile && dataA instanceof Enemy)) {
-                 
+
             handleProjectileEnemyCollision(dataA, dataB);
-        }
-        else if ((dataA instanceof Projectile && "PLAYER".equals(dataB)) ||
+        } else if ((dataA instanceof Projectile && "PLAYER".equals(dataB)) ||
                 (dataB instanceof Projectile && "PLAYER".equals(dataA))) {
             System.out.println("Colisão detectada entre projétil e player.");
             handleProjectilePlayerCollision(dataA, dataB);
@@ -75,9 +74,9 @@ public class ProjectileHandler implements ContactHandler {
         projectile.startDestruction();
 
         if (enemy.getHealth() <= 0) {
-            if (enemy instanceof Ratinho) {
-                ((Ratinho) enemy).die(Ratinho.DeathType.PROJECTILE);
-            }
+
+            enemy.die(Enemy.DeathType.PROJECTILE);
+
             enemy.isToBeDestroyed();
         }
 

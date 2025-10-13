@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import io.github.some_example_name.Entities.Enemies.Enemy.DeathType;
 
 public class CastorAnimationSystem {
     // Animations
@@ -17,6 +18,9 @@ public class CastorAnimationSystem {
     private Animation<TextureRegion> shootUpAnimation;
     private Animation<TextureRegion> damageAnimation;
     private Animation<TextureRegion> dashAnimation;
+    private Animation<TextureRegion> meleeDeathAnimation;
+    private Animation<TextureRegion> projectileDeathAnimation;
+    private float deathAnimationTime = 0f;
 
     // Animation states
     private float stateTime;
@@ -42,6 +46,7 @@ public class CastorAnimationSystem {
 
     public CastorAnimationSystem() {
         loadAnimations();
+        loadDeathAnimations();
     }
 
     private void loadAnimations() {
@@ -107,6 +112,44 @@ public class CastorAnimationSystem {
         };
 
         dashAnimation = new Animation<>(0.1f, dashFrames); // Duração base, vamos controlar manualmente
+    }
+
+    private void loadDeathAnimations() {
+        // Carregar spritesheet de morte (5 colunas x 4 linhas)
+        Texture deathSheet = new Texture(Gdx.files.internal("enemies/castor/CastorDeads.png"));
+
+        int deathFrameWidth = deathSheet.getWidth() / 5;
+        int deathFrameHeight = deathSheet.getHeight() / 4;
+
+        // Projetil death - primeiras 2 linhas (10 frames)
+        TextureRegion[] projectileFrames = new TextureRegion[10];
+        int index = 0;
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 5; col++) {
+                projectileFrames[index++] = new TextureRegion(
+                        deathSheet,
+                        col * deathFrameWidth,
+                        row * deathFrameHeight,
+                        deathFrameWidth,
+                        deathFrameHeight);
+            }
+        }
+        projectileDeathAnimation = new Animation<>(0.1f, projectileFrames);
+
+        // Melee death - últimas 2 linhas (10 frames)
+        TextureRegion[] meleeFrames = new TextureRegion[10];
+        index = 0;
+        for (int row = 2; row < 4; row++) {
+            for (int col = 0; col < 5; col++) {
+                meleeFrames[index++] = new TextureRegion(
+                        deathSheet,
+                        col * deathFrameWidth,
+                        row * deathFrameHeight,
+                        deathFrameWidth,
+                        deathFrameHeight);
+            }
+        }
+        meleeDeathAnimation = new Animation<>(0.1f, meleeFrames);
     }
 
     public void update(float deltaTime) {
@@ -272,22 +315,66 @@ public class CastorAnimationSystem {
         return damageAnimation.isAnimationFinished(damageAnimationTime);
     }
 
-    public void dispose() {
-        if (idleAnimation != null && idleAnimation.getKeyFrames().length > 0) {
-            idleAnimation.getKeyFrames()[0].getTexture().dispose();
+    public void updateDeathTime(float deltaTime) {
+        deathAnimationTime += deltaTime;
+    }
+
+    public void resetDeathTime() {
+        deathAnimationTime = 0f;
+    }
+
+    public TextureRegion getDeathFrame(DeathType deathType, Direction direction) {
+        TextureRegion frame = null;
+
+        switch (deathType) {
+            case MELEE:
+                frame = meleeDeathAnimation.getKeyFrame(deathAnimationTime, false);
+                break;
+            case PROJECTILE:
+                frame = projectileDeathAnimation.getKeyFrame(deathAnimationTime, false);
+                break;
         }
-        if (runLeftAnimation != null && runLeftAnimation.getKeyFrames().length > 0) {
-            runLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+
+        // Se animação acabou, pega o último frame
+        if (isDeathAnimationFinished(deathType)) {
+            frame = getLastDeathFrame(deathType);
         }
-        if (shootLeftAnimation != null && shootLeftAnimation.getKeyFrames().length > 0) {
-            shootLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+
+        return frame;
+    }
+
+    public TextureRegion getLastDeathFrame(DeathType deathType) {
+        switch (deathType) {
+            case MELEE:
+                return meleeDeathAnimation.getKeyFrames()[9]; // Último frame
+            case PROJECTILE:
+                return projectileDeathAnimation.getKeyFrames()[9]; // Último frame
+            default:
+                return idleAnimation.getKeyFrames()[0];
         }
-        if (damageAnimation != null && damageAnimation.getKeyFrames().length > 0) {
-            damageAnimation.getKeyFrames()[0].getTexture().dispose();
+    }
+
+    public boolean isDeathAnimationFinished(DeathType deathType) {
+        switch (deathType) {
+            case MELEE:
+                return meleeDeathAnimation.isAnimationFinished(deathAnimationTime);
+            case PROJECTILE:
+                return projectileDeathAnimation.isAnimationFinished(deathAnimationTime);
+            default:
+                return true;
         }
-        if (dashAnimation != null && dashAnimation.getKeyFrames().length > 0) {
-            dashAnimation.getKeyFrames()[0].getTexture().dispose();
-        }
+    }
+
+    public float getMeleeDeathDuration() {
+        return meleeDeathAnimation.getAnimationDuration();
+    }
+
+    public float getProjectileDeathDuration() {
+        return projectileDeathAnimation.getAnimationDuration();
+    }
+
+    public float getDeathTime() {
+        return deathAnimationTime;
     }
 
     /**
@@ -332,6 +419,31 @@ public class CastorAnimationSystem {
     // 🔥 CORREÇÃO: Método para verificar se o dash terminou
     public boolean isDashAnimationFinished() {
         return dashAnimationTime >= DASH_TOTAL_DURATION;
+    }
+
+    public void dispose() {
+        if (idleAnimation != null && idleAnimation.getKeyFrames().length > 0) {
+            idleAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+        if (runLeftAnimation != null && runLeftAnimation.getKeyFrames().length > 0) {
+            runLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+        if (shootLeftAnimation != null && shootLeftAnimation.getKeyFrames().length > 0) {
+            shootLeftAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+        if (damageAnimation != null && damageAnimation.getKeyFrames().length > 0) {
+            damageAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+        if (dashAnimation != null && dashAnimation.getKeyFrames().length > 0) {
+            dashAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+
+        if (meleeDeathAnimation != null && meleeDeathAnimation.getKeyFrames().length > 0) {
+            meleeDeathAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
+        if (projectileDeathAnimation != null && projectileDeathAnimation.getKeyFrames().length > 0) {
+            projectileDeathAnimation.getKeyFrames()[0].getTexture().dispose();
+        }
     }
 
 }

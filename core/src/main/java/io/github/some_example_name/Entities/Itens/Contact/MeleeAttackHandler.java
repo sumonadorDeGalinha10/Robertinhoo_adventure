@@ -77,13 +77,11 @@ public class MeleeAttackHandler implements ContactHandler {
             return;
 
         enemy.takeDamage(15);
-
-        // REDUZIR DRASTICAMENTE o impulso para Castor
-        float knockbackForce = 1f; // valor padrão
+        float knockbackForce = 1f;
 
         // Verificar se é um Castor e reduzir muito o knockback
         if (enemy instanceof io.github.some_example_name.Entities.Enemies.Castor.Castor) {
-            knockbackForce = 0.1f; // Apenas 10% do knockback normal
+            knockbackForce = 0.1f;
         }
 
         Vector2 direction = new Vector2(enemy.getBody().getPosition()).sub(attackPosition).nor();
@@ -93,9 +91,9 @@ public class MeleeAttackHandler implements ContactHandler {
                 true);
 
         if (enemy.getHealth() <= 0) {
-            if (enemy instanceof Ratinho) {
-                ((Ratinho) enemy).die(Ratinho.DeathType.MELEE);
-            }
+
+            enemy.die(Enemy.DeathType.MELEE);
+
         }
     }
 

@@ -197,6 +197,7 @@ public class Mapa {
             enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));
             castoresAdded++;
         }
+
         BarrelSpawner.spawnBarrels(this, 14);
 
     }
