@@ -8,10 +8,13 @@ import com.badlogic.gdx.math.Vector2;
 
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
 import io.github.some_example_name.Entities.Enemies.Rat.Ratinho.State;
+import io.github.some_example_name.Entities.Enemies.Enemy;
+import io.github.some_example_name.Entities.Renderer.CorpsesManager.CorpseManager;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 
-public class RatRenderer {
+public class RatRenderer implements CorpseManager.CorpseRenderer {
     private final Texture ratSpriteSheet;
     private final Animation<TextureRegion> idleAnimation;
     private final Animation<TextureRegion> runHorizontalAnimation;
@@ -105,10 +108,14 @@ public class RatRenderer {
     }
 
     private boolean shouldFlip(Ratinho rat) {
-        return rat.getDirectionX() < 0 &&
+        // CORREÇÃO: Incluir estados de morte na lógica de flip
+        boolean shouldFlip = rat.getDirectionX() < 0 &&
                 (rat.getState() == State.RUNNING_HORIZONTAL ||
                         rat.getState() == State.PREPARING_DASH ||
-                        rat.getState() == State.DASHING);
+                        rat.getState() == State.DASHING ||
+                        rat.getState() == State.MELEE_DEATH ||
+                        rat.getState() == State.PROJECTILE_DEATH);
+        return shouldFlip;
     }
 
     public TextureRegion getFrame(Ratinho rat, boolean flip) {
@@ -229,8 +236,9 @@ public class RatRenderer {
     }
 
     public boolean flipou(Ratinho rat) {
-        // Implementação real da lógica de flip
-        return rat.getDirectionX() < 0;
+
+        boolean flip = rat.getDirectionX() < 0;
+        return flip;
     }
 
     public Vector2 calculateRenderOffset(Ratinho rat) {
@@ -255,6 +263,40 @@ public class RatRenderer {
         offset.y -= (RAT_RENDER_HEIGHT / RAT_HEIGHT) / 2f;
 
         return offset;
+    }
+
+    @Override
+    public Vector2 calculateRenderOffset(Enemy enemy) {
+        if (enemy instanceof Ratinho) {
+            return calculateRenderOffset((Ratinho) enemy);
+        }
+        return new Vector2();
+    }
+
+    @Override
+    public float getRenderWidth() {
+        return getRatRenderWidth();
+    }
+
+    @Override
+    public float getRenderHeight() {
+        return getRatRenderHeight();
+    }
+
+    @Override
+    public TextureRegion getCorpseFrame(Enemy enemy) {
+        if (enemy instanceof Ratinho) {
+            return getCorpseFrame((Ratinho) enemy);
+        }
+        return idleAnimation.getKeyFrames()[0];
+    }
+
+    @Override
+    public boolean shouldFlipCorpse(Enemy enemy) {
+        if (enemy instanceof Ratinho) {
+            return flipou((Ratinho) enemy);
+        }
+        return false;
     }
 
 }

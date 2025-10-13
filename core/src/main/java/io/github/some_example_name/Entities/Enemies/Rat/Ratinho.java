@@ -62,15 +62,11 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     private float prepareDashTimer = 0f;
     private Vector2 dashTargetDirection; //
     private ShadowComponent shadowComponent;
-    private boolean deathAnimationFinished = false;
+
     private RatAI ai;
     public RatRenderer renderer = new RatRenderer();
-    private Rectangle homeRoom; 
+    private Rectangle homeRoom;
     private int TILE_SIZE = 64;
-
-    public enum DeathType {
-        NONE, MELEE, PROJECTILE
-    }
 
     public enum State {
         IDLE, RUNNING_HORIZONTAL, RUNNING_DOWN, GOT_DAMAGE,
@@ -84,14 +80,13 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
     public boolean isDead = false;
     private boolean shouldDeactivate = false;
 
-   public Ratinho(Mapa mapa, float x, float y, Robertinhoo target, Rectangle homeRoom) {
+    public Ratinho(Mapa mapa, float x, float y, Robertinhoo target, Rectangle homeRoom) {
         super(x, y, 20, 2);
         this.mapa = mapa;
         this.target = target;
         this.homeRoom = homeRoom;
         this.body = createBody(x, y);
         this.ai = new RatAI(this, target, mapa.getPathfindingSystem(), mapa, homeRoom);
-
 
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
@@ -100,8 +95,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
                 -0.1f,
 
                 0.7f,
-                new Color(0.05f, 0.05f, 0.05f, 1f)
-        );
+                new Color(0.05f, 0.05f, 0.05f, 1f));
     }
 
     private Body createBody(float x, float y) {
@@ -123,7 +117,7 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         fd.density = 2f;
         fd.friction = 0f;
         fd.filter.categoryBits = Constants.BIT_ENEMY;
-        
+
         body.createFixture(fd);
         shape.dispose();
 
@@ -148,11 +142,10 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         Vector2 myPos = body.getPosition();
         float distance = myPos.dst(playerPos);
 
-         if (isDead) {
+        if (isDead) {
             deathAnimationTime += deltaTime;
             return;
         }
-    
         animationTime += deltaTime;
 
         if (isTakingDamage) {
@@ -199,8 +192,8 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
             if (dashCooldown <= 0 && distance <= ATTACK_RANGE) {
                 executeDashAttack(playerPos);
             }
-        
-    }
+
+        }
     }
 
     @Override
@@ -286,14 +279,14 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
             shape.getVertex(i, local);
 
             // Rotaciona em torno da origem do body e converte pra pixel
-            float worldX = (local.x *TILE_SIZE) * MathUtils.cos(angle)
-                    - (local.y *TILE_SIZE) * MathUtils.sin(angle);
-            float worldY = (local.x *TILE_SIZE) * MathUtils.sin(angle)
-                    + (local.y *TILE_SIZE) * MathUtils.cos(angle);
+            float worldX = (local.x * TILE_SIZE) * MathUtils.cos(angle)
+                    - (local.y * TILE_SIZE) * MathUtils.sin(angle);
+            float worldY = (local.x * TILE_SIZE) * MathUtils.sin(angle)
+                    + (local.y * TILE_SIZE) * MathUtils.cos(angle);
 
             verts[i] = new Vector2(
-                    offsetX + (position.x *TILE_SIZE) + worldX,
-                    offsetY + (position.y *TILE_SIZE) + worldY);
+                    offsetX + (position.x * TILE_SIZE) + worldX,
+                    offsetY + (position.y * TILE_SIZE) + worldY);
         }
 
         renderer.setColor(Color.RED);
@@ -305,35 +298,24 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         }
     }
 
-   public void die(DeathType type) {
-        if (isDead) return;
-        
+    @Override
+    public void die(DeathType type) {
+        if (isDead)
+            return;
+
         isDead = true;
         deathType = type;
         deathAnimationTime = 0;
         state = type == DeathType.MELEE ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
         disableCollisions();
     }
-    
 
-    private void disableCollisions() {
-        for (Fixture fixture : getBody().getFixtureList()) {
-            fixture.setSensor(true);
-        }
-        
-        getBody().setLinearVelocity(0, 0);
-        getBody().setAngularVelocity(0);
-    }
-        public boolean isDeathAnimationFinished(float animationDuration) {
-        return deathAnimationTime >= animationDuration;
+    public DeathType getDeathType() {
+        return deathType;
     }
 
     public float getDeathAnimationTime() {
         return deathAnimationTime;
-    }
-
-    public DeathType getDeathType() {
-        return deathType;
     }
 
     public boolean isDead() {
@@ -458,26 +440,34 @@ public class Ratinho extends Enemy implements Steerable<Vector2>, ShadowEntity {
         this.renderer = renderer;
     }
 
-        public void markForDestruction() {
+    public void markForDestruction() {
         this.markedForDestruction = true;
     }
-    
+
     public boolean isMarkedForDestruction() {
         return markedForDestruction;
     }
 
-        public boolean isDying() {
+    public boolean isDying() {
         return isDead && !isDeathAnimationFinished();
     }
+
+    public List<Vector2> getCurrentPath() {
+        return ai != null ? ai.getCurrentPath() : null;
+    }
+
+    @Override
+    protected void disableCollisions() {
+        super.disableCollisions();
+
+        state = (deathType == DeathType.MELEE) ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
+    }
+
+    @Override
     public boolean isDeathAnimationFinished() {
-        float duration = (deathType == DeathType.MELEE) ? 
-            renderer.getMeleeDeathDuration() : 
-            renderer.getProjectileDeathDuration();
-            
+        float duration = (deathType == DeathType.MELEE) ? renderer.getMeleeDeathDuration()
+                : renderer.getProjectileDeathDuration();
         return deathAnimationTime >= duration;
     }
 
-   public List<Vector2> getCurrentPath() {
-        return ai != null ? ai.getCurrentPath() : null;
-    }
 }

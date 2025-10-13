@@ -19,6 +19,8 @@ import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Itens.Contact.Constants;
 import io.github.some_example_name.Entities.Itens.Weapon.Projectile;
 import io.github.some_example_name.Entities.Player.Robertinhoo;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Castor.CastorRenderer;
+import io.github.some_example_name.Entities.Renderer.EnemiRenderer.Rat.RatRenderer;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowComponent;
 import io.github.some_example_name.Entities.Renderer.Shadow.ShadowEntity;
 import io.github.some_example_name.MapConfig.Mapa;
@@ -31,6 +33,7 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     private final Mapa mapa;
     private final Body body;
     public final Robertinhoo target;
+    public CastorRenderer renderer = new CastorRenderer();
 
     private Animation<TextureRegion> ratAnimation;
     private float animationTime = 0f;
@@ -43,6 +46,9 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     private static final float DAMAGE_ANIMATION_DURATION = 0.5f;
     private boolean isDead = false;
     private boolean markedForDestruction = false;
+
+    private int directionX = 1;
+    private int directionY = 1;
 
     private boolean tagged;
     private float boundingRadius = 0.5f;
@@ -72,10 +78,17 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     private float dashTime = 0f;
     private static final float DASH_TOTAL_DURATION = 0.8f; // Ajuste conforme a animação
 
-    private boolean dashForceApplied = false;
+    public enum State {
+        IDLE, MOVING, SHOOTING, TAKING_DAMAGE, DASHING,
+        MELEE_DEATH, PROJECTILE_DEATH
+    }
+
+    private State state = State.IDLE;
+
+    private float deathAnimationTime = 0f;
 
     public Castor(Mapa mapa, float x, float y, Robertinhoo target) {
-        super(x, y, 300, 2);
+        super(x, y, 3, 2);
         this.mapa = mapa;
         this.target = target;
         this.body = createBody(x, y);
@@ -240,6 +253,7 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
             shootCooldown -= deltaTime;
         }
         if (isDead) {
+            deathAnimationTime += deltaTime;
             return;
         }
 
@@ -307,6 +321,10 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         return markedForDestruction;
     }
 
+    public void markForDestruction() {
+        this.markedForDestruction = true;
+    }
+
     public float getShootAnimationTime() {
         return shootAnimationTime;
     }
@@ -340,7 +358,7 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         super.takeDamage(damage);
         damageTimer = DAMAGE_ANIMATION_DURATION;
         isTakingDamage = true;
-
+        state = State.TAKING_DAMAGE;
         // 🔥 CORREÇÃO: AGENDAR o dodge em vez de executar imediatamente
         if (target != null) {
             float distanceToTarget = getPosition().dst(target.getPosition());
@@ -374,9 +392,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
         Gdx.app.log("Castor", "❤️ Saúde: " + health);
 
-        if (health <= 0) {
-            die();
-        }
     }
 
     private void applyReducedKnockback() {
@@ -404,20 +419,32 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         }
     }
 
-    private void die() {
-        isDead = true;
-        Gdx.app.log("Castor", "Morreu!");
+    @Override
+    public void die(DeathType type) {
+        if (isDead)
+            return;
 
-        // Desativa colisões
+        Gdx.app.log("Castor", "=== INICIANDO MORTE ===");
+        Gdx.app.log("Castor", "Tipo: " + type);
+        Gdx.app.log("Castor", "Estado anterior: " + state);
+
+        isDead = true;
+        deathType = type;
+        deathAnimationTime = 0;
+        state = type == DeathType.MELEE ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
+
+        Gdx.app.log("Castor", "Estado após morte: " + state);
+        Gdx.app.log("Castor", "deathType: " + deathType);
+        Gdx.app.log("Castor", "isDead: " + isDead);
+
         for (Fixture fixture : body.getFixtureList()) {
             fixture.setSensor(true);
         }
 
-        // Para o movimento
         body.setLinearVelocity(0, 0);
         body.setAngularVelocity(0);
 
-        markedForDestruction = true;
+        Gdx.app.log("Castor", "=== MORTE CONFIGURADA ===");
     }
 
     public boolean isTakingDamage() {
@@ -578,5 +605,40 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
                 Gdx.app.log("Castor", "❌ Falha ao aplicar dash via DodgeSystem");
             }
         }
+    }
+
+    public int getDirectionX() {
+        return directionX;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    @Override
+    public boolean isDeathAnimationFinished() {
+        if (deathType == null) {
+            Gdx.app.log("Castor", "deathType é NULL em isDeathAnimationFinished");
+            return true;
+        }
+
+        float duration = (deathType == DeathType.MELEE) ? renderer.getMeleeDeathDuration()
+                : renderer.getProjectileDeathDuration();
+
+        boolean finished = deathAnimationTime >= duration;
+        Gdx.app.log("Castor", "isDeathAnimationFinished: " + finished +
+                " (time: " + deathAnimationTime + ", duration: " + duration + ")");
+
+        return finished;
+    }
+
+    public boolean isDying() {
+        boolean dying = isDead && deathType != null && !isDeathAnimationFinished();
+        Gdx.app.log("Castor", "isDying: " + dying);
+        return dying;
     }
 }
