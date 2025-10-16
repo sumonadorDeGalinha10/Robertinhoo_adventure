@@ -6,9 +6,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import io.github.some_example_name.Entities.Enemies.Enemy.DeathType;
+import io.github.some_example_name.Entities.Enemies.Castor.CastorAnimationState;
 
 public class CastorAnimationSystem {
-    // Animations
+    // Animations (permanecem compartilhadas - são apenas os recursos)
     private Animation<TextureRegion> idleAnimation;
     private Animation<TextureRegion> runLeftAnimation;
     private Animation<TextureRegion> runDownAnimation;
@@ -20,17 +21,10 @@ public class CastorAnimationSystem {
     private Animation<TextureRegion> dashAnimation;
     private Animation<TextureRegion> meleeDeathAnimation;
     private Animation<TextureRegion> projectileDeathAnimation;
-    private float deathAnimationTime = 0f;
 
-    // Animation states
-    private float stateTime;
     private static final float FRAME_DURATION = 0.1f;
-    private float shootAnimationTime = 0f;
-    private float damageAnimationTime = 0f;
-    private float dashAnimationTime = 0f;
-
-    private static final float DASH_PREPARATION_DURATION = 0.3f; // Frames 0-1 mais curtos
-    private static final float DASH_EXECUTION_DURATION = 0.5f; // Frames 2-7
+    private static final float DASH_PREPARATION_DURATION = 0.3f;
+    private static final float DASH_EXECUTION_DURATION = 0.5f;
     private static final float DASH_TOTAL_DURATION = DASH_PREPARATION_DURATION + DASH_EXECUTION_DURATION;
 
     // Direction
@@ -89,7 +83,7 @@ public class CastorAnimationSystem {
         }
         damageAnimation = new Animation<>(FRAME_DURATION, damageFrames);
 
-        // 🔥 CARREGAMENTO REFINADO: Animação de dash com fases
+        // Carregar dash
         Texture dashSheet = new Texture(Gdx.files.internal("enemies/castor/recue_dash-Sheet.png"));
         int dashFrameWidth = dashSheet.getWidth() / 8;
         int dashFrameHeight = dashSheet.getHeight();
@@ -99,19 +93,7 @@ public class CastorAnimationSystem {
             dashFrames[i] = new TextureRegion(dashSheet, i * dashFrameWidth, 0, dashFrameWidth, dashFrameHeight);
         }
 
-        // 🔥 DURAÇÕES DIFERENCIADAS: Preparação mais lenta, dash mais rápido
-        float[] frameDurations = {
-                0.15f, // Frame 0: Preparação lenta
-                0.15f, // Frame 1: Preparação lenta
-                0.08f, // Frame 2: Dash rápido
-                0.08f, // Frame 3: Dash rápido
-                0.08f, // Frame 4: Dash rápido
-                0.08f, // Frame 5: Dash rápido
-                0.08f, // Frame 6: Dash rápido
-                0.08f // Frame 7: Dash rápido
-        };
-
-        dashAnimation = new Animation<>(0.1f, dashFrames); // Duração base, vamos controlar manualmente
+        dashAnimation = new Animation<>(0.1f, dashFrames);
     }
 
     private void loadDeathAnimations() {
@@ -152,40 +134,13 @@ public class CastorAnimationSystem {
         meleeDeathAnimation = new Animation<>(0.1f, meleeFrames);
     }
 
-    public void update(float deltaTime) {
-        stateTime += deltaTime;
-    }
-
-    public void updateShootTime(float deltaTime) {
-        shootAnimationTime += deltaTime;
-    }
-
-    public void resetShootTime() {
-        shootAnimationTime = 0f;
-    }
-
-    public void updateDamageTime(float deltaTime) {
-        damageAnimationTime += deltaTime;
-    }
-
-    public void resetDamageTime() {
-        damageAnimationTime = 0f;
-    }
-
-    public void updateDashTime(float deltaTime) {
-        dashAnimationTime += deltaTime;
-    }
-
-    public void resetDashTime() {
-        dashAnimationTime = 0f;
-    }
-
     /**
-     * 🔥 MÉTODO REFINADO: Obtém o frame atual baseado no estado do castor
+     * MÉTODO ATUALIZADO: Obtém o frame atual baseado no estado do castor e seu
+     * estado de animação
      */
     public AnimationFrame getCurrentFrame(CastorState state, Direction direction,
             Vector2 velocity, Vector2 targetPosition,
-            Vector2 currentPosition) {
+            Vector2 currentPosition, CastorAnimationState animState) {
 
         TextureRegion currentFrame = null;
         boolean flipX = false;
@@ -193,41 +148,36 @@ public class CastorAnimationSystem {
 
         switch (state) {
             case DASHING:
-                currentFrame = getDashFrame(direction);
-                dashPhase = getDashPhase();
-                // 🔥 CORREÇÃO DO FLIP:
-                // - LEFT: flipX = false (normal - sprite virado para esquerda)
-                // - RIGHT: flipX = true (espelhado - sprite virado para direita)
-                // - UP/DOWN: sem flip
+                currentFrame = getDashFrame(direction, animState.dashAnimationTime);
+                dashPhase = getDashPhase(animState.dashAnimationTime);
                 if (direction == Direction.LEFT) {
                     flipX = true;
                 }
                 break;
 
             case TAKING_DAMAGE:
-                currentFrame = getDamageFrame(direction);
-                // Manter flip consistente com outras animações
+                currentFrame = getDamageFrame(direction, animState.damageAnimationTime);
                 if (direction == Direction.RIGHT) {
                     flipX = true;
                 }
                 break;
 
             case SHOOTING:
-                currentFrame = getShootFrame(direction);
+                currentFrame = getShootFrame(direction, animState.shootAnimationTime);
                 if (direction == Direction.RIGHT) {
                     flipX = true;
                 }
                 break;
 
             case MOVING:
-                currentFrame = getRunFrame(direction);
+                currentFrame = getRunFrame(direction, animState.stateTime);
                 if (direction == Direction.RIGHT) {
                     flipX = true;
                 }
                 break;
 
             default:
-                currentFrame = getIdleFrame();
+                currentFrame = getIdleFrame(animState.stateTime);
                 break;
         }
 
@@ -235,43 +185,41 @@ public class CastorAnimationSystem {
     }
 
     /**
-     * 🔥 MÉTODO REFINADO: Obtém frame de dash com fases
+     * MÉTODO ATUALIZADO: Obtém frame de dash com tempo específico
      */
-    private TextureRegion getDashFrame(Direction direction) {
+    private TextureRegion getDashFrame(Direction direction, float dashAnimationTime) {
         int frameIndex;
 
         if (dashAnimationTime < DASH_PREPARATION_DURATION) {
             // Fase de preparação - frames 0 e 1
             float preparationProgress = dashAnimationTime / DASH_PREPARATION_DURATION;
-            frameIndex = (int) (preparationProgress * 2); // 0 ou 1
+            frameIndex = (int) (preparationProgress * 2);
             frameIndex = Math.min(frameIndex, 1);
         } else {
             // Fase de dash - frames 2 a 7
             float dashProgress = (dashAnimationTime - DASH_PREPARATION_DURATION) / DASH_EXECUTION_DURATION;
-            frameIndex = 2 + (int) (dashProgress * 6); // 2 a 7
+            frameIndex = 2 + (int) (dashProgress * 6);
             frameIndex = Math.min(frameIndex, 7);
         }
 
-        // Garantir que não ultrapassa o último frame
         frameIndex = Math.min(frameIndex, dashAnimation.getKeyFrames().length - 1);
-
         return dashAnimation.getKeyFrames()[frameIndex];
     }
 
-    private DashPhase getDashPhase() {
+    private DashPhase getDashPhase(float dashAnimationTime) {
         return (dashAnimationTime < DASH_PREPARATION_DURATION) ? DashPhase.PREPARATION : DashPhase.DASH;
     }
 
-    private TextureRegion getIdleFrame() {
+    private TextureRegion getIdleFrame(float stateTime) {
         return idleAnimation.getKeyFrame(stateTime, true);
     }
 
-    private TextureRegion getRunFrame(Direction direction) {
+    private TextureRegion getRunFrame(Direction direction, float stateTime) {
         switch (direction) {
             case LEFT:
                 return runLeftAnimation.getKeyFrame(stateTime, true);
             case RIGHT:
-                return runLeftAnimation.getKeyFrame(stateTime, true); // Será flipado
+                return runLeftAnimation.getKeyFrame(stateTime, true);
             case DOWN:
                 return runDownAnimation.getKeyFrame(stateTime, true);
             case UP:
@@ -281,25 +229,24 @@ public class CastorAnimationSystem {
         }
     }
 
-    private TextureRegion getShootFrame(Direction direction) {
+    private TextureRegion getShootFrame(Direction direction, float shootAnimationTime) {
         switch (direction) {
             case LEFT:
                 return shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
             case RIGHT:
-                return shootLeftAnimation.getKeyFrame(shootAnimationTime, false); // Será flipado
+                return shootLeftAnimation.getKeyFrame(shootAnimationTime, false);
             case DOWN:
                 return shootDownAnimation.getKeyFrame(shootAnimationTime, false);
             case UP:
                 return shootUpAnimation.getKeyFrame(shootAnimationTime, false);
             default:
-                return idleAnimation.getKeyFrame(stateTime, true);
+                return idleAnimation.getKeyFrame(0, true);
         }
     }
 
-    private TextureRegion getDamageFrame(Direction direction) {
+    private TextureRegion getDamageFrame(Direction direction, float damageAnimationTime) {
         TextureRegion frame = damageAnimation.getKeyFrame(damageAnimationTime, false);
 
-        // Se a animação terminou, manter o último frame
         if (damageAnimation.isAnimationFinished(damageAnimationTime)) {
             frame = damageAnimation.getKeyFrames()[damageAnimation.getKeyFrames().length - 1];
         }
@@ -307,36 +254,22 @@ public class CastorAnimationSystem {
         return frame;
     }
 
-    public boolean isShootAtFirePoint() {
-        return shootAnimationTime >= 0.5f;
-    }
-
-    public boolean isDamageAnimationFinished() {
-        return damageAnimation.isAnimationFinished(damageAnimationTime);
-    }
-
-    public void updateDeathTime(float deltaTime) {
-        deathAnimationTime += deltaTime;
-    }
-
-    public void resetDeathTime() {
-        deathAnimationTime = 0f;
-    }
-
-    public TextureRegion getDeathFrame(DeathType deathType, Direction direction) {
+    /**
+     * MÉTODO ATUALIZADO: Obtém frame de morte com estado específico
+     */
+    public TextureRegion getDeathFrame(DeathType deathType, Direction direction, CastorAnimationState animState) {
         TextureRegion frame = null;
 
         switch (deathType) {
             case MELEE:
-                frame = meleeDeathAnimation.getKeyFrame(deathAnimationTime, false);
+                frame = meleeDeathAnimation.getKeyFrame(animState.deathAnimationTime, false);
                 break;
             case PROJECTILE:
-                frame = projectileDeathAnimation.getKeyFrame(deathAnimationTime, false);
+                frame = projectileDeathAnimation.getKeyFrame(animState.deathAnimationTime, false);
                 break;
         }
 
-        // Se animação acabou, pega o último frame
-        if (isDeathAnimationFinished(deathType)) {
+        if (isDeathAnimationFinished(deathType, animState.deathAnimationTime)) {
             frame = getLastDeathFrame(deathType);
         }
 
@@ -346,15 +279,19 @@ public class CastorAnimationSystem {
     public TextureRegion getLastDeathFrame(DeathType deathType) {
         switch (deathType) {
             case MELEE:
-                return meleeDeathAnimation.getKeyFrames()[9]; // Último frame
+                return meleeDeathAnimation.getKeyFrames()[9];
             case PROJECTILE:
-                return projectileDeathAnimation.getKeyFrames()[9]; // Último frame
+                return projectileDeathAnimation.getKeyFrames()[9];
             default:
                 return idleAnimation.getKeyFrames()[0];
         }
     }
 
-    public boolean isDeathAnimationFinished(DeathType deathType) {
+    /**
+     * MÉTODO ATUALIZADO: Verifica se animação de morte terminou com tempo
+     * específico
+     */
+    public boolean isDeathAnimationFinished(DeathType deathType, float deathAnimationTime) {
         switch (deathType) {
             case MELEE:
                 return meleeDeathAnimation.isAnimationFinished(deathAnimationTime);
@@ -373,12 +310,8 @@ public class CastorAnimationSystem {
         return projectileDeathAnimation.getAnimationDuration();
     }
 
-    public float getDeathTime() {
-        return deathAnimationTime;
-    }
-
     /**
-     * 🔥 NOVO: Classe para encapsular o resultado da animação
+     * Classe para encapsular o resultado da animação
      */
     public static class AnimationFrame {
         public final TextureRegion frame;
@@ -393,32 +326,10 @@ public class CastorAnimationSystem {
     }
 
     /**
-     * 🔥 NOVO: Enum para estados do castor
+     * Enum para estados do castor
      */
     public enum CastorState {
         IDLE, MOVING, SHOOTING, TAKING_DAMAGE, DASHING
-    }
-
-    public float getDamageTime() {
-        return damageAnimationTime;
-    }
-
-    public float getDashTime() {
-        return dashAnimationTime;
-    }
-
-    public float getDashProgress() {
-        return Math.min(dashAnimationTime / DASH_TOTAL_DURATION, 1.0f);
-    }
-
-    // 🔥 CORREÇÃO: Método para verificar se está na fase de execução do dash
-    public boolean isDashInExecutionPhase() {
-        return dashAnimationTime >= DASH_PREPARATION_DURATION;
-    }
-
-    // 🔥 CORREÇÃO: Método para verificar se o dash terminou
-    public boolean isDashAnimationFinished() {
-        return dashAnimationTime >= DASH_TOTAL_DURATION;
     }
 
     public void dispose() {
@@ -445,5 +356,4 @@ public class CastorAnimationSystem {
             projectileDeathAnimation.getKeyFrames()[0].getTexture().dispose();
         }
     }
-
 }

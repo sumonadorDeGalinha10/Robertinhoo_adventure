@@ -182,7 +182,7 @@ public class Mapa {
         }
 
         int ratsAdded = 0;
-        for (int i = 0; i < validRoomPositions.size() && ratsAdded < 4; i++) {
+        for (int i = 0; i < validRoomPositions.size() && ratsAdded < 14; i++) {
             Vector2 tilePos = validRoomPositions.get(i);
             Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
             Rectangle ratRoom = findRoomContainingTile(tilePos);
@@ -191,7 +191,7 @@ public class Mapa {
         }
 
         int castoresAdded = 0;
-        for (int i = 8; i < validRoomPositions.size() && castoresAdded < 1; i++) {
+        for (int i = 8; i < validRoomPositions.size() && castoresAdded < 4; i++) {
             Vector2 tilePos = validRoomPositions.get(i);
             Vector2 worldPos = tileToWorld((int) tilePos.x, (int) tilePos.y);
             enemies.add(new Castor(this, worldPos.x, worldPos.y, robertinhoo));

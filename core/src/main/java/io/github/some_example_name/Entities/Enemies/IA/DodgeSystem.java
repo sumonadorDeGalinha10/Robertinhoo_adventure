@@ -11,7 +11,7 @@ public class DodgeSystem {
     private final Mapa mapa;
     private final Random random;
 
-    private static final boolean DEBUG_LOGS = true;
+    private static final boolean DEBUG_LOGS = false;
 
     private static final float DODGE_FORCE = 5f;
     private static final float MIN_DODGE_DISTANCE = 3f;

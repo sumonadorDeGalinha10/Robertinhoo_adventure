@@ -6,10 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 
 import io.github.some_example_name.Entities.Enemies.Enemy;
 import io.github.some_example_name.Entities.Enemies.Castor.Castor;
-import io.github.some_example_name.Entities.Enemies.Rat.Ratinho;
-
-import com.badlogic.gdx.Gdx;
-
+import io.github.some_example_name.Entities.Enemies.Castor.CastorAnimationState;
 import io.github.some_example_name.Entities.Renderer.CorpsesManager.CorpseManager;
 
 public class CastorRenderer implements CorpseManager.CorpseRenderer {
@@ -52,14 +49,13 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
     }
 
     public void render(SpriteBatch batch, Castor castor, float offsetX, float offsetY, float delta) {
+        CastorAnimationState animState = castor.getAnimationState();
 
-        // ATUALIZAÇÃO: Se estiver morto, só cuida da animação de morte
         if (castor.isDead()) {
-            renderDeathAnimation(batch, castor, offsetX, offsetY, delta);
+            renderDeathAnimation(batch, castor, offsetX, offsetY, delta, animState); // 🔥 PASSA ANIMSTATE
             return;
         }
 
-        // CÓDIGO NORMAL PARA CASTOR VIVO (existente)
         Vector2 velocity = castor.getLinearVelocity();
         Vector2 currentPosition = castor.getPosition();
         Vector2 targetPosition = castor.target.getPosition();
@@ -69,31 +65,13 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
         boolean isTakingDamage = castor.isTakingDamage();
         boolean isDashing = castor.isDashing();
 
-        animationSystem.update(delta);
-
-        if (isShooting) {
-            animationSystem.updateShootTime(delta);
-        } else {
-            animationSystem.resetShootTime();
-        }
-
-        if (isTakingDamage) {
-            animationSystem.updateDamageTime(delta);
-        } else {
-            animationSystem.resetDamageTime();
-        }
-
-        if (isDashing) {
-            animationSystem.updateDashTime(delta);
-        } else {
-            animationSystem.resetDashTime();
-        }
-
         currentDirection = getDirection(velocity, targetPosition, currentPosition, isShooting);
 
         CastorAnimationSystem.CastorState state = getCastorState(isMoving, isShooting, isTakingDamage, isDashing);
-        CastorAnimationSystem.AnimationFrame animationFrame = animationSystem.getCurrentFrame(state, currentDirection,
-                velocity, targetPosition, currentPosition);
+
+        // 🔥 PASSAR: animState para o animationSystem
+        CastorAnimationSystem.AnimationFrame animationFrame = animationSystem.getCurrentFrame(
+                state, currentDirection, velocity, targetPosition, currentPosition, animState);
 
         float drawWidth = TILE_SIZE;
         float drawHeight = TILE_SIZE;
@@ -101,9 +79,10 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
         float x = offsetX + (currentPosition.x - 0.5f) * TILE_SIZE;
         float y = offsetY + (currentPosition.y - 0.5f) * TILE_SIZE;
 
-        // Efeito visual durante o dano
+        // 🔥 CORREÇÃO: Usar animState.damageAnimationTime em vez de
+        // animationSystem.getDamageTime()
         if (isTakingDamage) {
-            if ((int) (animationSystem.getDamageTime() * 10) % 2 == 0) {
+            if ((int) (animState.damageAnimationTime * 10) % 2 == 0) {
                 batch.setColor(1, 0.3f, 0.3f, 1);
             } else {
                 batch.setColor(1, 1, 1, 1);
@@ -118,22 +97,23 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
 
         batch.setColor(1, 1, 1, 1);
 
-        if (isShooting && animationSystem.isShootAtFirePoint() && !castor.hasShot()) {
+        // 🔥 CORREÇÃO: Usar animState.shootAnimationTime em vez de
+        // animationSystem.isShootAtFirePoint()
+        if (isShooting && animState.shootAnimationTime >= 0.5f && !castor.hasShot()) {
             castor.setHasShot(true);
             castor.fireProjectile();
         }
     }
 
-    private void renderDeathAnimation(SpriteBatch batch, Castor castor, float offsetX, float offsetY, float delta) {
-        animationSystem.updateDeathTime(delta);
-
+    // 🔥 ATUALIZAR: Método renderDeathAnimation para receber animState
+    private void renderDeathAnimation(SpriteBatch batch, Castor castor, float offsetX, float offsetY,
+            float delta, CastorAnimationState animState) {
         Vector2 currentPosition = castor.getPosition();
-
-        // Pega a direção atual (usando direção padrão ou a última direção conhecida)
         CastorAnimationSystem.Direction deathDirection = currentDirection != null ? currentDirection
                 : CastorAnimationSystem.Direction.DOWN;
 
-        TextureRegion deathFrame = animationSystem.getDeathFrame(castor.getDeathType(), deathDirection);
+        // 🔥 PASSAR: animState para o animationSystem
+        TextureRegion deathFrame = animationSystem.getDeathFrame(castor.getDeathType(), deathDirection, animState);
 
         boolean flipX = flipou(castor);
 
@@ -143,8 +123,8 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
         float x = offsetX + (currentPosition.x - 0.5f) * TILE_SIZE;
         float y = offsetY + (currentPosition.y - 0.5f) * TILE_SIZE;
 
-        // Efeito visual durante a morte (opcional - igual ao rato)
-        if ((int) (animationSystem.getDeathTime() * 10) % 3 == 0) {
+        // 🔥 CORREÇÃO: Usar animState.deathAnimationTime
+        if ((int) (animState.deathAnimationTime * 10) % 3 == 0) {
             batch.setColor(0.8f, 0.8f, 0.8f, 1f);
         }
 
@@ -160,16 +140,13 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
     @Override
     public Vector2 calculateRenderOffset(Enemy enemy) {
         if (enemy instanceof Castor) {
-            return calculateRenderOffsetForCastor((Castor) enemy); // ← CORREÇÃO: método diferente
+            return calculateRenderOffsetForCastor((Castor) enemy);
         }
         return new Vector2();
     }
 
-    // MÉTODO CORRIGIDO: Agora com nome diferente para evitar recursão
     public Vector2 calculateRenderOffsetForCastor(Castor castor) {
         Vector2 offset = new Vector2();
-
-        // Aplica os mesmos ajustes de posição usados na renderização
         switch (castor.getState()) {
             case DASHING:
                 offset.x = -0.1f;
@@ -183,19 +160,15 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
                 break;
             case MELEE_DEATH:
             case PROJECTILE_DEATH:
-                // Ajustes específicos para animação de morte se necessário
                 offset.y -= 0.02f;
                 break;
         }
 
-        // Aplica o offset centralizador (igual ao RatRenderer)
         offset.x -= (CASTOR_RENDER_WIDTH / TILE_SIZE) / 2f;
         offset.y -= (CASTOR_RENDER_HEIGHT / TILE_SIZE) / 2f;
 
         return offset;
     }
-
-    // MÉTODOS NOVOS: Para o sistema de cadáveres (igual ao RatRenderer)
 
     public float getMeleeDeathDuration() {
         return animationSystem.getMeleeDeathDuration();
@@ -205,9 +178,6 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
         return animationSystem.getProjectileDeathDuration();
     }
 
-    /**
-     * 🔥 SIMPLIFICADO: Determina o estado atual do castor
-     */
     private CastorAnimationSystem.CastorState getCastorState(boolean isMoving, boolean isShooting,
             boolean isTakingDamage, boolean isDashing) {
         if (isDashing) {
@@ -225,14 +195,6 @@ public class CastorRenderer implements CorpseManager.CorpseRenderer {
 
     public void dispose() {
         animationSystem.dispose();
-    }
-
-    public float getDamageAnimationTime() {
-        return animationSystem.getDamageTime();
-    }
-
-    public float getDashAnimationTime() {
-        return animationSystem.getDashTime();
     }
 
     @Override

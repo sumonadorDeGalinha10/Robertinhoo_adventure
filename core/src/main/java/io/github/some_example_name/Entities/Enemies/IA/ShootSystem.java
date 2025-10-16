@@ -4,11 +4,9 @@ import io.github.some_example_name.Entities.Enemies.Castor.Castor;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import io.github.some_example_name.Entities.Enemies.IA.PathfindingSystem;
 import io.github.some_example_name.MapConfig.Mapa;
 import java.util.List;
 import java.util.Random;
-import com.badlogic.gdx.Gdx;
 
 public class ShootSystem {
     private final Castor castor;
@@ -34,7 +32,6 @@ public class ShootSystem {
 
         // VERIFICAÇÃO CRÍTICA: Não permitir atirar sem linha de visão
         if (!hasLOS) {
-            Gdx.app.log("ShootSystem", "Sem linha de visão, tentando reposicionar");
             return handleRepositioning(body, currentPosition, targetPosition);
         }
 
@@ -45,7 +42,6 @@ public class ShootSystem {
         }
 
         if (distanceToTarget > SHOOTING_RANGE) {
-            Gdx.app.log("ShootSystem", "Fora do alcance, voltando a perseguir");
             return true;
         }
 
@@ -71,9 +67,6 @@ public class ShootSystem {
                 Vector2 desiredVelocity = direction.scl(3f);
                 applySteeringForce(body, desiredVelocity);
 
-                if (hasLineOfSight(body.getPosition(), targetPosition)) {
-                    Gdx.app.log("ShootSystem", "Reposicionamento bem-sucedido");
-                }
             } else {
                 Vector2 direction = repositionTarget.cpy().sub(currentPosition).nor();
                 Vector2 desiredVelocity = direction.scl(3f);
@@ -81,7 +74,6 @@ public class ShootSystem {
             }
             return false;
         } else {
-            Gdx.app.log("ShootSystem", "Sem opções de reposicionamento, voltando a perseguir");
             return true; // Indica que deve mudar para estado CHASE
         }
     }
@@ -90,7 +82,6 @@ public class ShootSystem {
         Vector2 retreatDirection = findSafeRetreatDirection(currentPosition, targetPosition);
 
         if (retreatDirection.equals(Vector2.Zero)) {
-            Gdx.app.log("ShootSystem", "Encurralado! Atacando agressivamente");
             if (castor.canShoot()) {
                 castor.shootAtPlayer();
             }
@@ -101,8 +92,6 @@ public class ShootSystem {
         } else {
             Vector2 desiredVelocity = retreatDirection.scl(3.5f);
             applySteeringForce(body, desiredVelocity);
-            Gdx.app.log("ShootSystem", "Jogador muito perto, recuando inteligentemente");
-
             if (castor.canShoot()) {
                 castor.shootAtPlayer();
             }
