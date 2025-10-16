@@ -34,6 +34,7 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     private final Body body;
     public final Robertinhoo target;
     public CastorRenderer renderer = new CastorRenderer();
+    private CastorAnimationState animationState;
 
     private Animation<TextureRegion> ratAnimation;
     private float animationTime = 0f;
@@ -71,12 +72,12 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
     private boolean scheduledDodge = false;
     private Vector2 scheduledDodgePlayerPosition = null;
-    private static final float DODGE_AFTER_DAMAGE_DELAY = 0.4f; // Espera 0.4s após o dano
+    private static final float DODGE_AFTER_DAMAGE_DELAY = 0.4f;
     private float dodgeScheduleTimer = 0f;
 
     private boolean isDashing = false;
-    private float dashTime = 0f;
-    private static final float DASH_TOTAL_DURATION = 0.8f; // Ajuste conforme a animação
+
+    private static final float DASH_TOTAL_DURATION = 0.8f;
 
     public enum State {
         IDLE, MOVING, SHOOTING, TAKING_DAMAGE, DASHING,
@@ -84,8 +85,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     }
 
     private State state = State.IDLE;
-
-    private float deathAnimationTime = 0f;
 
     public Castor(Mapa mapa, float x, float y, Robertinhoo target) {
         super(x, y, 3, 2);
@@ -95,6 +94,7 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         this.damage = 15f;
         this.dodgeSystem = new DodgeSystem(mapa.getPathfindingSystem(), mapa);
         this.ai = new CastorIA(this, target, mapa.getPathfindingSystem(), mapa, dodgeSystem);
+        this.animationState = new CastorAnimationState();
 
         body.setUserData(this);
         this.shadowComponent = new ShadowComponent(
@@ -117,7 +117,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
             this.hasShot = false;
             this.shootAnimationTime = 0f;
             this.shootCooldown = SHOOT_COOLDOWN_TIME;
-            Gdx.app.log("Castor", "startShooting(): animação iniciada, movimento parado");
         }
     }
 
@@ -141,8 +140,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
                     recoilDirection.scl(RECOIL_FORCE * body.getMass() * 0.5f),
                     body.getWorldCenter(),
                     true);
-
-            Gdx.app.log("Castor", "Lançando míssil com recuo suave da posição: " + launchPosition);
         }
     }
 
@@ -199,19 +196,11 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     }
 
     public void shootAtPlayer() {
-        // Se a animação já está em progresso, ignora chamadas diretas
         if (isShooting) {
-            Gdx.app.log("Castor", "shootAtPlayer() ignorado — animação já em progresso");
             return;
         }
-
-        // Se pode atirar, pede pra iniciar a animação (que chamará fireProjectile no
-        // tempo certo)
         if (shootCooldown <= 0 && target != null) {
-            Gdx.app.log("Castor", "shootAtPlayer(): redirecionando para startShooting() para respeitar animação");
             startShooting();
-        } else {
-            Gdx.app.log("Castor", "shootAtPlayer(): não pode atirar ainda (cooldown=" + shootCooldown + ")");
         }
     }
 
@@ -231,29 +220,28 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
     @Override
     public void update(float deltaTime) {
+        // 🔥 ATUALIZAR: animationState primeiro
+        animationState.update(deltaTime, this);
         dodgeSystem.update(deltaTime);
 
-        // 🔥 NOVO: Atualizar timer do dash
         if (isDashing) {
-            dashTime += deltaTime;
-
-            // 🔥 APLICAR FORÇA DO DASH APENAS UMA VEZ no início da fase de execução
+            // 🔥 CORREÇÃO: Usar animationState.dashAnimationTime
             if (shouldApplyDashForce()) {
                 applyDashViaDodgeSystem();
             }
 
             // Finalizar dash quando a animação acabar
-            if (dashTime >= DASH_TOTAL_DURATION) {
+            if (animationState.dashAnimationTime >= DASH_TOTAL_DURATION) {
                 isDashing = false;
-                dashTime = 0f;
-                Gdx.app.log("Castor", "💨 Dash finalizado");
+                animationState.dashAnimationTime = 0f;
             }
         }
+
         if (shootCooldown > 0) {
             shootCooldown -= deltaTime;
         }
+
         if (isDead) {
-            deathAnimationTime += deltaTime;
             return;
         }
 
@@ -277,42 +265,31 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
             return;
         }
 
-        if (isShooting && shootAnimationTime >= 0.5f) {
+        if (isShooting && animationState.shootAnimationTime >= 0.5f) {
             Vector2 velocity = body.getLinearVelocity();
             velocity.scl(RECOIL_DAMPING);
             body.setLinearVelocity(velocity);
         }
 
         if (isShooting) {
-            shootAnimationTime += deltaTime;
-
-            if (shootAnimationTime < 0.5f) {
+            if (animationState.shootAnimationTime < 0.5f) {
                 body.setLinearVelocity(0, 0);
             }
-
-            if (shootAnimationTime >= 0.5f && !hasShot) {
+            if (animationState.shootAnimationTime >= 0.5f && !hasShot) {
                 fireProjectile();
                 hasShot = true;
             }
-
-            if (shootAnimationTime >= SHOOT_ANIMATION_DURATION) {
+            if (animationState.shootAnimationTime >= SHOOT_ANIMATION_DURATION) {
                 isShooting = false;
-                Gdx.app.log("Castor", "Animação de tiro terminada");
             }
         }
-
         ai.update(deltaTime, body);
     }
 
     private void executeScheduledDodge() {
         if (scheduledDodge && scheduledDodgePlayerPosition != null) {
-            Gdx.app.log("Castor", "🤸 Iniciando dash agendado");
-
-            // Apenas inicia o dash - a força será aplicada depois pelo DodgeSystem
             startDashAnimation();
             scheduledDodge = false;
-            // 🔥 MANTER: scheduledDodgePlayerPosition para usar no applyDashViaDodgeSystem
-            // scheduledDodgePlayerPosition = null; // NÃO limpar ainda!
             dodgeScheduleTimer = 0f;
         }
     }
@@ -359,25 +336,15 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
         damageTimer = DAMAGE_ANIMATION_DURATION;
         isTakingDamage = true;
         state = State.TAKING_DAMAGE;
-        // 🔥 CORREÇÃO: AGENDAR o dodge em vez de executar imediatamente
         if (target != null) {
             float distanceToTarget = getPosition().dst(target.getPosition());
 
-            Gdx.app.log("Castor", "🏥 Levou " + damage + " de dano! Distância: " + distanceToTarget);
-            Gdx.app.log("Castor", "🛡️ DodgeSystem cooldown: " + dodgeSystem.getDodgeCooldown());
-
             if (distanceToTarget < 8f && dodgeSystem.canDodge()) {
-                Gdx.app.log("Castor", "⏰ AGENDANDO esquiva para após animação de dano");
                 scheduledDodge = true;
                 scheduledDodgePlayerPosition = new Vector2(target.getPosition());
                 dodgeScheduleTimer = DODGE_AFTER_DAMAGE_DELAY;
-                applyReducedKnockback(); // Knockback reduzido pois vai esquivar depois
+                applyReducedKnockback();
             } else {
-                if (distanceToTarget >= 8f) {
-                    Gdx.app.log("Castor", "📏 Longe demais para esquivar");
-                } else {
-                    Gdx.app.log("Castor", "⏳ DodgeSystem em cooldown");
-                }
                 applyNormalKnockback();
             }
         } else {
@@ -389,9 +356,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
             hasShot = false;
             shootAnimationTime = 0f;
         }
-
-        Gdx.app.log("Castor", "❤️ Saúde: " + health);
-
     }
 
     private void applyReducedKnockback() {
@@ -401,7 +365,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
                     knockbackDirection.scl(0.3f * body.getMass()),
                     body.getWorldCenter(),
                     true);
-            Gdx.app.log("Castor", "💨 Knockback reduzido (esquiva agendada)");
         }
     }
 
@@ -415,7 +378,6 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
                     knockbackDirection.scl(1.0f * body.getMass()),
                     body.getWorldCenter(),
                     true);
-            Gdx.app.log("Castor", "💥 Knockback normal aplicado");
         }
     }
 
@@ -423,28 +385,17 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     public void die(DeathType type) {
         if (isDead)
             return;
-
-        Gdx.app.log("Castor", "=== INICIANDO MORTE ===");
-        Gdx.app.log("Castor", "Tipo: " + type);
-        Gdx.app.log("Castor", "Estado anterior: " + state);
-
         isDead = true;
         deathType = type;
-        deathAnimationTime = 0;
-        state = type == DeathType.MELEE ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
 
-        Gdx.app.log("Castor", "Estado após morte: " + state);
-        Gdx.app.log("Castor", "deathType: " + deathType);
-        Gdx.app.log("Castor", "isDead: " + isDead);
+        animationState.deathAnimationTime = 0f;
+        state = type == DeathType.MELEE ? State.MELEE_DEATH : State.PROJECTILE_DEATH;
 
         for (Fixture fixture : body.getFixtureList()) {
             fixture.setSensor(true);
         }
-
         body.setLinearVelocity(0, 0);
         body.setAngularVelocity(0);
-
-        Gdx.app.log("Castor", "=== MORTE CONFIGURADA ===");
     }
 
     public boolean isTakingDamage() {
@@ -579,22 +530,19 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
 
     private void startDashAnimation() {
         isDashing = true;
-        dashTime = 0f;
-        Gdx.app.log("Castor", "🚀 Iniciando animação de dash!");
+        animationState.dashAnimationTime = 0f;
+    }
+
+    private boolean shouldApplyDashForce() {
+        return isDashing && animationState.dashAnimationTime >= 0.3f && animationState.dashAnimationTime < 0.35f;
     }
 
     public boolean isDashing() {
         return isDashing;
     }
 
-    private boolean shouldApplyDashForce() {
-        // Aplicar força quando entrar na fase de execução (após ~0.3s)
-        return isDashing && dashTime >= 0.3f && dashTime < 0.35f; // Janela pequena para aplicar apenas uma vez
-    }
-
     private void applyDashViaDodgeSystem() {
         if (scheduledDodgePlayerPosition != null) {
-            Gdx.app.log("Castor", "🎯 Aplicando força do dash via DodgeSystem");
 
             // Usar o DodgeSystem existente - ele já calcula direção e aplica força
             boolean dashApplied = dodgeSystem.executeDodgeOnHit(body, getPosition(), scheduledDodgePlayerPosition);
@@ -622,23 +570,23 @@ public class Castor extends Enemy implements ShadowEntity, Steerable<Vector2> {
     @Override
     public boolean isDeathAnimationFinished() {
         if (deathType == null) {
-            Gdx.app.log("Castor", "deathType é NULL em isDeathAnimationFinished");
             return true;
         }
 
         float duration = (deathType == DeathType.MELEE) ? renderer.getMeleeDeathDuration()
                 : renderer.getProjectileDeathDuration();
 
-        boolean finished = deathAnimationTime >= duration;
-        Gdx.app.log("Castor", "isDeathAnimationFinished: " + finished +
-                " (time: " + deathAnimationTime + ", duration: " + duration + ")");
-
+        // 🔥 CORREÇÃO: Usar animationState.deathAnimationTime
+        boolean finished = animationState.deathAnimationTime >= duration;
         return finished;
     }
 
     public boolean isDying() {
         boolean dying = isDead && deathType != null && !isDeathAnimationFinished();
-        Gdx.app.log("Castor", "isDying: " + dying);
         return dying;
+    }
+
+    public CastorAnimationState getAnimationState() {
+        return animationState;
     }
 }

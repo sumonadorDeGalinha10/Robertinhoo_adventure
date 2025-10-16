@@ -95,10 +95,6 @@ public class PatrolSystem {
         }
 
         lastPosition.set(currentPosition);
-
-        if (isStuck()) {
-            Gdx.app.log("PatrolSystem", "🚨 PRESO! Timer: " + stuckTimer + "s");
-        }
     }
 
     private boolean isStuck() {
@@ -131,8 +127,6 @@ public class PatrolSystem {
 
         if (currentPath == null || currentPath.isEmpty()) {
             generateFallbackLongPath(currentPos);
-        } else {
-            Gdx.app.log("PatrolSystem", "🔄 Nova rota longa gerada com " + currentPath.size() + " pontos");
         }
     }
 
@@ -140,7 +134,6 @@ public class PatrolSystem {
         List<Vector2> path = pathfindingSystem.findPath(start, target);
 
         if (path == null || path.isEmpty()) {
-            Gdx.app.log("PatrolSystem", "❌ Caminho principal falhou, tentando alternativas...");
 
             for (int i = 0; i < 8; i++) {
                 float angle = (float) (i * Math.PI / 4);
@@ -151,7 +144,6 @@ public class PatrolSystem {
 
                 path = pathfindingSystem.findPath(start, alternativeTarget);
                 if (path != null && !path.isEmpty()) {
-                    Gdx.app.log("PatrolSystem", "✅ Caminho alternativo encontrado!");
                     return path;
                 }
             }
@@ -187,8 +179,6 @@ public class PatrolSystem {
     }
 
     private void generateFallbackLongPath(Vector2 currentPos) {
-        Gdx.app.log("PatrolSystem", "🔄 Gerando rota de fallback...");
-
         Vector2[] primaryDirections = {
                 new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1),
                 new Vector2(1, 1), new Vector2(-1, 1), new Vector2(1, -1), new Vector2(-1, -1)
@@ -205,7 +195,6 @@ public class PatrolSystem {
 
             if (currentPath != null && !currentPath.isEmpty()) {
                 currentPathIndex = 0;
-                Gdx.app.log("PatrolSystem", "✅ Fallback direcional bem-sucedido");
                 return;
             }
         }
@@ -215,9 +204,6 @@ public class PatrolSystem {
                 currentPos.y + (random.nextFloat() * 8 - 4f));
         currentPath = pathfindingSystem.findPath(currentPos, target);
         currentPathIndex = 0;
-
-        Gdx.app.log("PatrolSystem", "🎲 Fallback aleatório: " +
-                (currentPath != null ? currentPath.size() : 0) + " pontos");
     }
 
     private void followPath(Vector2 currentPosition, float deltaTime) {
@@ -239,9 +225,6 @@ public class PatrolSystem {
             adjustedSpeed *= 0.8f; // Pequena redução apenas em cantos fora de corredores
         }
 
-        Gdx.app.log("PatrolSystem",
-                inNarrowCorridor ? "🏎️ CORREDOR - Velocidade BOOST!" : "🌄 ÁREA ABERTA - Velocidade normal");
-
         if (distance < WAYPOINT_REACHED_DISTANCE) {
             currentPathIndex++;
             failedWaypointAttempts = 0;
@@ -253,7 +236,6 @@ public class PatrolSystem {
         } else if (distance > WAYPOINT_REACHED_DISTANCE * 3f) {
             failedWaypointAttempts++;
             if (failedWaypointAttempts >= MAX_FAILED_ATTEMPTS) {
-                Gdx.app.log("PatrolSystem", "⏩ Pulando waypoint inalcançável");
                 currentPathIndex++;
                 failedWaypointAttempts = 0;
                 if (currentPathIndex >= currentPath.size()) {
@@ -326,10 +308,6 @@ public class PatrolSystem {
 
         float angle = Math.abs(currentDirection.angleDeg(nextDirection));
         return angle > 60f; // Só considera canto se mudança > 60 graus
-    }
-
-    private Vector2 predictFuturePosition(Vector2 currentPosition, Vector2 velocity, float time) {
-        return currentPosition.cpy().add(velocity.cpy().scl(time));
     }
 
     private void applySteeringForce(Vector2 desiredVelocity, float forceMultiplier) {

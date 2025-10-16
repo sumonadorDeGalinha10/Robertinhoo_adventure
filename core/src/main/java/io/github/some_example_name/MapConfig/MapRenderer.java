@@ -240,16 +240,17 @@ public class MapRenderer {
             craftItensRenderer.render(spriteBatch, mapa.getCraftItems(), offsetX, offsetY);
         }
         spriteBatch.end();
-        shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (Enemy enemy : mapa.getEnemies())
-            if (enemy instanceof Castor) {
-                Castor castor = (Castor) enemy;
-                castor.debugRender(shapeRenderer, new Vector2(offsetX, offsetY), TILE_SIZE);
-                castor.ai.debugRenderVision(shapeRenderer);
+        // shapeRenderer.setProjectionMatrix(cameraController.getCamera().combined);
+        // shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        // for (Enemy enemy : mapa.getEnemies())
+        // if (enemy instanceof Castor) {
+        // Castor castor = (Castor) enemy;
+        // // castor.debugRender(shapeRenderer, new Vector2(offsetX, offsetY),
+        // TILE_SIZE);
+        // // castor.ai.debugRenderVision(shapeRenderer);
 
-            }
-        shapeRenderer.end();
+        // }
+        // shapeRenderer.end();
 
         // --- DEBUG RENDER ---
         // debugRender(offsetX, offsetY);
